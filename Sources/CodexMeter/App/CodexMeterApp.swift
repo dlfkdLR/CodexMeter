@@ -93,7 +93,7 @@ struct CodexMeterApp: App {
         } label: {
             HStack(spacing: 4) {
                 if resolvedShowIcon {
-                    Image(systemName: "diamond")
+                    Image(nsImage: DiamondMeterIcon.image(remainingFraction: menuBarLimitRemaining))
                         .accessibilityHidden(true)
                 }
                 if resolvedShowText {
@@ -140,6 +140,24 @@ struct CodexMeterApp: App {
             totalOverride: profileTotalOverride,
             totalPeriodDescription: profilePeriodDescription
         )
+    }
+
+    /// Fraction of the tightest account-limit window still available, for the
+    /// menu bar diamond fill. `nil` when the selected provider has no usable
+    /// limit snapshot — the diamond then shows only its outline.
+    private var menuBarLimitRemaining: Double? {
+        let windows: [AccountLimitWindow]?
+        switch selectedStore.provider {
+        case .codex:
+            guard accountLimitStore.isEnabled,
+                  accountLimitStore.status == .ready || accountLimitStore.status == .stale
+            else { return nil }
+            windows = accountLimitStore.snapshot?.windows
+        case .claude:
+            guard claudeIntegrationStore.isConnected else { return nil }
+            windows = claudeIntegrationStore.snapshot?.windows
+        }
+        return MenuBarLimitMeter.remainingFraction(windows: windows)
     }
 
     private var profileTotalOverride: Int64? {

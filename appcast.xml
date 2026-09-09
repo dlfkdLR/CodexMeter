@@ -4,26 +4,26 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>CodexMeter</title>
         <item>
-            <title>1.4.7</title>
-            <pubDate>Wed, 09 Sep 2026 11:53:59 +0900</pubDate>
-            <link>https://github.com/HechoLP/CodexMeter/releases/tag/v1.4.7</link>
-            <sparkle:version>147</sparkle:version>
-            <sparkle:shortVersionString>1.4.7</sparkle:shortVersionString>
+            <title>1.4.8</title>
+            <pubDate>Wed, 09 Sep 2026 12:59:51 +0900</pubDate>
+            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v1.4.8</link>
+            <sparkle:version>148</sparkle:version>
+            <sparkle:shortVersionString>1.4.8</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# CodexMeter 1.4.7
+            <description sparkle:format="markdown"><![CDATA[# CodexMeter 1.4.8
 
-A bug-fix release for the software-update flow.
+A bug-fix release, plus the repository move to its canonical location.
 
 ## What changed
 
-- **The "An error occurred while launching the installer" update failure now has a way out.** It happens when an earlier automatic update already placed a newer build on disk while this older copy keeps running — Sparkle then can't install over it, and the dialog's only button was "Cancel Update". CodexMeter now detects that situation (before the check, or when Sparkle aborts the install) and offers **Restart Now**, which quits the stale process and reopens the app so the pending update applies. Nothing needs to be reinstalled.
-- The takeover is scoped to that one recoverable case. Genuine install failures — no write permission to the Applications folder, a full disk, a cancelled authorization prompt — keep Sparkle's own accurate message. A background scheduled check that fails never pops an unsolicited dialog. If the automatic relaunch can't be started, CodexMeter explains how to quit and reopen manually instead of leaving you with no running app.
+- **Turning Claude off now always wins over an in-progress account add.** If you disabled Claude Code while an account add was still checking, the add could finish a moment later and reinstall CodexMeter's status-line helper into `~/.claude/settings.json` — right after the disable had removed it. The disable now blocks any in-flight add or refresh from completing.
+- **The repository and update feed point at their canonical `dlfkdLR/CodexMeter` location** after the GitHub account was renamed from `HechoLP`. New builds check `raw.githubusercontent.com/dlfkdLR/...`, and the in-app GitHub links, README, and Homebrew tap references use the new owner. Existing installs keep working through GitHub's redirects — nothing to do.
 
-No change to the update feed, the signing keys, automatic-update behavior, or the check schedule.
+No change to signing keys, saved-account storage, automatic-update behavior, or the check schedule.
 
 ## Verification
 
-- 292 automated tests, 0 failures (7 environment-integration tests skipped); new coverage for the on-disk replacement detection and the error-code scoping.
+- 292 automated tests, 0 failures (7 environment-integration tests skipped); the Claude disable/add race is now covered by a timing-independent test.
 - `swift build` with zero warnings and zero errors.
 - Universal 2 build for Apple silicon and Intel Macs running macOS 14 or later; the bundled Claude limits helper is signed and verified as part of the release.
 - The app remains ad-hoc signed and not Apple-notarized. SHA-256 protects the first download; Sparkle authenticates later update feeds and archives with Ed25519 signatures.
@@ -32,16 +32,16 @@ No change to the update feed, the signing keys, automatic-update behavior, or th
 
 ```bash
 brew update
-brew upgrade --cask --greedy HechoLP/tap/codexmeter
+brew upgrade --cask --greedy dlfkdLR/tap/codexmeter
 ```
 
 For a new installation:
 
 ```bash
-brew install --cask HechoLP/tap/codexmeter
+brew install --cask dlfkdLR/tap/codexmeter
 ```
 
-If macOS blocks this certificate-free app after installation, confirm that it came from `HechoLP/tap/codexmeter`, then remove quarantine from this app only:
+If macOS blocks this certificate-free app after installation, confirm that it came from `dlfkdLR/tap/codexmeter`, then remove quarantine from this app only:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/CodexMeter.app
@@ -50,12 +50,12 @@ open /Applications/CodexMeter.app
 
 ## First direct-download launch
 
-Download `CodexMeter-1.4.7.dmg` and `SHA256SUMS.txt` from this release into the same folder. Verify the checksum before opening the disk image:
+Download `CodexMeter-1.4.8.dmg` and `SHA256SUMS.txt` from this release into the same folder. Verify the checksum before opening the disk image:
 
 ```bash
 cd ~/Downloads
-grep ' CodexMeter-1.4.7.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
-open CodexMeter-1.4.7.dmg
+grep ' CodexMeter-1.4.8.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
+open CodexMeter-1.4.8.dmg
 ```
 
 Only after the checksum reports `OK`, copy `CodexMeter.app` to Applications and use the app-scoped quarantine command above.
@@ -64,10 +64,10 @@ Only after the checksum reports `OK`, copy `CodexMeter.app` to Applications and 
 
 This release does not migrate any database. Published version tags are immutable; corrections ship as a new patch release.
 ]]></description>
-            <enclosure url="https://github.com/HechoLP/CodexMeter/releases/download/v1.4.7/CodexMeter-1.4.7.zip" length="3803410" type="application/octet-stream" sparkle:edSignature="iJ/ANZzoFESYGBlxH4imclafqA9mZVCAB6l+yrYLkhFNXjeXm+evVb8AZNg57a+Z6BWoUGjvjqhxTBSIZxEZBQ=="></enclosure>
+            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v1.4.8/CodexMeter-1.4.8.zip" length="3803922" type="application/octet-stream" sparkle:edSignature="mQ5lAa5sNnU1Zh+57cjjg8NWyQ0c7Std6Vfx/Ddvcx3K63ZTZjLKUGQcAi9gt15eBBkv3D46GypVC4NX9bo4Cw=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: MEaPZmV5k/vXkx/m1aZAncBANq3xCnxNwT0XI8pjjJBltP5RdHVKDDC7QS4caxl73jldJ9ETrvH0go3yijngBw==
-length: 3942
+edSignature: q4GNOe6arIjI2OabS/Tb9L9kA/Nuavxla+ecffnK9OovkNpgdJ/1vXJQyTDyMkWn9JypR3heTmlAUQVZj1aFAQ==
+length: 3725
 -->

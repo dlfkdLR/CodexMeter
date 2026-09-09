@@ -4,6 +4,10 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Point the repository and update feed at their canonical `dlfkdLR/CodexMeter` location after the GitHub account was renamed (was `HechoLP`). New builds check `raw.githubusercontent.com/dlfkdLR/...` for updates and the in-app GitHub links, README, and Homebrew tap references use the new owner. Existing installs keep working through GitHub's redirects; the Sparkle signing key, the saved-account Keychain identifiers, and frozen historical release notes are unchanged.
+
 ## [1.4.7] - 2026-09-09
 
 ### Fixed

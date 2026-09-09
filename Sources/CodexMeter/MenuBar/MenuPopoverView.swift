@@ -630,7 +630,7 @@ struct MenuPopoverView: View {
                         }
                     }
                     Button("Open CodexMeter on GitHub") {
-                        open("https://github.com/HechoLP/CodexMeter")
+                        open("https://github.com/dlfkdLR/CodexMeter")
                     }
                     Button("Check for Updates…") {
                         UpdateService.shared.checkForUpdates()

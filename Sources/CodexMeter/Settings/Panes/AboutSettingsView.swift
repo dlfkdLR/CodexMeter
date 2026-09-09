@@ -32,11 +32,11 @@ struct AboutSettingsView: View {
 
             SettingsSection(title: "Project") {
                 SettingsLinkRow(title: "Open Source on GitHub", systemImage: "chevron.left.forwardslash.chevron.right",
-                                destination: URL(string: "https://github.com/HechoLP/CodexMeter")!)
+                                destination: URL(string: "https://github.com/dlfkdLR/CodexMeter")!)
                 SettingsLinkRow(title: "View Releases", systemImage: "shippingbox",
-                                destination: URL(string: "https://github.com/HechoLP/CodexMeter/releases")!)
+                                destination: URL(string: "https://github.com/dlfkdLR/CodexMeter/releases")!)
                 SettingsLinkRow(title: "Read MIT License", systemImage: "doc.text",
-                                destination: URL(string: "https://github.com/HechoLP/CodexMeter/blob/main/LICENSE")!)
+                                destination: URL(string: "https://github.com/dlfkdLR/CodexMeter/blob/main/LICENSE")!)
             }
 
             SettingsNote("CodexMeter is an independent utility and is not affiliated with or endorsed by OpenAI or Anthropic.")

@@ -22,6 +22,15 @@ Settings > Data > Rebuild Statistics deletes only CodexMeter's derived rows and 
 
 Settings > Data > Clear Local History securely clears CodexMeter's local SQLite rows and records the current time as an import cutoff. It never deletes Codex session files, and events at or before the cutoff stay excluded.
 
+## Update error: "An error occurred while launching the installer"
+
+This means the update downloaded correctly but Sparkle could not apply it from the
+still-running process — usually because an earlier automatic update already placed a
+newer build on disk while this older copy kept running. CodexMeter now detects that
+case before checking and, when Sparkle does report the installer error, offers
+**Restart Now**. Restarting quits the stale process and reopens the app, which
+applies the pending update. Nothing needs to be reinstalled.
+
 ## Launch at Login issue
 
 If macOS requires approval, use Settings > General > Open Login Items Settings and enable CodexMeter. Launch at Login is available from a packaged app; behavior from `swift run` is not representative.

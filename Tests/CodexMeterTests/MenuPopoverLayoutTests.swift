@@ -508,6 +508,27 @@ final class MenuPopoverLayoutTests: XCTestCase {
         }
     }
 
+    /// The Usage settings pane reuses the popover in `embedded` mode: it must
+    /// still render its analytics, but drop the menu-bar-only footer actions
+    /// (Refresh / Settings / Quit) and stop pinning itself to 372pt.
+    func testEmbeddedPopoverDropsMenuBarFooterAndUnpinsWidth() {
+        _ = NSApplication.shared
+        let view = MenuPopoverView(accounts: AccountLayoutFixture.emptyStore(), embedded: true)
+            .environmentObject(UsageStore(analyticsSnapshots: analyticsFixtures))
+            .environmentObject(ProfileUsageStore())
+            .environmentObject(AccountLimitStore(provider: CollapsedPopoverTestLimitProvider(), pollingInterval: nil))
+            .environmentObject(ClaudeIntegrationStore(automaticallyRefresh: false))
+            .frame(width: 720)
+        let hostingView = NSHostingView(rootView: view)
+        hostingView.layoutSubtreeIfNeeded()
+
+        let buttonTitles = descendants(of: NSButton.self, in: hostingView).compactMap { $0.title }
+        XCTAssertFalse(buttonTitles.contains("Refresh"), "embedded pane keeps the menu-bar Refresh button")
+        XCTAssertFalse(buttonTitles.contains { $0.contains("Quit") }, "embedded pane keeps Quit")
+        XCTAssertGreaterThan(hostingView.fittingSize.width, MenuPopoverMetrics.width,
+                             "embedded pane stays pinned to the popover width")
+    }
+
     private func viewport(height: CGFloat) -> some View {
         ContentFittingScrollView(maximumHeight: 440) {
             Color.clear.frame(height: height)

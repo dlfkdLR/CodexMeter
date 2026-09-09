@@ -10,12 +10,16 @@ final class SettingsEnvironment: ObservableObject {
     let limitStore: AccountLimitStore
     let claude: ClaudeIntegrationStore
     let codexAccounts: CodexAccountStore
+    /// Aggregate ChatGPT-account totals, shown beside the local numbers in the
+    /// Usage pane. Its own in-memory default keeps layout tests offline.
+    let profileStore: ProfileUsageStore
 
     init(
         codexStore: UsageStore = UsageStore(automaticallyRefresh: false),
         claudeStore: UsageStore = UsageStore(provider: .claude, automaticallyRefresh: false),
         limitStore: AccountLimitStore = AccountLimitStore(pollingInterval: nil),
         claude: ClaudeIntegrationStore = ClaudeIntegrationStore(automaticallyRefresh: false),
+        profileStore: ProfileUsageStore = ProfileUsageStore(),
         // Defaults to an empty in-memory vault, never the real Keychain: this
         // default is what layout tests construct, and a test must never read or
         // prompt for the developer's actual saved Codex logins. The app wires
@@ -27,6 +31,7 @@ final class SettingsEnvironment: ObservableObject {
         self.limitStore = limitStore
         self.claude = claude
         self.codexAccounts = codexAccounts
+        self.profileStore = profileStore
     }
 
     func usageStore(for provider: UsageProvider) -> UsageStore {

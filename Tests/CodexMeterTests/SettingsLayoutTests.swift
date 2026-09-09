@@ -35,8 +35,14 @@ final class SettingsLayoutTests: XCTestCase {
                     XCTAssertLessThanOrEqual(doc, scroll.contentSize.width + 1,
                                              "\(name): content scrolls horizontally")
                 }
-                XCTAssertTrue(descendants(of: NSSegmentedControl.self, in: host).isEmpty,
-                              "\(name): settings must not use a segmented control")
+                // The Usage pane hosts the menu-bar analytics view verbatim, which
+                // keeps the popover's own controls (a segmented chart-metric
+                // picker among them). The no-segmented-control rule is for the
+                // native settings panes.
+                if pane != .category(.usage) {
+                    XCTAssertTrue(descendants(of: NSSegmentedControl.self, in: host).isEmpty,
+                                  "\(name): settings must not use a segmented control")
+                }
 
                 if let captureDir {
                     let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
@@ -149,6 +155,7 @@ private struct SettingsPaneHarness: View {
     var body: some View {
         switch pane {
         case .category(.general): GeneralSettingsView()
+        case .category(.usage): UsageSettingsView()
         case .category(.menuBar): MenuBarSettingsView()
         case .category(.notch): NotchSettingsView()
         case .category(.advanced): AdvancedSettingsView()

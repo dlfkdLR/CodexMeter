@@ -73,6 +73,7 @@ struct SettingsView: View {
     private var detailPane: some View {
         switch selection {
         case .category(.general): GeneralSettingsView()
+        case .category(.usage): UsageSettingsView()
         case .category(.menuBar): MenuBarSettingsView()
         case .category(.notch): NotchSettingsView()
         case .category(.advanced): AdvancedSettingsView()

@@ -330,6 +330,10 @@ final class ClaudeIntegrationStore: ObservableObject {
     private var pollingTask: Task<Void, Never>?
     private var lastAvailability = false
     private var operationGeneration = 0
+    /// Set while a disable is tearing down. `isEnabled` only flips false after
+    /// `performUninstall()` returns, so an add/refresh that begins during that
+    /// await would otherwise pass its `isEnabled` guard and reinstall the helper.
+    private var isDisabling = false
 
     init(
         authenticator: ClaudeAuthenticating = ClaudeCLIService(),
@@ -378,6 +382,8 @@ final class ClaudeIntegrationStore: ObservableObject {
             statusMessage = "Checking Claude account…"
             await refresh()
         } else {
+            isDisabling = true
+            defer { isDisabling = false }
             cancelCurrentOperation()
             do {
                 try await performUninstall()
@@ -400,14 +406,14 @@ final class ClaudeIntegrationStore: ObservableObject {
     }
 
     func addCurrentAccount() async {
-        guard isEnabled, !isRefreshing else { return }
+        guard isEnabled, !isRefreshing, !isDisabling else { return }
         let operation = beginOperation()
         status = .checking
         statusMessage = "Checking Claude account…"
         defer { finishOperation(operation) }
         do {
             let detected = try await authenticator.accountStatus()
-            guard isCurrent(operation), isEnabled else { return }
+            guard isCurrent(operation), isEnabled, !isDisabling else { return }
             guard let found = detected else {
                 detectedAccount = nil
                 account = nil
@@ -448,13 +454,13 @@ final class ClaudeIntegrationStore: ObservableObject {
     }
 
     func refresh() async {
-        guard isEnabled, !isRefreshing else { return }
+        guard isEnabled, !isRefreshing, !isDisabling else { return }
         let operation = beginOperation()
         status = .checking
         defer { finishOperation(operation) }
         do {
             let found = try await authenticator.accountStatus()
-            guard isCurrent(operation), isEnabled else { return }
+            guard isCurrent(operation), isEnabled, !isDisabling else { return }
             detectedAccount = found
             let linkedIdentifier = defaults.string(forKey: "claudeLinkedAccountID")
             guard defaults.bool(forKey: "claudeAccountLinked"),

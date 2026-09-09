@@ -311,7 +311,7 @@ final class MenuPopoverLayoutTests: XCTestCase {
             let last = try XCTUnwrap(frames.last)
             XCTAssertEqual(scrollFrame.minY - last.maxY, 12, accuracy: 3, name)
             XCTAssertLessThanOrEqual(scrollFrame.height, MenuPopoverMetrics.analyticsViewportMaximumHeight)
-            XCTAssertNil(window.toolbar, "MenuBarExtra must not gain a second, automatic navigation toolbar")
+            XCTAssertNil(window.toolbar, "the analytics view must not gain an automatic navigation toolbar")
             try captureIfRequested(hostingView, name: name)
         }
     }

@@ -21,11 +21,20 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         self.environment = environment
     }
 
+    /// Posted with a `SettingsPane` object when something outside the window
+    /// asks it to open on a particular pane (the status-bar menu's "Usage…").
+    static let selectPaneNotification = Notification.Name("CodexMeterSettingsSelectPane")
+
     func present() {
         let environment = self.environment ?? SettingsEnvironment()
         let window = settingsWindow ?? makeWindow(environment: environment)
         NSApplication.shared.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+    }
+
+    func present(selecting pane: SettingsPane) {
+        present()
+        NotificationCenter.default.post(name: Self.selectPaneNotification, object: pane)
     }
 
     private func makeWindow(environment: SettingsEnvironment) -> NSWindow {

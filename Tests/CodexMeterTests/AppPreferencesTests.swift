@@ -3,67 +3,16 @@ import XCTest
 @testable import CodexMeter
 
 final class AppPreferencesTests: XCTestCase {
-    func testFreshInstallDefaultsToVisibleIconWithoutText() throws {
+    func testFreshInstallLeavesTheOptionalIntegrationsOff() throws {
         let suiteName = "CodexMeterTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         AppPreferences.registerDefaults(in: defaults)
 
-        XCTAssertEqual(defaults.string(forKey: "menuBarDisplay"), MenuBarDisplay.total.rawValue)
-        XCTAssertTrue(defaults.bool(forKey: "showMenuBarIcon"))
-        XCTAssertFalse(defaults.bool(forKey: "showMenuBarText"))
         XCTAssertFalse(defaults.bool(forKey: "profileSyncEnabled"))
         XCTAssertFalse(defaults.bool(forKey: "claudeEnabled"))
-        XCTAssertTrue(
-            AppPreferences.shouldShowMenuBarIcon(
-                display: defaults.string(forKey: "menuBarDisplay") ?? "",
-                showIcon: defaults.bool(forKey: "showMenuBarIcon"),
-                showText: defaults.bool(forKey: "showMenuBarText")
-            )
-        )
-        XCTAssertFalse(
-            AppPreferences.shouldShowMenuBarText(
-                display: defaults.string(forKey: "menuBarDisplay") ?? "",
-                showText: defaults.bool(forKey: "showMenuBarText"),
-                text: "123M"
-            )
-        )
-    }
-
-    func testLegacyIconOnlyPreferenceMigratesToIndependentVisibilityControls() throws {
-        let suiteName = "CodexMeterTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-        defaults.set("iconOnly", forKey: "menuBarDisplay")
-        defaults.set(false, forKey: "showMenuBarIcon")
-        defaults.set(true, forKey: "showMenuBarText")
-
-        AppPreferences.registerDefaults(in: defaults)
-
-        XCTAssertEqual(defaults.string(forKey: "menuBarDisplay"), MenuBarDisplay.total.rawValue)
-        XCTAssertTrue(defaults.bool(forKey: "showMenuBarIcon"))
-        XCTAssertFalse(defaults.bool(forKey: "showMenuBarText"))
-        XCTAssertTrue(
-            AppPreferences.shouldShowMenuBarText(
-                display: defaults.string(forKey: "menuBarDisplay") ?? "",
-                showText: true,
-                text: "123M"
-            )
-        )
-    }
-
-    func testRegistrationPreservesAnExistingDisplayPreference() throws {
-        let suiteName = "CodexMeterTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-        defaults.set(MenuBarDisplay.total.rawValue, forKey: "menuBarDisplay")
-        defaults.set(true, forKey: "showMenuBarText")
-
-        AppPreferences.registerDefaults(in: defaults)
-
-        XCTAssertEqual(defaults.string(forKey: "menuBarDisplay"), MenuBarDisplay.total.rawValue)
-        XCTAssertTrue(defaults.bool(forKey: "showMenuBarText"))
+        XCTAssertFalse(defaults.bool(forKey: "showEdgeNotch"))
     }
 
     func testPreparingDataDirectoryEnforcesOwnerOnlyPermissions() throws {

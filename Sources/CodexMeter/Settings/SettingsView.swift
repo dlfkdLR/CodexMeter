@@ -67,6 +67,12 @@ struct SettingsView: View {
             onPaneTitleChange(newValue?.title ?? "CodexMeter Settings")
         }
         .onAppear { onPaneTitleChange(selection?.title ?? "CodexMeter Settings") }
+        .onReceive(NotificationCenter.default.publisher(for: SettingsWindowController.selectPaneNotification)) { note in
+            if let pane = note.object as? SettingsPane {
+                selection = pane
+                search = ""
+            }
+        }
     }
 
     @ViewBuilder
@@ -74,7 +80,6 @@ struct SettingsView: View {
         switch selection {
         case .category(.general): GeneralSettingsView()
         case .category(.usage): UsageSettingsView()
-        case .category(.menuBar): MenuBarSettingsView()
         case .category(.notch): NotchSettingsView()
         case .category(.advanced): AdvancedSettingsView()
         case .category(.about): AboutSettingsView()

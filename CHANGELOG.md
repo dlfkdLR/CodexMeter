@@ -4,16 +4,19 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+Heading toward **2.0.0**: the menu bar is replaced by the edge notch. Ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch); see `NOTICE`.
+
 ### Added
 
-- **Edge notch (early preview).** A floating usage ring welded to a screen edge, one ring per provider (Codex, Claude Code), hover to expand for the limit tooltip, ⌥-drag to reposition, gear orb to open Settings. Ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch); see `NOTICE`. Off by default — turn it on in **Settings ▸ Notch**. The menu bar and popover are unchanged. Single-screen only for now; more providers and multi-monitor come later.
-- **Edge notch — session awareness.** The notch now reads which Claude Code and Codex sessions are actually running: a working agent spins its ring, one blocked waiting on your input pulses amber, and when a session finishes the notch drops open for five seconds — click that peek to raise the terminal it was running in. Optionally plays a sound on completion. Controls under **Settings ▸ Notch ▸ When a Session Ends** (peek on/off, sound on/off, and the finished/blocked sound names). Reads local session files only; adds no network or credential access.
+- **Edge notch.** A floating usage ring welded to a screen edge, one ring per provider (Codex, Claude Code), hover to expand for the limit tooltip, ⌥-drag to reposition, gear orb to open Settings. Turn it on in **Settings ▸ Notch** (or the status-bar menu's *Show Notch*).
+- **Edge notch — session awareness.** The notch reads which Claude Code and Codex sessions are actually running: a working agent spins its ring, one blocked waiting on your input pulses amber, and when a session finishes the notch drops open for five seconds — click that peek to raise the terminal it was running in. Optionally plays a sound on completion. Controls under **Settings ▸ Notch ▸ When a Session Ends**. Reads local session files only; adds no network or credential access.
 - **Edge notch — limit alerts.** A macOS notification when a provider's headline limit crosses 80%, then 100% — once per crossing, and again only after the window resets. Permission is asked on the first real crossing, not at launch. Per-provider mute and a master on/off.
+- **"Notch" and "Usage" Settings panes.** Notch: pinned-open vs show-on-hover, size, ring colour, reset-time wording, usage-pace line, a Recentre button. Usage: the token history, day/week/month charts, and project/session breakdowns the popover used to show.
+- **Status-bar menu.** A small always-present item — *Show Notch*, *Usage…*, *Settings…*, *Check for Updates…*, *Quit* — since the menu-bar popover is gone.
 
-### Changed
+### Removed
 
-- **Edge notch settings moved to their own "Notch" pane.** The notch now has a dedicated Settings section instead of living under Menu Bar. New controls there: pinned-open vs show-on-hover, notch size (small/medium/large), ring colour, reset-time wording (date vs time-remaining), a usage-pace line in the tooltip, and a **Recentre** button that drops the ⌥-drag offset.
-- **New "Usage" Settings pane.** Token history, the day/week/month charts, and the project and session breakdowns now also live in Settings — the same views the menu-bar popover shows, minus its Quit/Refresh footer. Groundwork for the notch eventually replacing the menu bar; nothing is removed yet.
+- **The menu-bar popover, its diamond meter, and the token-count menu-bar text.** CodexMeter is now a notch-plus-Settings app; the readings live in the notch and the Usage pane. The notch is **off by default** — a fresh launch shows only the status-bar item until you enable it. Menu-bar preferences (`menuBarDisplay`, `showMenuBarIcon`, `showMenuBarText`, `menuBarPeriod`) no longer do anything. Number-format and cached-input/last-updated toggles moved to **Settings ▸ General ▸ Usage Numbers**.
 
 ## [1.4.10] - 2026-09-09
 

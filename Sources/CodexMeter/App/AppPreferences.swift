@@ -1,9 +1,6 @@
 import Foundation
 
 enum AppPreferences {
-    static let defaultMenuBarDisplay = MenuBarDisplay.total.rawValue
-    static let defaultShowMenuBarIcon = true
-    static let defaultShowMenuBarText = false
     static let defaultProfileSyncEnabled = false
     static let defaultAccountLimitsEnabled = true
     static let defaultAnalyticsEnabled = true
@@ -25,7 +22,6 @@ enum AppPreferences {
     static let defaultNotchAccent = NotchAccentChoice.system.rawValue
     static let defaultNotchResetTimeFormat = ResetTimeFormat.automatic.rawValue
     static let defaultNotchShowUsagePace = false
-    private static let legacyIconOnlyDisplay = "iconOnly"
 
     // MARK: Threshold alerts
 
@@ -54,9 +50,6 @@ enum AppPreferences {
     static func registerDefaults(in defaults: UserDefaults = .standard) {
         defaults.register(
             defaults: [
-                "menuBarDisplay": defaultMenuBarDisplay,
-                "showMenuBarIcon": defaultShowMenuBarIcon,
-                "showMenuBarText": defaultShowMenuBarText,
                 "profileSyncEnabled": defaultProfileSyncEnabled,
                 "accountLimitsEnabled": defaultAccountLimitsEnabled,
                 "analyticsEnabled": defaultAnalyticsEnabled,
@@ -83,29 +76,5 @@ enum AppPreferences {
                 "notchShowUsagePace": defaultNotchShowUsagePace
             ]
         )
-        migrateLegacyIconOnlyPreference(in: defaults)
-    }
-
-    static func shouldShowMenuBarIcon(
-        display _: String,
-        showIcon: Bool,
-        showText: Bool
-    ) -> Bool {
-        showIcon || !showText
-    }
-
-    static func shouldShowMenuBarText(
-        display _: String,
-        showText: Bool,
-        text: String
-    ) -> Bool {
-        showText && !text.isEmpty
-    }
-
-    private static func migrateLegacyIconOnlyPreference(in defaults: UserDefaults) {
-        guard defaults.string(forKey: "menuBarDisplay") == legacyIconOnlyDisplay else { return }
-        defaults.set(MenuBarDisplay.total.rawValue, forKey: "menuBarDisplay")
-        defaults.set(true, forKey: "showMenuBarIcon")
-        defaults.set(false, forKey: "showMenuBarText")
     }
 }

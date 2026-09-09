@@ -4,25 +4,25 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>CodexMeter</title>
         <item>
-            <title>1.4.9</title>
-            <pubDate>Wed, 09 Sep 2026 14:30:40 +0900</pubDate>
-            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v1.4.9</link>
-            <sparkle:version>149</sparkle:version>
-            <sparkle:shortVersionString>1.4.9</sparkle:shortVersionString>
+            <title>1.4.10</title>
+            <pubDate>Wed, 09 Sep 2026 15:46:30 +0900</pubDate>
+            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v1.4.10</link>
+            <sparkle:version>1410</sparkle:version>
+            <sparkle:shortVersionString>1.4.10</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# CodexMeter 1.4.9
+            <description sparkle:format="markdown"><![CDATA[# CodexMeter 1.4.10
 
-The menu bar diamond becomes a meter.
+A small polish on the menu bar diamond.
 
 ## What changed
 
-- **The menu bar diamond now fills from the bottom to show how much account limit is left.** It tracks the tightest limit window for the selected provider — Codex's app-server limits, or Claude's five-hour / weekly — so a full diamond means fresh quota and a near-empty one means the limit is close. When there is no limit snapshot (limits turned off, still loading, unavailable, or Claude not connected) it shows the outline alone, as before. The mark still tints with the menu bar appearance and highlight.
+- **The diamond's fill eases to a new level instead of snapping.** When the tightest account limit ticks down between refreshes, the diamond now drains toward the new level over about half a second rather than jumping. Reduce Motion still snaps.
 
 No preference or data changes.
 
 ## Verification
 
-- 298 automated tests, 0 failures (8 environment-integration tests skipped); new `DiamondMeterIconTests` cover the tightest-window selection, out-of-range clamping, the template-image flag, and a pixel-coverage check that a fuller diamond draws more ink.
+- 297 automated tests, 0 failures (8 environment-integration tests skipped); `DiamondMeterIconTests` render the meter through `ImageRenderer` and check that a fuller diamond draws more ink.
 - `swift build` with zero warnings and zero errors.
 - Universal 2 build for Apple silicon and Intel Macs running macOS 14 or later; the bundled Claude limits helper is signed and verified as part of the release.
 - The app remains ad-hoc signed and not Apple-notarized. SHA-256 protects the first download; Sparkle authenticates later update feeds and archives with Ed25519 signatures.
@@ -49,12 +49,12 @@ open /Applications/CodexMeter.app
 
 ## First direct-download launch
 
-Download `CodexMeter-1.4.9.dmg` and `SHA256SUMS.txt` from this release into the same folder. Verify the checksum before opening the disk image:
+Download `CodexMeter-1.4.10.dmg` and `SHA256SUMS.txt` from this release into the same folder. Verify the checksum before opening the disk image:
 
 ```bash
 cd ~/Downloads
-grep ' CodexMeter-1.4.9.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
-open CodexMeter-1.4.9.dmg
+grep ' CodexMeter-1.4.10.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
+open CodexMeter-1.4.10.dmg
 ```
 
 Only after the checksum reports `OK`, copy `CodexMeter.app` to Applications and use the app-scoped quarantine command above.
@@ -63,10 +63,10 @@ Only after the checksum reports `OK`, copy `CodexMeter.app` to Applications and 
 
 This release does not migrate any database. Published version tags are immutable; corrections ship as a new patch release.
 ]]></description>
-            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v1.4.9/CodexMeter-1.4.9.zip" length="3811235" type="application/octet-stream" sparkle:edSignature="es/OISIQYg3HIuxX0XWKIk7QAZU81bYwYNkoMNStZEnxEdtqIG7WQKsq/DtuNWgFioS2NiDUvAuYFip1b24jBA=="></enclosure>
+            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v1.4.10/CodexMeter-1.4.10.zip" length="3823779" type="application/octet-stream" sparkle:edSignature="9ilLygWhkVZqRenP7hxwWGYEeNriTtiqKLkjxnXGgAD++HzSqG/fYwNkM0u0Co4a6vR0ubgm6f0UYoaWopCuAA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: gzCmi8eBwENIJLVyQ4Ol4gUlvP/uRL6H5YzqtFTr9Nk5k78uIboSmnmNEsCR6ZXDgLZc8ml5sXiKNayc2PUgDw==
-length: 3508
+edSignature: rnP1T4k7BCgclOLyMiNKboiPIUhF4t7NIMo3/Whx9GSbNg5zbRid4Aw1m5Npc/MY65y9r8ZGgeiHvwz8ysRkDw==
+length: 3188
 -->

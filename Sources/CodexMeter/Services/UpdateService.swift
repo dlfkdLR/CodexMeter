@@ -97,12 +97,14 @@ final class UpdateService: NSObject, SPUUpdaterDelegate {
     }
 
     /// Waits for this process to exit, then reopens the app bundle. The wait is
-    /// required because the app forbids a second instance while this one lives.
+    /// required because the app forbids a second instance while this one lives;
+    /// it is capped so a cancelled quit can't leave the helper spinning forever.
     private static func relaunch() {
         let bundlePath = Bundle.main.bundlePath
         let pid = ProcessInfo.processInfo.processIdentifier
         let quoted = "'" + bundlePath.replacingOccurrences(of: "'", with: "'\\''") + "'"
-        let script = "while /bin/kill -0 \(pid) 2>/dev/null; do /bin/sleep 0.2; done; exec /usr/bin/open \(quoted)"
+        let script = "for _ in $(/usr/bin/seq 1 300); do /bin/kill -0 \(pid) 2>/dev/null || break; /bin/sleep 0.2; done; "
+            + "exec /usr/bin/open \(quoted)"
 
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/sh")

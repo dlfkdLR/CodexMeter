@@ -13,6 +13,7 @@ All notable changes to CodexMeter will be documented in this file.
 ### Changed
 
 - **Edge notch settings moved to their own "Notch" pane.** The notch now has a dedicated Settings section instead of living under Menu Bar. New controls there: pinned-open vs show-on-hover, notch size (small/medium/large), ring colour, reset-time wording (date vs time-remaining), a usage-pace line in the tooltip, and a **Recentre** button that drops the ⌥-drag offset.
+- **New "Usage" Settings pane.** Token history, the day/week/month charts, and the project and session breakdowns now also live in Settings — the same views the menu-bar popover shows, minus its Quit/Refresh footer. Groundwork for the notch eventually replacing the menu bar; nothing is removed yet.
 
 ## [1.4.10] - 2026-09-09
 

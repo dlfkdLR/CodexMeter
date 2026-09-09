@@ -4,6 +4,7 @@ import SwiftUI
 /// (account, limits, local data, analytics options) live in `SettingsPane.provider`.
 enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
     case general
+    case usage
     case menuBar
     case notch
     case advanced
@@ -14,6 +15,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
     var title: String {
         switch self {
         case .general: "General"
+        case .usage: "Usage"
         case .menuBar: "Menu Bar"
         case .notch: "Notch"
         case .advanced: "Diagnostics"
@@ -24,6 +26,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
     var systemImage: String {
         switch self {
         case .general: "gearshape"
+        case .usage: "chart.bar.xaxis"
         case .menuBar: "menubar.rectangle"
         case .notch: "inset.filled.topthird.rectangle"
         case .advanced: "slider.horizontal.3"
@@ -34,6 +37,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
     var chipTint: Color {
         switch self {
         case .general: .gray
+        case .usage: .blue
         case .menuBar: .purple
         case .notch: .teal
         case .advanced: .pink

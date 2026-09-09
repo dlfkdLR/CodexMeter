@@ -99,9 +99,16 @@ struct MenuPopoverView: View {
 
     private let formatter = TokenFormatter()
 
+    /// True when the view is hosted in the Settings window's Usage pane rather
+    /// than in the menu-bar popover: it then fills the pane instead of pinning
+    /// to 372pt, and the footer drops the Quit / Settings / More actions that
+    /// only make sense from the menu bar.
+    private let embedded: Bool
+
     init(accounts: CodexAccountStore, navigation: MenuNavigation = MenuNavigation(),
-         section: MenuPopoverSection = .overview) {
+         section: MenuPopoverSection = .overview, embedded: Bool = false) {
         self.accounts = accounts
+        self.embedded = embedded
         _navigation = StateObject(wrappedValue: navigation)
         _selectedSection = State(initialValue: section)
     }
@@ -126,11 +133,15 @@ struct MenuPopoverView: View {
                 .id(selectedSection)
                 .fixedSize(horizontal: false, vertical: true)
                 .transition(.opacity)
-                Divider()
-                footer
+                if !embedded || shouldShowStatus {
+                    Divider()
+                    footer
+                }
             }
         }
-        .frame(width: MenuPopoverMetrics.width, alignment: .topLeading)
+        .frame(width: embedded ? nil : MenuPopoverMetrics.width,
+               alignment: .topLeading)
+        .frame(maxWidth: embedded ? 480 : nil, alignment: .topLeading)
         .fixedSize(horizontal: false, vertical: true)
         .background(.background)
         .environmentObject(navigation)
@@ -577,6 +588,7 @@ struct MenuPopoverView: View {
                 }
             }
 
+            if !embedded {
             HStack(spacing: 18) {
                 Button {
                     Task {
@@ -654,6 +666,7 @@ struct MenuPopoverView: View {
             .buttonStyle(MenuInteractionStyle())
             .font(.caption.weight(.medium))
             .frame(minHeight: 28)
+            }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)

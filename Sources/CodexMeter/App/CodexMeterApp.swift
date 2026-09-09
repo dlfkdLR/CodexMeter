@@ -41,6 +41,7 @@ struct CodexMeterApp: App {
             claudeStore: claudeStore,
             limitStore: accountLimitStore,
             claude: claudeIntegrationStore,
+            profileStore: profileStore,
             codexAccounts: .shared
         )
         _settingsEnvironment = StateObject(wrappedValue: settingsEnvironment)

@@ -45,6 +45,9 @@ final class NotchController {
         let providers: [any NotchProvider] = [
             CodexNotchProvider(limits: codexLimits, accounts: codexAccounts),
             ClaudeNotchProvider(claude: claudeIntegration),
+            // Borrows a token from GitHub CLI; its ring only appears once one
+            // turns up (`isVisibleWhenAbsent == false`).
+            CopilotNotchProvider(),
         ]
         let store = NotchUsageStore(providers: providers)
         self.store = store

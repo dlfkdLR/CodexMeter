@@ -13,6 +13,7 @@ Heading toward **2.0.0**: the menu bar is replaced by the edge notch. Ported fro
 - **Edge notch — limit alerts.** A macOS notification when a provider's headline limit crosses 80%, then 100% — once per crossing, and again only after the window resets. Permission is asked on the first real crossing, not at launch. Per-provider mute and a master on/off.
 - **"Notch" and "Usage" Settings panes.** Notch: pinned-open vs show-on-hover, size, ring colour, reset-time wording, usage-pace line, a Recentre button. Usage: the token history, day/week/month charts, and project/session breakdowns the popover used to show.
 - **Status-bar menu.** A small always-present item — *Show Notch*, *Usage…*, *Settings…*, *Check for Updates…*, *Quit* — since the menu-bar popover is gone.
+- **GitHub Copilot ring.** The notch shows a Copilot ring — premium requests, chat, completions — when it can borrow a token from `GH_TOKEN`/`GITHUB_TOKEN`, GitHub CLI's `hosts.yml`, or `gh auth token`. No token, no ring; CodexMeter never stores one. Ported from the MIT-licensed Codenotch.
 
 ### Removed
 

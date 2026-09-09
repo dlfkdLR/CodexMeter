@@ -46,4 +46,25 @@ final class UpdateServiceTests: XCTestCase {
             )
         )
     }
+
+    func testBundleReplacementNeedsBothReadingsToTrigger() {
+        let identity = UpdateService.ExecutableIdentity(device: 1, inode: 2, modified: 3, size: 4)
+        XCTAssertFalse(UpdateService.bundleWasReplaced(sinceLaunch: nil, current: identity))
+        XCTAssertFalse(UpdateService.bundleWasReplaced(sinceLaunch: identity, current: nil))
+        XCTAssertFalse(UpdateService.bundleWasReplaced(sinceLaunch: identity, current: identity))
+    }
+
+    func testBundleReplacementDetectedWhenExecutableIdentityChanges() {
+        let atLaunch = UpdateService.ExecutableIdentity(device: 1, inode: 2, modified: 3, size: 4)
+        let replacedInode = UpdateService.ExecutableIdentity(device: 1, inode: 99, modified: 3, size: 4)
+        let rebuilt = UpdateService.ExecutableIdentity(device: 1, inode: 2, modified: 500, size: 4200)
+        XCTAssertTrue(UpdateService.bundleWasReplaced(sinceLaunch: atLaunch, current: replacedInode))
+        XCTAssertTrue(UpdateService.bundleWasReplaced(sinceLaunch: atLaunch, current: rebuilt))
+    }
+
+    func testInstallFailureCodesScopeTheTakeoverToTheInstallPhase() {
+        // SUMissingInstallerToolError = 4003, SURelaunchError = 4004, SUInstallationError = 4005.
+        // These only scope the phase; pendingUpdateNeedsRestart is what proves a restart helps.
+        XCTAssertEqual(UpdateService.installFailureCodes, [4003, 4004, 4005])
+    }
 }

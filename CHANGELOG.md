@@ -4,6 +4,10 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- The "An error occurred while launching the installer" update failure now has a way out. CodexMeter detects when a newer build is already on disk from an earlier automatic update and — either before checking, or when Sparkle reports the installer/relaunch error — offers **Restart Now**, which quits the stale process and reopens the app so the pending update applies. Previously that dialog was a dead end with only "Cancel Update".
+
 ## [1.4.6] - 2026-09-06
 
 ### Fixed

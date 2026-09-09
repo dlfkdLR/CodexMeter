@@ -24,7 +24,7 @@ The verifier requires an ad-hoc signature, rejects an Apple certificate authorit
 
 ## macOS release
 
-The macOS app uses one immutable `vVERSION` tag and one public release in `HechoLP/CodexMeter`.
+The macOS app uses one immutable `vVERSION` tag and one public release in `dlfkdLR/CodexMeter`.
 
 1. Merge the reviewed release commit to `main` after CI passes.
 2. Create and push `vVERSION` at that exact commit. Never move or replace a published tag.
@@ -60,12 +60,12 @@ Do not advertise the package as Apple-trusted. SHA-256 verifies the first downlo
 
 ## Homebrew Cask
 
-The public Cask lives in `HechoLP/homebrew-tap`.
+The public Cask lives in `dlfkdLR/homebrew-tap`.
 
 1. Publish the exact verified macOS ZIP at `vVERSION` before changing the Cask.
 2. Update `Casks/codexmeter.rb` with the published URL, version, and exact ZIP SHA-256.
 3. Keep `auto_updates true`, the macOS 14 requirement, and the certificate/notarization caveat.
-4. Run `brew style`, `brew audit --cask --online HechoLP/tap/codexmeter`, and a clean install/uninstall cycle.
+4. Run `brew style`, `brew audit --cask --online dlfkdLR/tap/codexmeter`, and a clean install/uninstall cycle.
 5. Verify the installed app version, build number, architecture, updater metadata, first-run icon-only state, Settings window, refresh animation, and live totals.
 
 The personal Tap provides convenient installation and checksum-based artifact integrity; it does not make the app Apple-trusted. Homebrew 6 does not provide the former `--no-quarantine` option.

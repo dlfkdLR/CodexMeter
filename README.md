@@ -2,7 +2,7 @@
 
 > Local Codex and Claude Code token usage, one click away on macOS.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/HechoLP/CodexMeter/ci.yml?branch=main&style=flat-square&label=CI&color=0a0a0c)](https://github.com/HechoLP/CodexMeter/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/dlfkdLR/CodexMeter/ci.yml?branch=main&style=flat-square&label=CI&color=0a0a0c)](https://github.com/dlfkdLR/CodexMeter/actions/workflows/ci.yml)
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-0a0a0c?style=flat-square)](https://support.apple.com/macos)
 [![macOS Release](https://img.shields.io/badge/macOS-v1.4.7-6e5aff?style=flat-square)](Documentation/ReleaseNotes/1.4.7.md)
 [![Swift 6.2](https://img.shields.io/badge/Swift-6.2-F05138?style=flat-square&logo=swift&logoColor=white)](Package.swift)
@@ -34,17 +34,17 @@ Tiny native macOS menu bar app that turns **local Codex and Claude Code session 
 Install the certificate-free stable release from the public personal Tap:
 
 ```bash
-brew install --cask HechoLP/tap/codexmeter
+brew install --cask dlfkdLR/tap/codexmeter
 ```
 
 To update an existing installation, including releases with automatic updates enabled:
 
 ```bash
 brew update
-brew upgrade --cask --greedy HechoLP/tap/codexmeter
+brew upgrade --cask --greedy dlfkdLR/tap/codexmeter
 ```
 
-Homebrew verifies the published ZIP against the Cask's SHA-256 checksum. Because the app is ad-hoc signed and not Apple-notarized, macOS still blocks its first launch. After confirming that Homebrew installed `HechoLP/tap/codexmeter`, remove quarantine from this app only and open it:
+Homebrew verifies the published ZIP against the Cask's SHA-256 checksum. Because the app is ad-hoc signed and not Apple-notarized, macOS still blocks its first launch. After confirming that Homebrew installed `dlfkdLR/tap/codexmeter`, remove quarantine from this app only and open it:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/CodexMeter.app
@@ -55,7 +55,7 @@ Homebrew 6 no longer provides the old `--no-quarantine` installation option. The
 
 ### Direct download
 
-CodexMeter v1.4.7 is available from the public [CodexMeter repository](https://github.com/HechoLP/CodexMeter/releases/tag/v1.4.7) as a certificate-free Universal 2 DMG and ZIP. The app uses an ad-hoc signature rather than an Apple Developer ID certificate, so macOS will not trust the first launch automatically. Verify the downloaded DMG and follow the one-time first-run steps below.
+CodexMeter v1.4.7 is available from the public [CodexMeter repository](https://github.com/dlfkdLR/CodexMeter/releases/tag/v1.4.7) as a certificate-free Universal 2 DMG and ZIP. The app uses an ad-hoc signature rather than an Apple Developer ID certificate, so macOS will not trust the first launch automatically. Verify the downloaded DMG and follow the one-time first-run steps below.
 
 This is the stable 1.4.7 application release, but it is not Apple-trusted or notarized. Sparkle update archives and the update feed are separately authenticated with Ed25519 signatures, while first-install trust is established by checking the published SHA-256 manifest.
 
@@ -198,7 +198,7 @@ Switch Codex accounts directly from the account menu at the top of the menu-bar 
 ## Build from source
 
 ```bash
-git clone https://github.com/HechoLP/CodexMeter.git
+git clone https://github.com/dlfkdLR/CodexMeter.git
 cd CodexMeter
 swift test
 swift run CodexMeter

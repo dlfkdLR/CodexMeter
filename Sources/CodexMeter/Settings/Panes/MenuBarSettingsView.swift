@@ -10,6 +10,10 @@ struct MenuBarSettingsView: View {
     @AppStorage("showMenuBarText") private var showMenuBarText = AppPreferences.defaultShowMenuBarText
     @AppStorage("showEdgeNotch") private var showEdgeNotch = AppPreferences.defaultShowEdgeNotch
     @AppStorage("notchEdge") private var notchEdge = AppPreferences.defaultNotchEdge
+    @AppStorage("notchAnnounceSessionEnd") private var announceSessionEnd = AppPreferences.defaultNotchAnnounceSessionEnd
+    @AppStorage("notchSessionEndSound") private var sessionEndSound = AppPreferences.defaultNotchSessionEndSound
+    @AppStorage("notchSessionEndSoundName") private var finishedSoundName = "Glass"
+    @AppStorage("notchSessionBlockedSoundName") private var blockedSoundName = "Funk"
 
     var body: some View {
         SettingsForm {
@@ -43,6 +47,35 @@ struct MenuBarSettingsView: View {
                 .disabled(!showEdgeNotch)
             }
             SettingsNote("A floating usage ring welded to a screen edge, shown alongside the menu bar. Early preview.")
+
+            SettingsSection(title: "When a Session Ends") {
+                SettingsToggleRow(
+                    "Peek the notch open",
+                    get: { announceSessionEnd },
+                    set: { announceSessionEnd = $0 }
+                )
+                SettingsToggleRow(
+                    "Play a sound",
+                    get: { sessionEndSound },
+                    set: { sessionEndSound = $0 }
+                )
+                SettingsPickerRow(title: "Finished", selection: Binding(
+                    get: { finishedSoundName },
+                    set: { finishedSoundName = $0; SessionChime.play($0) }
+                )) {
+                    ForEach(SessionChime.available, id: \.self) { Text($0).tag($0) }
+                }
+                .disabled(!sessionEndSound)
+                SettingsPickerRow(title: "Blocked on you", selection: Binding(
+                    get: { blockedSoundName },
+                    set: { blockedSoundName = $0; SessionChime.play($0) }
+                )) {
+                    ForEach(SessionChime.available, id: \.self) { Text($0).tag($0) }
+                }
+                .disabled(!sessionEndSound)
+            }
+            .disabled(!showEdgeNotch)
+            SettingsNote("A running agent spins its ring; one waiting on you pulses amber. When it finishes, the notch drops open for five seconds — click it to raise that agent's terminal.")
 
             SettingsSection(title: "Token Text") {
                 SettingsPickerRow(title: "Content", selection: $display) {

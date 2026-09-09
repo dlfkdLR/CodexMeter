@@ -151,12 +151,12 @@ enum NotchLayout {
 
     /// The percent label's line box. Fixed rather than intrinsic so the panel
     /// geometry can be worked out in AppKit before SwiftUI lays anything out.
-    nonisolated(unsafe) static let percentLineHeight: CGFloat = {
+    static let percentLineHeight: CGFloat = {
         let font = NSFont.systemFont(ofSize: NotchDesign.fontSize(capPixels: 27), weight: .semibold)
         return ceil(font.ascender - font.descender + font.leading)
     }()
 
-    nonisolated(unsafe) static let cardTitleLineHeight: CGFloat = lineHeight(
+    static let cardTitleLineHeight: CGFloat = lineHeight(
         NSFont.systemFont(ofSize: NotchDesign.fontSize(capPixels: 26), weight: .semibold)
     )
     /// The card's body face. Held rather than rebuilt at each use: the line
@@ -165,7 +165,7 @@ enum NotchLayout {
     nonisolated(unsafe) static let cardBodyFont = NSFont.systemFont(
         ofSize: NotchDesign.fontSize(capPixels: 18), weight: .regular
     )
-    nonisolated(unsafe) static let cardBodyLineHeight: CGFloat = lineHeight(cardBodyFont)
+    static let cardBodyLineHeight: CGFloat = lineHeight(cardBodyFont)
 
     /// How wide a line of body text is inside the card.
     static var cardTextWidth: CGFloat { cardWidth - 2 * cardPadding }

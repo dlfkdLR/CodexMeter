@@ -6,7 +6,7 @@ All notable changes to CodexMeter will be documented in this file.
 
 ### Added
 
-- Foundation for an edge-notch UI (`Sources/CodexMeter/Notch/`), ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch): the notch geometry/layout/shape types, the per-provider `ProviderSnapshot` model, the `NotchProvider` adapter protocol, and `CodexNotchProvider` / `ClaudeNotchProvider` bridging CodexMeter's existing `AccountLimitStore` and `ClaudeIntegrationStore` into it. Nothing is wired into the app yet — the window and the settings toggle land in the next changes. See `NOTICE`.
+- **Edge notch (early preview).** A floating usage ring welded to a screen edge, one ring per provider (Codex, Claude Code), hover to expand for the limit tooltip, ⌥-drag to reposition, gear orb to open Settings. Ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch); see `NOTICE`. Off by default — turn it on in **Settings ▸ Menu Bar ▸ Edge Notch**. The menu bar and popover are unchanged. Single-screen only for now; session-activity indicators, threshold alerts, more providers, and multi-monitor come later.
 
 ## [1.4.10] - 2026-09-09
 

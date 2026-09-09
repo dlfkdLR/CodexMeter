@@ -54,10 +54,6 @@ final class CodexNotchProvider: NotchProvider {
     }
 
     func fetchSnapshot() async throws -> ProviderSnapshot {
-        // The underlying store polls on its own; ask it to refresh and read the
-        // freshest published value.
-        await limits.refresh()
-
         let windows = (limits.snapshot?.windows ?? []).map(NotchLimitMapping.window)
         let status: ProviderStatus
         switch limits.status {
@@ -105,8 +101,6 @@ final class ClaudeNotchProvider: NotchProvider {
     }
 
     func fetchSnapshot() async throws -> ProviderSnapshot {
-        if claude.isEnabled { await claude.refresh() }
-
         let windows = (claude.snapshot?.windows ?? []).map(NotchLimitMapping.window)
         let status: ProviderStatus
         switch claude.status {

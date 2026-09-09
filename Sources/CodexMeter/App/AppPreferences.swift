@@ -20,6 +20,11 @@ enum AppPreferences {
     static let defaultNotchSessionEndSound = true
     static let defaultNotchAnnounceSessionEnd = true
     static let defaultNotchThresholdAlerts = true
+    static let defaultNotchVisibility = NotchVisibility.onHover.rawValue
+    static let defaultNotchSize = NotchSize.medium.rawValue
+    static let defaultNotchAccent = NotchAccentChoice.system.rawValue
+    static let defaultNotchResetTimeFormat = ResetTimeFormat.automatic.rawValue
+    static let defaultNotchShowUsagePace = false
     private static let legacyIconOnlyDisplay = "iconOnly"
 
     // MARK: Threshold alerts
@@ -70,7 +75,12 @@ enum AppPreferences {
                 "notchSessionEndSoundName": "Glass",
                 "notchSessionBlockedSoundName": "Funk",
                 "notchThresholdAlerts": defaultNotchThresholdAlerts,
-                mutedAlertProvidersKey: ""
+                mutedAlertProvidersKey: "",
+                "notchVisibility": defaultNotchVisibility,
+                "notchSize": defaultNotchSize,
+                "notchAccent": defaultNotchAccent,
+                "notchResetTimeFormat": defaultNotchResetTimeFormat,
+                "notchShowUsagePace": defaultNotchShowUsagePace
             ]
         )
         migrateLegacyIconOnlyPreference(in: defaults)

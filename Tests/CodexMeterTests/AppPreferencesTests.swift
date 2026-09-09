@@ -83,6 +83,21 @@ final class AppPreferencesTests: XCTestCase {
         XCTAssertEqual(permissions.intValue & 0o777, 0o700)
     }
 
+    func testNotchAppearanceDefaultsRegisterAndParseBack() throws {
+        let suiteName = "CodexMeterTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        AppPreferences.registerDefaults(in: defaults)
+
+        XCTAssertEqual(NotchVisibility(rawValue: defaults.string(forKey: "notchVisibility") ?? ""), .onHover)
+        XCTAssertEqual(NotchSize(rawValue: defaults.string(forKey: "notchSize") ?? ""), .medium)
+        XCTAssertEqual(NotchAccentChoice(rawValue: defaults.string(forKey: "notchAccent") ?? ""), .system)
+        XCTAssertEqual(ResetTimeFormat(rawValue: defaults.string(forKey: "notchResetTimeFormat") ?? ""), .automatic)
+        XCTAssertTrue(defaults.bool(forKey: "notchThresholdAlerts"))
+        XCTAssertFalse(defaults.bool(forKey: "notchShowUsagePace"))
+    }
+
     func testRefreshModesExposePredictablePollingChoices() {
         XCTAssertEqual(RefreshMode.thirtySeconds.pollingInterval, 30)
         XCTAssertEqual(RefreshMode.oneMinute.pollingInterval, 60)

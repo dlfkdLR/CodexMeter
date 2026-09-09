@@ -8,17 +8,6 @@ struct MenuBarSettingsView: View {
     @AppStorage("showLastUpdated") private var showLastUpdated = true
     @AppStorage("showMenuBarIcon") private var showMenuBarIcon = AppPreferences.defaultShowMenuBarIcon
     @AppStorage("showMenuBarText") private var showMenuBarText = AppPreferences.defaultShowMenuBarText
-    @AppStorage("showEdgeNotch") private var showEdgeNotch = AppPreferences.defaultShowEdgeNotch
-    @AppStorage("notchEdge") private var notchEdge = AppPreferences.defaultNotchEdge
-    @AppStorage("notchAnnounceSessionEnd") private var announceSessionEnd = AppPreferences.defaultNotchAnnounceSessionEnd
-    @AppStorage("notchSessionEndSound") private var sessionEndSound = AppPreferences.defaultNotchSessionEndSound
-    @AppStorage("notchSessionEndSoundName") private var finishedSoundName = "Glass"
-    @AppStorage("notchSessionBlockedSoundName") private var blockedSoundName = "Funk"
-    @AppStorage("notchThresholdAlerts") private var thresholdAlerts = AppPreferences.defaultNotchThresholdAlerts
-    @AppStorage(AppPreferences.mutedAlertProvidersKey) private var mutedAlerts = ""
-
-    /// The notch's two providers today; Phase 5 will make this the store's list.
-    private let alertProviders = [(id: "codex", name: "Codex"), (id: "claude", name: "Claude Code")]
 
     var body: some View {
         SettingsForm {
@@ -26,79 +15,7 @@ struct MenuBarSettingsView: View {
                 SettingsToggleRow("Show icon", isOn: iconVisibility, isEnabled: showMenuBarText)
                 SettingsToggleRow("Show token text", isOn: textVisibility)
             }
-
-            SettingsSection(title: "Edge Notch") {
-                SettingsToggleRow(
-                    "Show edge notch",
-                    get: { showEdgeNotch },
-                    set: { newValue in
-                        showEdgeNotch = newValue
-                        NotchController.shared.setVisible(newValue)
-                    }
-                )
-                SettingsPickerRow(title: "Edge", selection: Binding(
-                    get: { notchEdge },
-                    set: { newValue in
-                        notchEdge = newValue
-                        if let edge = NotchEdge(rawValue: newValue) {
-                            NotchController.shared.apply(edge: edge)
-                        }
-                    }
-                )) {
-                    ForEach(NotchEdge.allCases) { edge in
-                        Text(edge.title).tag(edge.rawValue)
-                    }
-                }
-                .disabled(!showEdgeNotch)
-            }
-            SettingsNote("A floating usage ring welded to a screen edge, shown alongside the menu bar. Early preview.")
-
-            SettingsSection(title: "When a Session Ends") {
-                SettingsToggleRow(
-                    "Peek the notch open",
-                    get: { announceSessionEnd },
-                    set: { announceSessionEnd = $0 }
-                )
-                SettingsToggleRow(
-                    "Play a sound",
-                    get: { sessionEndSound },
-                    set: { sessionEndSound = $0 }
-                )
-                SettingsPickerRow(title: "Finished", selection: Binding(
-                    get: { finishedSoundName },
-                    set: { finishedSoundName = $0; SessionChime.play($0) }
-                )) {
-                    ForEach(SessionChime.available, id: \.self) { Text($0).tag($0) }
-                }
-                .disabled(!sessionEndSound)
-                SettingsPickerRow(title: "Blocked on you", selection: Binding(
-                    get: { blockedSoundName },
-                    set: { blockedSoundName = $0; SessionChime.play($0) }
-                )) {
-                    ForEach(SessionChime.available, id: \.self) { Text($0).tag($0) }
-                }
-                .disabled(!sessionEndSound)
-            }
-            .disabled(!showEdgeNotch)
-            SettingsNote("A running agent spins its ring; one waiting on you pulses amber. When it finishes, the notch drops open for five seconds — click it to raise that agent's terminal.")
-
-            SettingsSection(title: "Limit Alerts") {
-                SettingsToggleRow(
-                    "Notify at 80% and 100%",
-                    get: { thresholdAlerts },
-                    set: { thresholdAlerts = $0 }
-                )
-                ForEach(alertProviders, id: \.id) { provider in
-                    SettingsToggleRow(
-                        provider.name,
-                        get: { _ = mutedAlerts; return !AppPreferences.isAlertMuted(provider.id) },
-                        set: { AppPreferences.setAlertMuted(!$0, for: provider.id) }
-                    )
-                    .disabled(!thresholdAlerts)
-                }
-            }
-            .disabled(!showEdgeNotch)
-            SettingsNote("A single macOS notification each time a limit window crosses 80%, then 100% — once per crossing, and again only after the window resets.")
+            SettingsNote("The floating edge notch has its own section — see Notch in the sidebar.")
 
             SettingsSection(title: "Token Text") {
                 SettingsPickerRow(title: "Content", selection: $display) {

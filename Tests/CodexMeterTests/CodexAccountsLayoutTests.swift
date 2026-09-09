@@ -11,10 +11,10 @@ final class CodexAccountsLayoutTests: XCTestCase {
     func testAccountsAreOutsideSettings() {
         // Shared, provider-independent categories only.
         XCTAssertEqual(SettingsCategory.allCases.map(\.title),
-                       ["General", "Menu Bar", "Diagnostics", "Information"])
+                       ["General", "Menu Bar", "Notch", "Diagnostics", "Information"])
         // Providers are their own sidebar entries, not a shared category.
         XCTAssertEqual(SettingsPane.allCases.map(\.title),
-                       ["General", "Menu Bar", "Diagnostics", "Information", "Codex", "Claude Code"])
+                       ["General", "Menu Bar", "Notch", "Diagnostics", "Information", "Codex", "Claude Code"])
     }
 
     func testMenuTitlesDisambiguateWorkspacesAndDoNotContainCredentials() throws {

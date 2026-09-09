@@ -74,6 +74,7 @@ struct SettingsView: View {
         switch selection {
         case .category(.general): GeneralSettingsView()
         case .category(.menuBar): MenuBarSettingsView()
+        case .category(.notch): NotchSettingsView()
         case .category(.advanced): AdvancedSettingsView()
         case .category(.about): AboutSettingsView()
         case .provider(let provider): ProviderSettingsView(provider: provider)

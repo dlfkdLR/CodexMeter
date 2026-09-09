@@ -5,6 +5,7 @@ import SwiftUI
 enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
     case general
     case menuBar
+    case notch
     case advanced
     case about
 
@@ -14,6 +15,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general: "General"
         case .menuBar: "Menu Bar"
+        case .notch: "Notch"
         case .advanced: "Diagnostics"
         case .about: "Information"
         }
@@ -23,6 +25,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general: "gearshape"
         case .menuBar: "menubar.rectangle"
+        case .notch: "inset.filled.topthird.rectangle"
         case .advanced: "slider.horizontal.3"
         case .about: "info.circle"
         }
@@ -32,6 +35,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general: .gray
         case .menuBar: .purple
+        case .notch: .teal
         case .advanced: .pink
         case .about: .gray
         }

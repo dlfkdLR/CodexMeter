@@ -8,6 +8,7 @@ All notable changes to CodexMeter will be documented in this file.
 
 - **Edge notch (early preview).** A floating usage ring welded to a screen edge, one ring per provider (Codex, Claude Code), hover to expand for the limit tooltip, ⌥-drag to reposition, gear orb to open Settings. Ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch); see `NOTICE`. Off by default — turn it on in **Settings ▸ Menu Bar ▸ Edge Notch**. The menu bar and popover are unchanged. Single-screen only for now; threshold alerts, more providers, and multi-monitor come later.
 - **Edge notch — session awareness.** The notch now reads which Claude Code and Codex sessions are actually running: a working agent spins its ring, one blocked waiting on your input pulses amber, and when a session finishes the notch drops open for five seconds — click that peek to raise the terminal it was running in. Optionally plays a sound on completion. New controls under **Settings ▸ Menu Bar ▸ When a Session Ends** (peek on/off, sound on/off, and the finished/blocked sound names). Reads local session files only; adds no network or credential access.
+- **Edge notch — limit alerts.** A macOS notification when a provider's headline limit crosses 80%, then 100% — once per crossing, and again only after the window resets. Permission is asked on the first real crossing, not at launch. Per-provider mute and a master on/off under **Settings ▸ Menu Bar ▸ Limit Alerts**.
 
 ## [1.4.10] - 2026-09-09
 

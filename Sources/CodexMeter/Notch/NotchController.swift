@@ -18,6 +18,15 @@ final class NotchController {
     private var store: NotchUsageStore?
     private var monitors: [String: any AgentActivityMonitor] = [:]
     private var completions = SessionCompletionWatcher()
+    private let thresholds = ThresholdNotifier(
+        isMuted: { id in
+            let defaults = UserDefaults.standard
+            let enabled = defaults.object(forKey: "notchThresholdAlerts") as? Bool
+                ?? AppPreferences.defaultNotchThresholdAlerts
+            return !enabled || AppPreferences.isAlertMuted(id)
+        },
+        deliver: { ThresholdAlerts.deliver($0) }
+    )
     private var cancellables = Set<AnyCancellable>()
     private var configured = false
     private var visible = false
@@ -60,6 +69,7 @@ final class NotchController {
                 self.window.model.snapshots = snapshots
                 self.window.model.now = Date()
                 self.window.relocate(cellCount: snapshots.count)
+                self.thresholds.observe(snapshots)
             }
             .store(in: &cancellables)
 

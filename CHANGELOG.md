@@ -4,6 +4,10 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- The menu bar diamond now fills from the bottom in proportion to how much of the tightest account-limit window is still available — a full diamond means fresh quota, a near-empty one means the limit is close. It shows the outline alone when the selected provider has no limit snapshot.
+
 ## [1.4.8] - 2026-09-09
 
 ### Fixed

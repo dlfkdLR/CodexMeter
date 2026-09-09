@@ -4,6 +4,8 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [1.4.10] - 2026-09-09
+
 ### Changed
 
 - The menu bar diamond's fill now eases to a new level over ~0.55s instead of snapping, so watching the limit tick down reads as a gentle drain. Respects Reduce Motion.

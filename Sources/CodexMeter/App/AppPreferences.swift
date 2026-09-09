@@ -17,6 +17,8 @@ enum AppPreferences {
     static let defaultAttachmentMetadataEnabled = true
     static let defaultShowEdgeNotch = false
     static let defaultNotchEdge = NotchEdge.right.rawValue
+    static let defaultNotchSessionEndSound = true
+    static let defaultNotchAnnounceSessionEnd = true
     private static let legacyIconOnlyDisplay = "iconOnly"
 
     static func registerDefaults(in defaults: UserDefaults = .standard) {
@@ -37,7 +39,11 @@ enum AppPreferences {
                 "agentDetailsEnabled": defaultAgentDetailsEnabled,
                 "attachmentMetadataEnabled": defaultAttachmentMetadataEnabled,
                 "showEdgeNotch": defaultShowEdgeNotch,
-                "notchEdge": defaultNotchEdge
+                "notchEdge": defaultNotchEdge,
+                "notchSessionEndSound": defaultNotchSessionEndSound,
+                "notchAnnounceSessionEnd": defaultNotchAnnounceSessionEnd,
+                "notchSessionEndSoundName": "Glass",
+                "notchSessionBlockedSoundName": "Funk"
             ]
         )
         migrateLegacyIconOnlyPreference(in: defaults)

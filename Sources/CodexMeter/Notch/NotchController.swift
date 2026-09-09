@@ -2,17 +2,22 @@ import AppKit
 import Combine
 
 /// Owns the edge notch: one `NotchWindowController`, a `NotchUsageStore` fed by
-/// the Codex and Claude adapters, and the wiring between them. Modelled on
-/// `SettingsWindowController` — a `@MainActor` singleton created from the app's
-/// `init`, shown or hidden from a preference.
+/// the Codex and Claude adapters, the session monitors that light the activity
+/// arcs, and the wiring between them. Modelled on `SettingsWindowController` —
+/// a `@MainActor` singleton created from the app's `init`, shown or hidden from
+/// a preference.
 ///
-/// Phase 1: single screen, hover-to-expand, no session activity, no multi-monitor.
+/// Phase 1–2: single screen, hover-to-expand, live session activity + a peek
+/// and a chime when an agent finishes. Multi-monitor and the full notch
+/// settings pane come later.
 @MainActor
 final class NotchController {
     static let shared = NotchController()
 
     private let window = NotchWindowController()
     private var store: NotchUsageStore?
+    private var monitors: [String: any AgentActivityMonitor] = [:]
+    private var completions = SessionCompletionWatcher()
     private var cancellables = Set<AnyCancellable>()
     private var configured = false
     private var visible = false
@@ -42,9 +47,6 @@ final class NotchController {
             UserDefaults.standard.set(Double(offset), forKey: offsetKey)
         }
 
-        // The notch mirrors the notch store, which mirrors the two underlying
-        // limit stores. Re-run the adapters whenever either underlying store
-        // publishes, so the rings never lag the popover.
         codexLimits.objectWillChange
             .merge(with: claudeIntegration.objectWillChange)
             .debounce(for: .milliseconds(250), scheduler: RunLoop.main)
@@ -61,6 +63,31 @@ final class NotchController {
             }
             .store(in: &cancellables)
 
+        // Live agent activity — one monitor per provider ring. Built once and
+        // started/stopped with the notch's visibility.
+        let claudeHome = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".claude")
+        monitors = [
+            "claude": ClaudeSessionMonitor(
+                directory: claudeHome.appendingPathComponent("sessions"),
+                projects: claudeHome.appendingPathComponent("projects")
+            ),
+            "codex": CodexActivityMonitor(),
+        ]
+        for (id, monitor) in monitors {
+            monitor.sessionsPublisher
+                .receive(on: RunLoop.main)
+                .sink { [weak self] live in
+                    guard let self else { return }
+                    self.window.model.sessions[id] = live
+                    self.window.model.now = Date()
+                    self.announceCompletions()
+                }
+                .store(in: &cancellables)
+        }
+        store.isBusy = { [weak self] in
+            self?.monitors.values.contains { m in m.sessions.contains { $0.state == .busy } } ?? false
+        }
+
         if let saved = UserDefaults.standard.object(forKey: offsetKey) as? Double {
             window.model.alongOffset = CGFloat(saved)
         }
@@ -75,7 +102,9 @@ final class NotchController {
             window.show()
             window.apply(.onHover)
             store?.start()
+            monitors.values.forEach { $0.start() }
         } else {
+            monitors.values.forEach { $0.stop() }
             store?.stop()
             window.apply(.hidden)
         }
@@ -85,6 +114,25 @@ final class NotchController {
     func apply(edge: NotchEdge) {
         guard configured else { return }
         window.apply(edge: edge)
+    }
+
+    // MARK: - Completion peek + chime
+
+    private func announceCompletions() {
+        let events = completions.absorb(window.model.sessions)
+        guard let event = events.first else { return }
+        NotchLog.sessions.info("session \(event.session.name, privacy: .public) \(String(describing: event.reason), privacy: .public)")
+
+        let defaults = UserDefaults.standard
+        if defaults.object(forKey: "notchSessionEndSound") as? Bool ?? AppPreferences.defaultNotchSessionEndSound {
+            let name = event.reason == .blocked
+                ? (defaults.string(forKey: "notchSessionBlockedSoundName") ?? "Funk")
+                : (defaults.string(forKey: "notchSessionEndSoundName") ?? "Glass")
+            SessionChime.play(name)
+        }
+        guard defaults.object(forKey: "notchAnnounceSessionEnd") as? Bool
+            ?? AppPreferences.defaultNotchAnnounceSessionEnd else { return }
+        window.peek(for: 5, focusing: event.session.processID)
     }
 
     private func storedEdge() -> NotchEdge {

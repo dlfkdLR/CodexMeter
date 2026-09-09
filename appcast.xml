@@ -4,30 +4,28 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>CodexMeter</title>
         <item>
-            <title>1.4.6</title>
-            <pubDate>Sun, 06 Sep 2026 01:27:58 +0900</pubDate>
-            <link>https://github.com/HechoLP/CodexMeter/releases/tag/v1.4.6</link>
-            <sparkle:version>146</sparkle:version>
-            <sparkle:shortVersionString>1.4.6</sparkle:shortVersionString>
+            <title>1.4.7</title>
+            <pubDate>Wed, 09 Sep 2026 11:53:59 +0900</pubDate>
+            <link>https://github.com/HechoLP/CodexMeter/releases/tag/v1.4.7</link>
+            <sparkle:version>147</sparkle:version>
+            <sparkle:shortVersionString>1.4.7</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# CodexMeter 1.4.6
+            <description sparkle:format="markdown"><![CDATA[# CodexMeter 1.4.7
 
-A bug-fix release for Codex account switching.
+A bug-fix release for the software-update flow.
 
 ## What changed
 
-- **Account switching no longer gets stuck behind unrelated Codex processes.** Modern Codex keeps an idle background app-server running after its window closes, and editor extensions and remote sessions start their own `codex` processes. The previous safety gate blocked a switch whenever any `codex`-named process was alive anywhere on the machine, so the switch would quit and reopen the desktop app but never apply the saved login — leaving only a small "Another Codex process is still running" note under the account menu.
-- The gate still identifies Codex processes the same way, but now blocks a switch **only** while one actually holds `~/.codex/auth.json` open, matched by device and inode. An idle daemon, a remote session, or an editor extension that has already released the file no longer blocks. `CodexLoginFile.replace` keeps its compare-and-swap, so a login that changes under the switch is still never overwritten.
-- The blocked-state message now points at CLI sessions and editor extensions rather than a generic "close it" instruction.
+- **The "An error occurred while launching the installer" update failure now has a way out.** It happens when an earlier automatic update already placed a newer build on disk while this older copy keeps running — Sparkle then can't install over it, and the dialog's only button was "Cancel Update". CodexMeter now detects that situation (before the check, or when Sparkle aborts the install) and offers **Restart Now**, which quits the stale process and reopens the app so the pending update applies. Nothing needs to be reinstalled.
+- The takeover is scoped to that one recoverable case. Genuine install failures — no write permission to the Applications folder, a full disk, a cancelled authorization prompt — keep Sparkle's own accurate message. A background scheduled check that fails never pops an unsolicited dialog. If the automatic relaunch can't be started, CodexMeter explains how to quit and reopen manually instead of leaving you with no running app.
 
-Switching applies the saved login to Codex (the CLI and the desktop app's Codex side). It does not change the account shown in the ChatGPT desktop app's own chat UI, which authenticates from a separate web session.
+No change to the update feed, the signing keys, automatic-update behavior, or the check schedule.
 
 ## Verification
 
-- 289 automated tests, 0 failures (7 environment-integration tests skipped).
+- 292 automated tests, 0 failures (7 environment-integration tests skipped); new coverage for the on-disk replacement detection and the error-code scoping.
 - `swift build` with zero warnings and zero errors.
 - Universal 2 build for Apple silicon and Intel Macs running macOS 14 or later; the bundled Claude limits helper is signed and verified as part of the release.
-- Read-only real-desktop probe: three live `codex` processes identified, none holding the login file open, switch no longer blocked.
 - The app remains ad-hoc signed and not Apple-notarized. SHA-256 protects the first download; Sparkle authenticates later update feeds and archives with Ed25519 signatures.
 
 ## Install or update with Homebrew
@@ -52,12 +50,12 @@ open /Applications/CodexMeter.app
 
 ## First direct-download launch
 
-Download `CodexMeter-1.4.6.dmg` and `SHA256SUMS.txt` from this release into the same folder. Verify the checksum before opening the disk image:
+Download `CodexMeter-1.4.7.dmg` and `SHA256SUMS.txt` from this release into the same folder. Verify the checksum before opening the disk image:
 
 ```bash
 cd ~/Downloads
-grep ' CodexMeter-1.4.6.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
-open CodexMeter-1.4.6.dmg
+grep ' CodexMeter-1.4.7.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
+open CodexMeter-1.4.7.dmg
 ```
 
 Only after the checksum reports `OK`, copy `CodexMeter.app` to Applications and use the app-scoped quarantine command above.
@@ -66,10 +64,10 @@ Only after the checksum reports `OK`, copy `CodexMeter.app` to Applications and 
 
 This release does not migrate any database. Published version tags are immutable; corrections ship as a new patch release.
 ]]></description>
-            <enclosure url="https://github.com/HechoLP/CodexMeter/releases/download/v1.4.6/CodexMeter-1.4.6.zip" length="3788377" type="application/octet-stream" sparkle:edSignature="7XkCaRui5QpEi6uov5JzKlPWo9S+x2jy6mrSUUStPnmyu04mFe2oWpA9W2RoXwNETj2t6WjvL3HA0JiuokquCQ=="></enclosure>
+            <enclosure url="https://github.com/HechoLP/CodexMeter/releases/download/v1.4.7/CodexMeter-1.4.7.zip" length="3803410" type="application/octet-stream" sparkle:edSignature="iJ/ANZzoFESYGBlxH4imclafqA9mZVCAB6l+yrYLkhFNXjeXm+evVb8AZNg57a+Z6BWoUGjvjqhxTBSIZxEZBQ=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: q2wMun9eWZK8xUR4V+9nenF7WNjoUZqJ+uN3KpJWtaxUETOdqKxD19QtCh6z2pS/hmG2BN8bw8yCk8f3i2R4Cw==
-length: 4199
+edSignature: MEaPZmV5k/vXkx/m1aZAncBANq3xCnxNwT0XI8pjjJBltP5RdHVKDDC7QS4caxl73jldJ9ETrvH0go3yijngBw==
+length: 3942
 -->

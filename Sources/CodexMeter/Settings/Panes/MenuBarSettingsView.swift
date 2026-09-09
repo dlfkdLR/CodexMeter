@@ -8,6 +8,8 @@ struct MenuBarSettingsView: View {
     @AppStorage("showLastUpdated") private var showLastUpdated = true
     @AppStorage("showMenuBarIcon") private var showMenuBarIcon = AppPreferences.defaultShowMenuBarIcon
     @AppStorage("showMenuBarText") private var showMenuBarText = AppPreferences.defaultShowMenuBarText
+    @AppStorage("showEdgeNotch") private var showEdgeNotch = AppPreferences.defaultShowEdgeNotch
+    @AppStorage("notchEdge") private var notchEdge = AppPreferences.defaultNotchEdge
 
     var body: some View {
         SettingsForm {
@@ -15,6 +17,32 @@ struct MenuBarSettingsView: View {
                 SettingsToggleRow("Show icon", isOn: iconVisibility, isEnabled: showMenuBarText)
                 SettingsToggleRow("Show token text", isOn: textVisibility)
             }
+
+            SettingsSection(title: "Edge Notch") {
+                SettingsToggleRow(
+                    "Show edge notch",
+                    get: { showEdgeNotch },
+                    set: { newValue in
+                        showEdgeNotch = newValue
+                        NotchController.shared.setVisible(newValue)
+                    }
+                )
+                SettingsPickerRow(title: "Edge", selection: Binding(
+                    get: { notchEdge },
+                    set: { newValue in
+                        notchEdge = newValue
+                        if let edge = NotchEdge(rawValue: newValue) {
+                            NotchController.shared.apply(edge: edge)
+                        }
+                    }
+                )) {
+                    ForEach(NotchEdge.allCases) { edge in
+                        Text(edge.title).tag(edge.rawValue)
+                    }
+                }
+                .disabled(!showEdgeNotch)
+            }
+            SettingsNote("A floating usage ring welded to a screen edge, shown alongside the menu bar. Early preview.")
 
             SettingsSection(title: "Token Text") {
                 SettingsPickerRow(title: "Content", selection: $display) {

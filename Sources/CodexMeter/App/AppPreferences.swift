@@ -15,6 +15,8 @@ enum AppPreferences {
     static let defaultSessionsEnabled = true
     static let defaultAgentDetailsEnabled = true
     static let defaultAttachmentMetadataEnabled = true
+    static let defaultShowEdgeNotch = false
+    static let defaultNotchEdge = NotchEdge.right.rawValue
     private static let legacyIconOnlyDisplay = "iconOnly"
 
     static func registerDefaults(in defaults: UserDefaults = .standard) {
@@ -33,7 +35,9 @@ enum AppPreferences {
                 "projectsEnabled": defaultProjectsEnabled,
                 "sessionsEnabled": defaultSessionsEnabled,
                 "agentDetailsEnabled": defaultAgentDetailsEnabled,
-                "attachmentMetadataEnabled": defaultAttachmentMetadataEnabled
+                "attachmentMetadataEnabled": defaultAttachmentMetadataEnabled,
+                "showEdgeNotch": defaultShowEdgeNotch,
+                "notchEdge": defaultNotchEdge
             ]
         )
         migrateLegacyIconOnlyPreference(in: defaults)

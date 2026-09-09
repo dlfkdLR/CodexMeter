@@ -45,6 +45,11 @@ struct CodexMeterApp: App {
         )
         _settingsEnvironment = StateObject(wrappedValue: settingsEnvironment)
         SettingsWindowController.shared.configure(environment: settingsEnvironment)
+        NotchController.shared.configure(
+            codexLimits: accountLimitStore,
+            claudeIntegration: claudeIntegrationStore,
+            codexAccounts: .shared
+        )
         claudeIntegrationStore.onAvailabilityChanged = { [weak claudeStore] available in
             guard let claudeStore else { return }
             if available {
@@ -200,5 +205,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
         UpdateService.shared.start()
+        NotchController.shared.setVisible(
+            UserDefaults.standard.object(forKey: "showEdgeNotch") as? Bool
+                ?? AppPreferences.defaultShowEdgeNotch
+        )
     }
 }

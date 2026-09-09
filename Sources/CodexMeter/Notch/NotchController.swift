@@ -101,6 +101,10 @@ final class NotchController {
         if let saved = UserDefaults.standard.object(forKey: offsetKey) as? Double {
             window.model.alongOffset = CGFloat(saved)
         }
+        // Appearance that lives on the model rather than the panel is safe to
+        // set now, before the panel exists.
+        window.model.accentColor = storedAccent()
+        window.model.resetTimeFormat = storedResetTimeFormat()
     }
 
     /// Bound to `@AppStorage("showEdgeNotch")`.
@@ -110,7 +114,8 @@ final class NotchController {
         if on {
             window.model.edge = storedEdge()
             window.show()
-            window.apply(.onHover)
+            window.apply(size: storedSize())
+            window.apply(storedVisibility())
             store?.start()
             monitors.values.forEach { $0.start() }
         } else {
@@ -124,6 +129,37 @@ final class NotchController {
     func apply(edge: NotchEdge) {
         guard configured else { return }
         window.apply(edge: edge)
+    }
+
+    // MARK: - Appearance (the Notch settings pane)
+
+    /// Pinned-open vs hover. Only meaningful while the notch is shown; `hidden`
+    /// is reached through the master toggle, not this.
+    func apply(visibility: NotchVisibility) {
+        guard configured, visible else { return }
+        window.apply(visibility)
+    }
+
+    func apply(size: NotchSize) {
+        guard configured else { return }
+        window.apply(size: size)
+    }
+
+    func apply(accent: NotchAccentChoice) {
+        guard configured else { return }
+        window.model.accentColor = accent
+    }
+
+    func apply(resetTimeFormat: ResetTimeFormat) {
+        guard configured else { return }
+        window.model.resetTimeFormat = resetTimeFormat
+    }
+
+    /// Drop the ⌥-drag offset and sit the notch back at the centre of its edge.
+    func recentre() {
+        guard configured else { return }
+        window.model.alongOffset = 0
+        UserDefaults.standard.set(0.0, forKey: offsetKey)
     }
 
     // MARK: - Completion peek + chime
@@ -148,5 +184,25 @@ final class NotchController {
     private func storedEdge() -> NotchEdge {
         NotchEdge(rawValue: UserDefaults.standard.string(forKey: "notchEdge") ?? "")
             ?? NotchEdge(rawValue: AppPreferences.defaultNotchEdge) ?? .right
+    }
+
+    private func storedVisibility() -> NotchVisibility {
+        NotchVisibility(rawValue: UserDefaults.standard.string(forKey: "notchVisibility") ?? "")
+            ?? NotchVisibility(rawValue: AppPreferences.defaultNotchVisibility) ?? .onHover
+    }
+
+    private func storedSize() -> NotchSize {
+        NotchSize(rawValue: UserDefaults.standard.string(forKey: "notchSize") ?? "")
+            ?? NotchSize(rawValue: AppPreferences.defaultNotchSize) ?? .medium
+    }
+
+    private func storedAccent() -> NotchAccentChoice {
+        NotchAccentChoice(rawValue: UserDefaults.standard.string(forKey: "notchAccent") ?? "")
+            ?? NotchAccentChoice(rawValue: AppPreferences.defaultNotchAccent) ?? .system
+    }
+
+    private func storedResetTimeFormat() -> ResetTimeFormat {
+        ResetTimeFormat(rawValue: UserDefaults.standard.string(forKey: "notchResetTimeFormat") ?? "")
+            ?? .automatic
     }
 }

@@ -106,7 +106,7 @@ CodexMeter is flat by default. Depth comes from the native menu-bar window, sema
 
 ## Shapes
 
-The diamond meter mark remains the menu bar and app identity rather than being repeated inside the compact popover. Its interior fills from the bottom in proportion to how much of the tightest account-limit window is still available, so a full diamond means fresh quota and a near-empty one means the limit is close; it falls back to the outline alone when the selected provider has no usable limit snapshot. It is drawn as a template image so the fill tints with the menu bar appearance and highlight. Detail selections use gently rounded 8px containers, while information cards use 10px corners. Standard buttons, progress views, menus, and navigation controls retain native macOS shapes.
+The diamond meter mark remains the menu bar and app identity rather than being repeated inside the compact popover. Its interior fills from the bottom in proportion to how much of the tightest account-limit window is still available, so a full diamond means fresh quota and a near-empty one means the limit is close; it falls back to the outline alone when the selected provider has no usable limit snapshot. The fill eases to a new level (~0.55s, Reduce Motion respected) rather than snapping, and uses `.primary` so it tints with the menu bar appearance. Detail selections use gently rounded 8px containers, while information cards use 10px corners. Standard buttons, progress views, menus, and navigation controls retain native macOS shapes.
 
 **The Native Control Rule.** Do not redraw a platform control solely to mimic another menu-bar app.
 

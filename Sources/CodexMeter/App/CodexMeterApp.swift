@@ -93,8 +93,7 @@ struct CodexMeterApp: App {
         } label: {
             HStack(spacing: 4) {
                 if resolvedShowIcon {
-                    Image(nsImage: DiamondMeterIcon.image(remainingFraction: menuBarLimitRemaining))
-                        .accessibilityHidden(true)
+                    DiamondLimitMeter(remaining: menuBarLimitRemaining)
                 }
                 if resolvedShowText {
                     Text(menuBarText)

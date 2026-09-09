@@ -12,6 +12,9 @@ final class UpdateService: NSObject, SPUUpdaterDelegate {
     /// no longer matches on disk, an update was already applied and only a restart
     /// can pick it up — Sparkle would fail trying to install from the stale image.
     private var launchExecutableIdentity: ExecutableIdentity?
+    /// Set while a user-initiated check is in flight, so a background check that
+    /// fails never pops an unsolicited modal on this menu-bar app.
+    private var checkIsUserInitiated = false
     private var isPromptingRestart = false
 
     private override init() { super.init() }
@@ -43,9 +46,13 @@ final class UpdateService: NSObject, SPUUpdaterDelegate {
     func checkForUpdates() {
         start()
         if pendingUpdateNeedsRestart {
+            // A newer build is already on disk from an earlier update. Sparkle
+            // cannot install over it from this stale process; a restart is the
+            // only thing that helps, so say so instead of failing later.
             promptRestartToFinishUpdate()
             return
         }
+        checkIsUserInitiated = true
         updaterController?.checkForUpdates(nil)
     }
 
@@ -58,18 +65,35 @@ final class UpdateService: NSObject, SPUUpdaterDelegate {
     // MARK: - SPUUpdaterDelegate
 
     func updater(_ updater: SPUUpdater, didAbortWithError error: any Error) {
+        let userInitiated = checkIsUserInitiated
+        checkIsUserInitiated = false
+
+        // Only take over the failure when we have positive evidence a restart
+        // fixes it: a newer build is already on disk and Sparkle aborted an
+        // install/relaunch step. Every other abort (no update found, download
+        // failure, /Applications not writable, user-cancelled authorization)
+        // keeps Sparkle's own message, which is accurate for those.
         let nsError = error as NSError
-        guard nsError.domain == SUSparkleErrorDomain,
-              Self.installerLaunchFailureCodes.contains(nsError.code) else { return }
-        // Defer past Sparkle's own error alert and the rest of this callback so
-        // our recovery prompt is the last thing the user sees, not a nested modal.
+        guard userInitiated,
+              nsError.domain == SUSparkleErrorDomain,
+              Self.installFailureCodes.contains(nsError.code),
+              pendingUpdateNeedsRestart else { return }
+
+        // Defer past Sparkle's own alert and the rest of this callback so our
+        // recovery prompt is the last thing on screen, not a nested modal.
         Task { @MainActor in self.promptRestartToFinishUpdate() }
     }
 
-    /// `SUSparkleErrorDomain` codes that mean "the download is fine, but the
-    /// installer or relaunch could not be started from this running process."
-    /// A clean restart resolves every one of these.
-    nonisolated static let installerLaunchFailureCodes: Set<Int> = [
+    func updater(_ updater: SPUUpdater,
+                 didFinishUpdateCycleFor updateCheck: SPUUpdateCheck,
+                 error: (any Error)?) {
+        checkIsUserInitiated = false
+    }
+
+    /// `SUSparkleErrorDomain` codes raised while applying an update. On their own
+    /// they do not prove a restart helps — `pendingUpdateNeedsRestart` does — but
+    /// they scope the takeover to the install phase.
+    nonisolated static let installFailureCodes: Set<Int> = [
         Int(SUError.missingInstallerToolError.rawValue),
         Int(SUError.relaunchError.rawValue),
         Int(SUError.installationError.rawValue),
@@ -85,21 +109,26 @@ final class UpdateService: NSObject, SPUUpdaterDelegate {
         let alert = NSAlert()
         alert.alertStyle = .informational
         alert.messageText = "Restart CodexMeter to finish updating"
-        alert.informativeText = "The update downloaded, but it can't be applied while CodexMeter is running — "
-            + "usually because an earlier update is still waiting. Restarting now applies it."
+        alert.informativeText = "A newer version was downloaded but can't replace CodexMeter while it is running. "
+            + "Restarting applies it. You can keep using this version until then."
         alert.addButton(withTitle: "Restart Now")
         alert.addButton(withTitle: "Later")
 
         NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertFirstButtonReturn {
-            Self.relaunch()
-        }
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        Self.relaunch()
     }
 
     /// Waits for this process to exit, then reopens the app bundle. The wait is
-    /// required because the app forbids a second instance while this one lives;
-    /// it is capped so a cancelled quit can't leave the helper spinning forever.
+    /// required because the app forbids a second instance while this one lives,
+    /// and is capped so a vetoed quit can't leave the helper spinning.
     private static func relaunch() {
+        guard let executablePath = Bundle.main.executableURL?.path,
+              FileManager.default.isExecutableFile(atPath: executablePath) else {
+            presentManualRestartFallback()
+            return
+        }
+
         let bundlePath = Bundle.main.bundlePath
         let pid = ProcessInfo.processInfo.processIdentifier
         let quoted = "'" + bundlePath.replacingOccurrences(of: "'", with: "'\\''") + "'"
@@ -112,10 +141,20 @@ final class UpdateService: NSObject, SPUUpdaterDelegate {
         do {
             try task.run()
         } catch {
-            NSSound.beep()
+            presentManualRestartFallback()
             return
         }
         NSApp.terminate(nil)
+    }
+
+    private static func presentManualRestartFallback() {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Couldn't restart CodexMeter automatically"
+        alert.informativeText = "Quit CodexMeter and open it again from your Applications folder to finish updating."
+        alert.addButton(withTitle: "OK")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 
     // MARK: - Executable identity

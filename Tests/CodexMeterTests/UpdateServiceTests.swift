@@ -62,8 +62,9 @@ final class UpdateServiceTests: XCTestCase {
         XCTAssertTrue(UpdateService.bundleWasReplaced(sinceLaunch: atLaunch, current: rebuilt))
     }
 
-    func testInstallerLaunchFailureCodesCoverTheRecoverableSparkleErrors() {
+    func testInstallFailureCodesScopeTheTakeoverToTheInstallPhase() {
         // SUMissingInstallerToolError = 4003, SURelaunchError = 4004, SUInstallationError = 4005.
-        XCTAssertEqual(UpdateService.installerLaunchFailureCodes, [4003, 4004, 4005])
+        // These only scope the phase; pendingUpdateNeedsRestart is what proves a restart helps.
+        XCTAssertEqual(UpdateService.installFailureCodes, [4003, 4004, 4005])
     }
 }

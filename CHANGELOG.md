@@ -4,6 +4,10 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Foundation for an edge-notch UI (`Sources/CodexMeter/Notch/`), ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch): the notch geometry/layout/shape types, the per-provider `ProviderSnapshot` model, the `NotchProvider` adapter protocol, and `CodexNotchProvider` / `ClaudeNotchProvider` bridging CodexMeter's existing `AccountLimitStore` and `ClaudeIntegrationStore` into it. Nothing is wired into the app yet — the window and the settings toggle land in the next changes. See `NOTICE`.
+
 ## [1.4.10] - 2026-09-09
 
 ### Changed

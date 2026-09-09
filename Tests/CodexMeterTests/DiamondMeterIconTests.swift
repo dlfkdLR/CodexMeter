@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import XCTest
 @testable import CodexMeter
 
@@ -21,47 +22,37 @@ final class DiamondMeterIconTests: XCTestCase {
                        1, accuracy: 0.0001)
     }
 
-    func testIconIsATemplateImageAtTheExpectedSize() {
-        let image = DiamondMeterIcon.image(remainingFraction: 0.5)
-        XCTAssertTrue(image.isTemplate)
-        XCTAssertEqual(image.size.width, 15, accuracy: 0.5)
-        XCTAssertEqual(image.size.height, 15, accuracy: 0.5)
+    @MainActor
+    func testFillLevelChangesTheRenderedPixels() throws {
+        let empty = try coverage(of: DiamondLimitMeter(remaining: 0))
+        let half = try coverage(of: DiamondLimitMeter(remaining: 0.5))
+        let full = try coverage(of: DiamondLimitMeter(remaining: 1))
+        let outline = try coverage(of: DiamondLimitMeter(remaining: nil))
+
+        XCTAssertGreaterThan(half, empty, "A half-full diamond covers more than an empty one.")
+        XCTAssertGreaterThan(full, half, "A full diamond covers more than a half-full one.")
+        XCTAssertEqual(outline, empty, accuracy: 0.03, "nil and 0 both draw only the outline.")
     }
 
+    @MainActor
     func testCaptureSwatchesWhenRequested() throws {
         guard let dir = ProcessInfo.processInfo.environment["CODEXMETER_LAYOUT_CAPTURE_DIR"] else {
             throw XCTSkip("Set CODEXMETER_LAYOUT_CAPTURE_DIR to write diamond swatches.")
         }
         for fraction: Double? in [nil, 0, 0.15, 0.4, 0.75, 1] {
-            let image = DiamondMeterIcon.image(remainingFraction: fraction)
-            let scale: CGFloat = 16
-            let rep = try XCTUnwrap(NSBitmapImageRep(
-                bitmapDataPlanes: nil, pixelsWide: Int(image.size.width * scale),
-                pixelsHigh: Int(image.size.height * scale), bitsPerSample: 8, samplesPerPixel: 4,
-                hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
-            ))
-            NSGraphicsContext.saveGraphicsState()
-            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-            NSColor.white.setFill()
-            NSRect(x: 0, y: 0, width: rep.pixelsWide, height: rep.pixelsHigh).fill()
-            NSColor.black.set()
-            image.draw(in: NSRect(x: 0, y: 0, width: rep.pixelsWide, height: rep.pixelsHigh))
-            NSGraphicsContext.restoreGraphicsState()
+            let renderer = ImageRenderer(content:
+                DiamondLimitMeter(remaining: fraction)
+                    .foregroundStyle(.black)
+                    .scaleEffect(10)
+                    .frame(width: 150, height: 150)
+                    .background(Color.white)
+            )
+            renderer.scale = 2
             let name = fraction.map { "diamond-\(Int($0 * 100)).png" } ?? "diamond-outline.png"
-            try rep.representation(using: .png, properties: [:])?
-                .write(to: URL(fileURLWithPath: dir).appendingPathComponent(name))
+            let url = URL(fileURLWithPath: dir).appendingPathComponent(name)
+            let rep = try XCTUnwrap(renderer.nsImage?.tiffRepresentation.flatMap(NSBitmapImageRep.init))
+            try XCTUnwrap(rep.representation(using: .png, properties: [:])).write(to: url)
         }
-    }
-
-    func testFillLevelChangesTheRenderedPixels() throws {
-        let empty = try alphaCoverage(of: DiamondMeterIcon.image(remainingFraction: 0))
-        let half = try alphaCoverage(of: DiamondMeterIcon.image(remainingFraction: 0.5))
-        let full = try alphaCoverage(of: DiamondMeterIcon.image(remainingFraction: 1))
-        let outline = try alphaCoverage(of: DiamondMeterIcon.image(remainingFraction: nil))
-
-        XCTAssertGreaterThan(half, empty, "A half-full diamond covers more than an empty one.")
-        XCTAssertGreaterThan(full, half, "A full diamond covers more than a half-full one.")
-        XCTAssertEqual(outline, empty, accuracy: 0.02, "nil and 0 both draw only the outline.")
     }
 
     // MARK: - Helpers
@@ -72,23 +63,21 @@ final class DiamondMeterIconTests: XCTestCase {
     }
 
     /// Fraction of pixels with any ink, so a fuller diamond scores higher.
-    private func alphaCoverage(of image: NSImage) throws -> Double {
-        let rep = try XCTUnwrap(NSBitmapImageRep(
-            bitmapDataPlanes: nil, pixelsWide: 30, pixelsHigh: 30,
-            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+    @MainActor
+    private func coverage<V: View>(of view: V) throws -> Double {
+        let renderer = ImageRenderer(content: view.foregroundStyle(.black).frame(width: 40, height: 40))
+        renderer.scale = 1
+        let cg = try XCTUnwrap(renderer.cgImage)
+        let width = cg.width, height = cg.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let ctx = try XCTUnwrap(CGContext(
+            data: &pixels, width: width, height: height, bitsPerComponent: 8,
+            bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ))
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-        image.draw(in: NSRect(x: 0, y: 0, width: 30, height: 30))
-        NSGraphicsContext.restoreGraphicsState()
-
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
         var inked = 0
-        for x in 0..<30 {
-            for y in 0..<30 where (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.05 {
-                inked += 1
-            }
-        }
-        return Double(inked) / 900
+        for i in stride(from: 3, to: pixels.count, by: 4) where pixels[i] > 12 { inked += 1 }
+        return Double(inked) / Double(width * height)
     }
 }

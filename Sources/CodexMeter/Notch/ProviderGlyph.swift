@@ -54,7 +54,7 @@ enum ProviderGlyph: String, Codable, Equatable {
         case .copilot: return 0.96
         case .ollama: return 0.95
         case .third:  return 1.0
-        case .ollama, .ollamaLocal: return 0.98
+        case .ollamaLocal: return 0.98
         }
     }
 

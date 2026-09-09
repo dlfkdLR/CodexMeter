@@ -2,27 +2,23 @@ import AppKit
 import SwiftUI
 
 /*
- THESIS: Codex usage should read like a quiet macOS instrument, not a web dashboard squeezed into the menu bar.
- OWN-WORLD: System materials, semantic labels, hairline separators, tabular numerals, and one diamond meter mark.
- STORY: Launch, see today's total, click once for its composition and nearby periods, then return to work.
- FIRST VIEWPORT: A 320-point popover leads with today's total, follows with input/cached/output rows, then week/month/all-time links and a compact status footer.
- FORM: Native macOS utility, selected from the binding product brief; code-first session with no decorative visual comp.
+ THESIS: Codex and Claude usage should read like a quiet macOS instrument welded to a screen edge, not a web dashboard squeezed into the menu bar.
+ OWN-WORLD: A floating notch of concentric usage rings; system materials elsewhere; semantic labels, hairline separators, tabular numerals.
+ STORY: Glance at the edge for how much limit is left and which agent is running; open Settings ▸ Usage for the token history.
+ FIRST VIEWPORT: The notch at rest is a small pill; on hover it unfolds one ring per provider with the tightest limit and a tooltip card.
+ FORM: Native macOS accessory app — a status-bar menu for the way in, the notch for the reading, a Settings window for everything else.
  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+ HISTORY: through 1.x this was a MenuBarExtra popover with a diamond meter; 2.0 replaced it with the notch (ported from the MIT-licensed vinzdg/codenotch).
 */
 @main
 struct CodexMeterApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store: UsageStore
     @StateObject private var claudeStore: UsageStore
-    @AppStorage("usageProvider") private var usageProvider = UsageProvider.codex.rawValue
     @StateObject private var profileStore: ProfileUsageStore
     @StateObject private var accountLimitStore: AccountLimitStore
     @StateObject private var claudeIntegrationStore: ClaudeIntegrationStore
     @StateObject private var settingsEnvironment: SettingsEnvironment
-    @AppStorage("menuBarDisplay") private var menuBarDisplay = AppPreferences.defaultMenuBarDisplay
-    @AppStorage("menuBarPeriod") private var menuBarPeriod = UsagePeriod.today.rawValue
-    @AppStorage("showMenuBarIcon") private var showMenuBarIcon = AppPreferences.defaultShowMenuBarIcon
-    @AppStorage("showMenuBarText") private var showMenuBarText = AppPreferences.defaultShowMenuBarText
 
     init() {
         AppPreferences.registerDefaults()
@@ -89,107 +85,11 @@ struct CodexMeterApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra {
-            MenuPopoverView(accounts: .shared)
-                .id(selectedStore.provider)
-                .environmentObject(selectedStore)
-                .environmentObject(profileStore)
-                .environmentObject(accountLimitStore)
-                .environmentObject(claudeIntegrationStore)
-        } label: {
-            HStack(spacing: 4) {
-                if resolvedShowIcon {
-                    DiamondLimitMeter(remaining: menuBarLimitRemaining)
-                }
-                if resolvedShowText {
-                    Text(menuBarText)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .frame(maxWidth: 220)
-                }
-            }
-                .accessibilityLabel(menuBarAccessibilityLabel)
-        }
-        .menuBarExtraStyle(.window)
-
         Settings {
             SettingsView()
                 .environmentObject(settingsEnvironment)
                 .environmentObject(claudeIntegrationStore)
         }
-    }
-
-    private var resolvedShowIcon: Bool {
-        AppPreferences.shouldShowMenuBarIcon(
-            display: menuBarDisplay,
-            showIcon: showMenuBarIcon,
-            showText: showMenuBarText
-        )
-    }
-
-    private var resolvedShowText: Bool {
-        AppPreferences.shouldShowMenuBarText(
-            display: menuBarDisplay,
-            showText: showMenuBarText,
-            text: menuBarText
-        )
-    }
-
-    private var menuBarText: String {
-        selectedStore.menuBarText(totalOverride: profileTotalOverride)
-    }
-
-    private var menuBarAccessibilityLabel: String {
-        "\(selectedStore.provider.title), " + selectedStore.menuBarAccessibilityLabel(
-            totalOverride: profileTotalOverride,
-            totalPeriodDescription: profilePeriodDescription
-        )
-    }
-
-    /// Fraction of the tightest account-limit window still available, for the
-    /// menu bar diamond fill. `nil` when the selected provider has no usable
-    /// limit snapshot — the diamond then shows only its outline.
-    private var menuBarLimitRemaining: Double? {
-        let windows: [AccountLimitWindow]?
-        switch selectedStore.provider {
-        case .codex:
-            guard accountLimitStore.isEnabled,
-                  accountLimitStore.status == .ready || accountLimitStore.status == .stale
-            else { return nil }
-            windows = accountLimitStore.snapshot?.windows
-        case .claude:
-            guard claudeIntegrationStore.isConnected else { return nil }
-            windows = claudeIntegrationStore.snapshot?.windows
-        }
-        return MenuBarLimitMeter.remainingFraction(windows: windows)
-    }
-
-    private var profileTotalOverride: Int64? {
-        guard selectedStore.provider.supportsAccountTotals,
-              profileStore.isEnabled, let snapshot = profileStore.snapshot else { return nil }
-        return UsageDisplayPolicy.profileOverride(
-            for: UsagePeriod(rawValue: menuBarPeriod) ?? .today,
-            profileSnapshot: snapshot
-        )
-    }
-
-    private var profilePeriodDescription: String? {
-        guard selectedStore.provider.supportsAccountTotals,
-              profileStore.isEnabled, let snapshot = profileStore.snapshot else { return nil }
-        let asOf = snapshot.statsAsOf.formatted(.dateTime.month(.abbreviated).day())
-        return switch UsagePeriod(rawValue: menuBarPeriod) ?? .today {
-        case .today: nil
-        case .week: "this week in the ChatGPT profile through \(asOf)"
-        case .month: "this month in the ChatGPT profile through \(asOf)"
-        case .allTime: "in the ChatGPT profile through \(asOf)"
-        }
-    }
-
-    private var selectedStore: UsageStore {
-        UsageProvider(rawValue: usageProvider) == .claude && claudeIntegrationStore.isAvailable
-            ? claudeStore
-            : store
     }
 
     private static var selectedWeekStart: WeekStart {
@@ -206,9 +106,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
         UpdateService.shared.start()
+        StatusItemController.shared.install()
         NotchController.shared.setVisible(
             UserDefaults.standard.object(forKey: "showEdgeNotch") as? Bool
                 ?? AppPreferences.defaultShowEdgeNotch
         )
+    }
+
+    /// With no windows of its own, an accessory app clicked in the Finder or
+    /// the Dock would do nothing visible. Send those to Settings — the same
+    /// place the status-bar menu's ⌘, goes.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        if !hasVisibleWindows {
+            SettingsWindowController.shared.present()
+        }
+        return true
     }
 }

@@ -12,11 +12,11 @@
 
 <p align="center"><sub>The app popover shown above is an actual CodexMeter screen.</sub></p>
 
-Tiny native macOS menu bar app that turns **local Codex and Claude Code session history** into separate token totals. Codex also offers a separate, opt-in, memory-only ChatGPT account-total view. Claude is opt-in: after you enable it and add the Claude Code account, CodexMeter can show the documented five-hour and weekly limits without reading or storing Claude credentials.
+Tiny native macOS app that turns **local Codex and Claude Code session history** into separate token totals. As of 2.0 it shows them in a floating **edge notch** — a usage ring per provider welded to a screen edge — plus a Settings window; a small status-bar item is the way in. Codex also offers a separate, opt-in, memory-only ChatGPT account-total view. Claude is opt-in: after you enable it and add the Claude Code account, CodexMeter can show the documented five-hour and weekly limits without reading or storing Claude credentials.
 
 ## Why
 
-- **Glanceable totals.** See input, cached input, output, and total tokens without leaving the menu bar.
+- **Glanceable limits.** The notch fills a ring per provider with how much of the tightest quota window is left, and spins it while an agent is working.
 - **Plan around limits.** See the nearest Codex or Claude Code quota windows, reset countdowns, and an explicitly labeled even-use pace estimate before starting a long task.
 - **Honest accounting.** Cumulative snapshots are normalized into increases instead of being added repeatedly.
 - **Local by design.** Prompts, responses, source code, credentials, and raw session paths are not stored in CodexMeter's database.
@@ -82,8 +82,8 @@ open /Applications/CodexMeter.app
 
 1. Launch CodexMeter after Codex has created local session history.
 2. To add Claude Code, open **Settings**, select **Claude Code** in the Providers sidebar, enable it, and explicitly add the account already signed in to the official Claude CLI. If no account is signed in, run `claude` in your terminal and sign in there first, then choose **Add Account**.
-3. Select the diamond meter in the macOS menu bar, then choose **Codex** or **Claude**.
-4. Use **Refresh** whenever you want an immediate reconciliation. Claude limits appear after Claude Code completes a response.
+3. Open the status-bar item and choose **Show Notch**, or turn it on in **Settings ▸ Notch**. The token history lives in **Settings ▸ Usage**.
+4. Claude limits appear after Claude Code completes a response.
 
 Local totals require no account connection. On macOS, **Settings → Codex → Use ChatGPT account totals** can optionally use the existing Codex sign-in to match ChatGPT profile totals.
 
@@ -105,7 +105,7 @@ Local totals require no account connection. On macOS, **Settings → Codex → U
 - Bounded incremental JSONL ingestion with durable SQLite checkpoints
 - Duplicate, replay, partial-line, truncation, and same-inode rewrite protection
 - Resumable 32 MiB / roughly five-second import slices for large histories
-- Native menu bar popover and Settings window
+- Floating edge-notch usage rings, a status-bar menu, and a native Settings window
 - Optional launch at login through macOS Service Management
 - Daily signed update checks with a manual check-for-updates action
 - Secure local-history clearing with a persistent re-import cutoff

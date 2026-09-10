@@ -269,11 +269,12 @@ struct ClaudeStatusLineInstaller: ClaudeStatusLineInstalling, @unchecked Sendabl
         // wrote this file, for its own use — strip the flag it just inherited.
         Self.clearGatekeeperFlags(at: temporary)
         if fileManager.fileExists(atPath: destination.path) {
-            _ = try fileManager.replaceItemAt(destination, withItemAt: temporary)
+            let replaced = try fileManager.replaceItemAt(destination, withItemAt: temporary)
+            Self.clearGatekeeperFlags(at: replaced ?? destination)
         } else {
             try fileManager.moveItem(at: temporary, to: destination)
+            Self.clearGatekeeperFlags(at: destination)
         }
-        Self.clearGatekeeperFlags(at: destination)
     }
 
     /// Remove `com.apple.quarantine` / `com.apple.provenance` from a file we

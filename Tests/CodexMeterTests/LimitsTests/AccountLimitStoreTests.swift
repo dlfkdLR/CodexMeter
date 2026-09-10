@@ -72,6 +72,32 @@ final class AccountLimitStoreTests: XCTestCase {
         }
     }
 
+    func testUnrelatedDefaultsWriteDoesNotRestartThePoll() async throws {
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "accountLimitsEnabled")
+        let snapshot = AccountLimitsSnapshot(
+            windows: [AccountLimitWindow(id: "w", limitID: "codex", displayName: "Codex",
+                                         windowDurationMinutes: 10_080, usedPercent: 10, resetsAt: nil)],
+            resetCredits: nil, fetchedAt: Date(timeIntervalSince1970: 1)
+        )
+        let provider = CountingLimitProvider(snapshot)
+        let store = AccountLimitStore(provider: provider, defaults: defaults, pollingInterval: .seconds(120))
+        // Let the initial poll's first read land.
+        try await Task.sleep(for: .milliseconds(200))
+        let baseline = await provider.callCount
+
+        // A mute toggle / notch drag is a write to some other key.
+        defaults.set("copilot", forKey: AppPreferences.mutedAlertProvidersKey)
+        try await Task.sleep(for: .milliseconds(200))
+        let afterUnrelated = await provider.callCount
+        XCTAssertEqual(afterUnrelated, baseline, "an unrelated preference write must not trigger a fresh read")
+
+        // Flipping the actual flag still resynchronises.
+        defaults.set(false, forKey: "accountLimitsEnabled")
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(store.status, .disabled)
+    }
+
     private func makeDefaults() throws -> UserDefaults {
         let name = "AccountLimitStoreTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
@@ -92,6 +118,18 @@ private actor SequencedLimitProvider: AccountLimitProviding {
         callCount += 1
         guard !outcomes.isEmpty else { throw AccountLimitError.malformedResponse }
         return try outcomes.removeFirst().get()
+    }
+}
+
+private actor CountingLimitProvider: AccountLimitProviding {
+    private let snapshot: AccountLimitsSnapshot
+    private(set) var callCount = 0
+
+    init(_ snapshot: AccountLimitsSnapshot) { self.snapshot = snapshot }
+
+    func readLimits() async throws -> AccountLimitsSnapshot {
+        callCount += 1
+        return snapshot
     }
 }
 

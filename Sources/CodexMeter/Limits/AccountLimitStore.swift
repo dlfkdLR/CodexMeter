@@ -13,6 +13,9 @@ final class AccountLimitStore: ObservableObject {
     private var pollingTask: Task<Void, Never>?
     private var defaultsTask: Task<Void, Never>?
     private var inFlightReadTask: Task<AccountLimitsSnapshot, Error>?
+    /// The last `isEnabled` this store acted on, so an unrelated defaults write
+    /// does not restart the poll.
+    private var lastKnownEnabled: Bool
 
     init(
         provider: AccountLimitProviding = AppServerLimitProvider(),
@@ -22,6 +25,8 @@ final class AccountLimitStore: ObservableObject {
         self.provider = provider
         self.defaults = defaults
         self.pollingInterval = pollingInterval
+        lastKnownEnabled = defaults.object(forKey: "accountLimitsEnabled") == nil
+            || defaults.bool(forKey: "accountLimitsEnabled")
         synchronizeEnabledPreference()
         defaultsTask = Task { [weak self] in
             let changes = NotificationCenter.default.notifications(
@@ -30,7 +35,12 @@ final class AccountLimitStore: ObservableObject {
             )
             for await _ in changes {
                 guard !Task.isCancelled else { return }
-                self?.synchronizeEnabledPreference()
+                // `didChangeNotification` carries no key. Only the enabled flag
+                // matters here — every other preference write (an alert mute, a
+                // notch drag) would otherwise cancel and immediately restart the
+                // poll, firing a fresh network read each time.
+                guard let self, self.isEnabled != self.lastKnownEnabled else { continue }
+                self.synchronizeEnabledPreference()
             }
         }
     }
@@ -47,6 +57,7 @@ final class AccountLimitStore: ObservableObject {
     }
 
     func synchronizeEnabledPreference() {
+        lastKnownEnabled = isEnabled
         pollingTask?.cancel()
         pollingTask = nil
         guard isEnabled else {

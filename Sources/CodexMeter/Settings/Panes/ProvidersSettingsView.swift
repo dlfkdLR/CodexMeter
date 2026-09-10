@@ -38,6 +38,12 @@ private struct ProvidersSettingsContent: View {
                 list
             }
         }
+        // A drag released in the pane but off any row fires no row drop; clear
+        // the drag state here so the row it came from does not stay dimmed.
+        .onDrop(of: [.text], isTargeted: nil) { _ in
+            dragging = nil
+            return false
+        }
         .task {
             codexAccounts.load()
             notch.refreshProvidersForSettings()
@@ -133,11 +139,15 @@ private struct ProvidersSettingsContent: View {
 
     private var providerRows: [ProviderRowModel] {
         let order = notch.providerOrder
-        let ordered = NotchProviderCatalog.all.sorted { a, b in
-            let ia = order.firstIndex(of: a.id) ?? Int.max
-            let ib = order.firstIndex(of: b.id) ?? Int.max
-            return ia == ib ? false : ia < ib
-        }
+        // Sort by the user's order, then by catalogue position as a stable
+        // tie-break — `Array.sorted` is not a stable sort, so without the
+        // second key the providers nobody has dragged would reshuffle on
+        // every render.
+        let ordered = NotchProviderCatalog.all.enumerated().sorted { lhs, rhs in
+            let li = order.firstIndex(of: lhs.element.id) ?? Int.max
+            let ri = order.firstIndex(of: rhs.element.id) ?? Int.max
+            return li != ri ? li < ri : lhs.offset < rhs.offset
+        }.map(\.element)
         return ordered.map { entry in
             switch entry.id {
             case "codex":  return codexRow(name: entry.name)

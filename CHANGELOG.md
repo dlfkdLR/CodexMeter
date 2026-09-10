@@ -4,6 +4,8 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-09-10
+
 ### Added
 
 - **Local Ollama models in the notch.** When `ollama serve` is running, a cell shows how many models are loaded and the tooltip lists them by name and resident memory. No daemon (or nothing loaded), no cell.

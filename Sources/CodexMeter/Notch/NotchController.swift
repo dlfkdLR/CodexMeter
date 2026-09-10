@@ -45,15 +45,17 @@ final class NotchController {
     /// Called once from `CodexMeterApp.init`, after the stores exist.
     func configure(codexLimits: AccountLimitStore,
                    claudeIntegration: ClaudeIntegrationStore,
-                   codexAccounts: CodexAccountStore) {
+                   codexAccounts: CodexAccountStore,
+                   codexUsage: UsageStore? = nil,
+                   claudeUsage: UsageStore? = nil) {
         guard !configured else { return }
         configured = true
         self.codexLimits = codexLimits
         self.claudeIntegration = claudeIntegration
 
         let providers: [any NotchProvider] = [
-            CodexNotchProvider(limits: codexLimits, accounts: codexAccounts),
-            ClaudeNotchProvider(claude: claudeIntegration),
+            CodexNotchProvider(limits: codexLimits, accounts: codexAccounts, usage: codexUsage),
+            ClaudeNotchProvider(claude: claudeIntegration, usage: claudeUsage),
             // Borrows a token from GitHub CLI; its ring only appears once one
             // turns up (`isVisibleWhenAbsent == false`).
             CopilotNotchProvider(),
@@ -76,6 +78,9 @@ final class NotchController {
         window.onRefresh = { [weak store] in store?.refreshNow() }
         window.onRefreshProvider = { [weak store] id in store?.refresh(providerID: id) }
         window.onOpenSettings = { SettingsWindowController.shared.present() }
+        window.onOpenUsage = {
+            SettingsWindowController.shared.present(selecting: .category(.usage))
+        }
         window.onReposition = { [offsetKey] offset in
             UserDefaults.standard.set(Double(offset), forKey: offsetKey)
         }

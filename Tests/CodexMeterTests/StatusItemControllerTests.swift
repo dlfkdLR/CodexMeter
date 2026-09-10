@@ -10,11 +10,11 @@ final class StatusItemControllerTests: XCTestCase {
         return menu
     }
 
-    func testMenuOffersTheWayBackIn() {
+    func testMenuLeadsWithTokenUsageAndOffersTheWayBackIn() {
         let titles = menu.items.map(\.title)
         XCTAssertEqual(
             titles,
-            ["Show Notch", "", "Usage…", "Settings…", "Check for Updates…", "", "Quit CodexMeter"]
+            ["Token Usage…", "", "Show Notch", "Settings…", "Check for Updates…", "", "Quit CodexMeter"]
         )
     }
 
@@ -26,11 +26,13 @@ final class StatusItemControllerTests: XCTestCase {
             else { defaults.removeObject(forKey: "showEdgeNotch") }
         }
 
+        func showNotchItem() -> NSMenuItem? { menu.items.first { $0.title == "Show Notch" } }
+
         defaults.set(false, forKey: "showEdgeNotch")
-        XCTAssertEqual(menu.items.first?.state, .off)
+        XCTAssertEqual(showNotchItem()?.state, .off)
 
         defaults.set(true, forKey: "showEdgeNotch")
-        XCTAssertEqual(menu.items.first?.state, .on)
+        XCTAssertEqual(showNotchItem()?.state, .on)
     }
 
     func testUpdatesItemTracksUpdaterAvailability() throws {

@@ -5,7 +5,7 @@ struct SettingsView: View {
 
     @EnvironmentObject private var env: SettingsEnvironment
     @EnvironmentObject private var claude: ClaudeIntegrationStore
-    @State private var selection: SettingsPane? = .category(.general)
+    @State private var selection: SettingsPane? = .category(.usage)
     @State private var search = ""
 
     var body: some View {

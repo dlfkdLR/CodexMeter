@@ -46,7 +46,9 @@ struct CodexMeterApp: App {
         NotchController.shared.configure(
             codexLimits: accountLimitStore,
             claudeIntegration: claudeIntegrationStore,
-            codexAccounts: .shared
+            codexAccounts: .shared,
+            codexUsage: store,
+            claudeUsage: claudeStore
         )
         claudeIntegrationStore.onAvailabilityChanged = { [weak claudeStore] available in
             guard let claudeStore else { return }
@@ -128,11 +130,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// With no windows of its own, an accessory app clicked in the Finder or
-    /// the Dock would do nothing visible. Send those to Settings — the same
-    /// place the status-bar menu's ⌘, goes.
+    /// the Dock would do nothing visible. Send those to the token-usage view —
+    /// that is what the app is for.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         if !hasVisibleWindows {
-            SettingsWindowController.shared.present()
+            SettingsWindowController.shared.present(selecting: .category(.usage))
         }
         return true
     }

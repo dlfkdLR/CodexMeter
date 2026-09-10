@@ -38,10 +38,13 @@ final class CodexNotchProvider: NotchProvider {
 
     private let limits: AccountLimitStore
     private let accounts: CodexAccountStore
+    /// CodexMeter's own local token accounting, for the tooltip's "today" line.
+    private let usage: UsageStore?
 
-    init(limits: AccountLimitStore, accounts: CodexAccountStore = .shared) {
+    init(limits: AccountLimitStore, accounts: CodexAccountStore = .shared, usage: UsageStore? = nil) {
         self.limits = limits
         self.accounts = accounts
+        self.usage = usage
     }
 
     var signInRoute: SignInRoute { .openApp(bundleID: "com.openai.chat", name: "Codex") }
@@ -68,8 +71,18 @@ final class CodexNotchProvider: NotchProvider {
             id: id, displayName: displayName, glyph: glyph,
             fidelity: .official, status: status,
             windows: windows,
-            headlineID: NotchLimitMapping.headlineID(limits.snapshot?.windows ?? [])
+            headlineID: NotchLimitMapping.headlineID(limits.snapshot?.windows ?? []),
+            todaysTokens: NotchLimitMapping.todaysTokens(usage)
         )
+    }
+}
+
+extension NotchLimitMapping {
+    /// Today's local token total, or nil when there is nothing to show.
+    @MainActor
+    static func todaysTokens(_ usage: UsageStore?) -> Int? {
+        guard let total = usage?.snapshot.today.totalTokens, total > 0 else { return nil }
+        return Int(total)
     }
 }
 
@@ -82,9 +95,11 @@ final class ClaudeNotchProvider: NotchProvider {
     let glyph: ProviderGlyph = .claude
 
     private let claude: ClaudeIntegrationStore
+    private let usage: UsageStore?
 
-    init(claude: ClaudeIntegrationStore) {
+    init(claude: ClaudeIntegrationStore, usage: UsageStore? = nil) {
         self.claude = claude
+        self.usage = usage
     }
 
     /// No ring at all when the whole Claude integration is switched off.
@@ -117,7 +132,8 @@ final class ClaudeNotchProvider: NotchProvider {
             id: id, displayName: displayName, glyph: glyph,
             fidelity: .official, status: status,
             windows: windows,
-            headlineID: NotchLimitMapping.headlineID(claude.snapshot?.windows ?? [])
+            headlineID: NotchLimitMapping.headlineID(claude.snapshot?.windows ?? []),
+            todaysTokens: NotchLimitMapping.todaysTokens(usage)
         )
     }
 }

@@ -28,8 +28,15 @@ final class NotchController {
         deliver: { ThresholdAlerts.deliver($0) }
     )
     private var cancellables = Set<AnyCancellable>()
+    /// Subscriptions and stores that only run while the notch is on screen.
+    private var whileVisible = Set<AnyCancellable>()
     private var configured = false
     private var visible = false
+
+    /// The two upstream stores, kept so the limit-change bridge can be wired
+    /// and torn down with visibility rather than running while hidden.
+    private var codexLimits: AccountLimitStore?
+    private var claudeIntegration: ClaudeIntegrationStore?
 
     private let offsetKey = "notchAlongOffset"
 
@@ -41,6 +48,8 @@ final class NotchController {
                    codexAccounts: CodexAccountStore) {
         guard !configured else { return }
         configured = true
+        self.codexLimits = codexLimits
+        self.claudeIntegration = claudeIntegration
 
         let providers: [any NotchProvider] = [
             CodexNotchProvider(limits: codexLimits, accounts: codexAccounts),
@@ -70,12 +79,6 @@ final class NotchController {
         window.onReposition = { [offsetKey] offset in
             UserDefaults.standard.set(Double(offset), forKey: offsetKey)
         }
-
-        codexLimits.objectWillChange
-            .merge(with: claudeIntegration.objectWillChange)
-            .debounce(for: .milliseconds(250), scheduler: RunLoop.main)
-            .sink { [weak store] in store?.refreshNow() }
-            .store(in: &cancellables)
 
         store.$snapshots
             .receive(on: RunLoop.main)
@@ -133,11 +136,30 @@ final class NotchController {
             window.apply(storedVisibility())
             store?.start()
             monitors.values.forEach { $0.start() }
+            wireLimitBridge()
         } else {
+            whileVisible.removeAll()
             monitors.values.forEach { $0.stop() }
             store?.stop()
             window.apply(.hidden)
         }
+    }
+
+    /// Reflect a change in the underlying Codex/Claude limits into the notch
+    /// without waiting out the store's poll — but only while the notch is on
+    /// screen, and only on an actual change to the limit *windows*. Keyed on
+    /// `objectWillChange` this fed a loop: every fetch writes the last-good
+    /// cache to `UserDefaults`, `AccountLimitStore` re-publishes on any defaults
+    /// change, and the notch re-fetched three times a second.
+    private func wireLimitBridge() {
+        guard whileVisible.isEmpty, let codexLimits, let claudeIntegration else { return }
+        codexLimits.$snapshot
+            .map { $0?.windows ?? [] }
+            .merge(with: claudeIntegration.$snapshot.map { $0?.windows ?? [] })
+            .removeDuplicates()
+            .debounce(for: .seconds(1), scheduler: RunLoop.main)
+            .sink { [weak store] _ in store?.refreshNow() }
+            .store(in: &whileVisible)
     }
 
     /// Bound to `@AppStorage("notchEdge")`.

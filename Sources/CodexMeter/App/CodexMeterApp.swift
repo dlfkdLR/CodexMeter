@@ -1,4 +1,5 @@
 import AppKit
+import os
 import SwiftUI
 
 /*
@@ -103,10 +104,23 @@ struct CodexMeterApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    private static let log = Logger(subsystem: "dev.codexmeter.CodexMeter", category: "lifecycle")
+
+    /// A SwiftUI `App` whose only scene is `Settings` does not reliably deliver
+    /// `applicationDidFinishLaunching` — the status item has to go up here, the
+    /// one callback that always fires, or the app launches with no visible
+    /// surface at all.
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        Self.log.info("willFinishLaunching")
         NSApplication.shared.setActivationPolicy(.accessory)
-        UpdateService.shared.start()
         StatusItemController.shared.install()
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        Self.log.info("didFinishLaunching")
+        NSApplication.shared.setActivationPolicy(.accessory)
+        StatusItemController.shared.install()
+        UpdateService.shared.start()
         NotchController.shared.setVisible(
             UserDefaults.standard.object(forKey: "showEdgeNotch") as? Bool
                 ?? AppPreferences.defaultShowEdgeNotch

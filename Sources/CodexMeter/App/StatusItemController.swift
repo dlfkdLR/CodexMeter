@@ -1,4 +1,5 @@
 import AppKit
+import os
 
 /// The one always-present entry point once the menu-bar popover is gone: a
 /// small status-bar item whose menu reaches Settings, the Usage window, and the
@@ -12,19 +13,36 @@ import AppKit
 final class StatusItemController: NSObject, NSMenuDelegate {
     static let shared = StatusItemController()
 
+    private static let log = Logger(subsystem: "dev.codexmeter.CodexMeter", category: "statusitem")
     private var statusItem: NSStatusItem?
 
     private override init() { super.init() }
 
-    /// Called once from `AppDelegate.applicationDidFinishLaunching`.
+    /// Called from `AppDelegate` (both `willFinishLaunching` and
+    /// `didFinishLaunching`, since a `Settings`-only SwiftUI app is not
+    /// guaranteed to deliver the second). Idempotent.
     func install() {
         guard statusItem == nil else { return }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.image = NSImage(
-            systemSymbolName: "diamond",
-            accessibilityDescription: "CodexMeter"
-        )
-        item.button?.image?.isTemplate = true
+
+        guard let button = item.button else {
+            // Extremely rare, but a status item with no button draws nothing —
+            // give it up rather than sit invisible.
+            Self.log.error("status item has no button; removing")
+            NSStatusBar.system.removeStatusItem(item)
+            return
+        }
+
+        if let image = NSImage(systemSymbolName: "diamond", accessibilityDescription: "CodexMeter") {
+            image.isTemplate = true
+            button.image = image
+        } else {
+            // No SF Symbol (older macOS, a stripped symbol table) — the mark
+            // itself still reads.
+            button.title = "◈"
+        }
+        button.imagePosition = .imageOnly
+        button.toolTip = "CodexMeter"
 
         let menu = NSMenu()
         // Manage `isEnabled` directly (the updates item) rather than through
@@ -33,6 +51,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.delegate = self
         item.menu = menu
         statusItem = item
+        Self.log.info("status item installed (image: \(button.image != nil, privacy: .public))")
     }
 
     // MARK: - Menu

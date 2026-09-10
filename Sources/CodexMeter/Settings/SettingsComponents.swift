@@ -2,94 +2,30 @@ import SwiftUI
 
 // MARK: - Sidebar
 
-/// One sidebar row: an icon chip, a single-line title, and an optional trailing
-/// status dot. Categories get a tinted SF Symbol chip; providers show their real
-/// logo on a neutral chip.
-struct SettingsChipLabel: View {
-    let title: String
-    var systemImage: String?
-    var logoProvider: UsageProvider?
-    var tint: Color = .gray
-    var statusDot: Color?
-    var dimmed = false
+/// A tinted rounded-square badge behind a white symbol — the icon style
+/// System Settings uses in its own sidebar, and Codenotch after it.
+struct SidebarIcon: View {
+    let systemName: String
+    let tint: Color
 
     var body: some View {
-        HStack(spacing: 8) {
-            chip.accessibilityHidden(true)
-            Text(title)
-                .lineLimit(1)
-                .foregroundStyle(dimmed ? Color.secondary : Color.primary)
-            Spacer(minLength: 4)
-            if let statusDot {
-                Circle()
-                    .fill(statusDot)
-                    .frame(width: 7, height: 7)
-                    .accessibilityHidden(true)
+        RoundedRectangle(cornerRadius: 5.5, style: .continuous)
+            .fill(tint.gradient)
+            .frame(width: 20, height: 20)
+            .overlay {
+                Image(systemName: systemName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white)
             }
-        }
-        .padding(.vertical, 3)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(statusDot != nil ? "\(title), on" : title)
-        .accessibilityHint("Select to view this section.")
-    }
-
-    @ViewBuilder
-    private var chip: some View {
-        if let logoProvider {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color(nsColor: .textBackgroundColor))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .strokeBorder(.quaternary, lineWidth: 1)
-                )
-                .frame(width: 20, height: 20)
-                .overlay(
-                    ProviderLogo(provider: logoProvider, size: 13)
-                        .foregroundStyle(dimmed ? Color.secondary : Color.primary)
-                )
-        } else {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(tint.gradient)
-                .frame(width: 20, height: 20)
-                .overlay(
-                    Image(systemName: systemImage ?? "circle")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white)
-                )
-        }
-    }
-}
-
-struct SettingsSidebarSearchField: View {
-    @Binding var text: String
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            TextField("Search settings", text: $text)
-                .textFieldStyle(.plain)
-                .accessibilityLabel("Search settings")
-            if !text.isEmpty {
-                Button {
-                    text = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(6)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .accessibilityHidden(true)
     }
 }
 
 // MARK: - Detail primitives
 
-/// The flat replacement for `Form { … }.formStyle(.grouped)`. No in-pane title
-/// block — the window title carries the pane name.
+/// A pane of grouped cards. CodexMeter's own `Form { … }.formStyle(.grouped)`:
+/// section headings sit outside the card, the rows inside one rounded surface,
+/// and explanatory notes fall between cards.
 struct SettingsForm<Content: View>: View {
     @ViewBuilder var content: Content
 
@@ -98,14 +34,23 @@ struct SettingsForm<Content: View>: View {
             VStack(alignment: .leading, spacing: 6) {
                 content
             }
-            .padding(.top, 8)
-            .padding(.bottom, 26)
+            .padding(.top, 6)
+            .padding(.bottom, 28)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollBounceBehavior(.basedOnSize)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.background)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
+}
+
+/// How far a card sits in from the pane's edges, and how far its rows sit in
+/// from the card's. Shared so headings, notes and rows all line up.
+enum SettingsMetrics {
+    static let cardInset: CGFloat = 18
+    static let rowInset: CGFloat = 14
+    /// Where text starts, measured from the pane edge.
+    static var textInset: CGFloat { cardInset + rowInset }
 }
 
 struct SettingsSection<Content: View>: View {
@@ -127,12 +72,22 @@ struct SettingsSection<Content: View>: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, SettingsMetrics.textInset)
                 .accessibilityAddTraits(.isHeader)
             }
             _VariadicView.Tree(SettingsDividedRows()) { content }
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color(nsColor: .controlBackgroundColor))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(.quaternary, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .padding(.horizontal, SettingsMetrics.cardInset)
         }
-        .padding(.top, 18)
+        .padding(.top, 16)
     }
 }
 
@@ -144,7 +99,7 @@ private struct SettingsDividedRows: _VariadicView_MultiViewRoot {
             ForEach(children) { child in
                 child
                 if child.id != lastID {
-                    Divider().padding(.leading, 20)
+                    Divider().padding(.leading, SettingsMetrics.rowInset)
                 }
             }
         }
@@ -173,7 +128,7 @@ struct SettingsRow<Control: View>: View {
             Spacer(minLength: 8)
             control.layoutPriority(1)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, SettingsMetrics.rowInset)
         .padding(.vertical, 9)
         .accessibilityElement(children: .combine)
     }
@@ -281,7 +236,7 @@ struct SettingsButtonRow: View {
             }
             Spacer(minLength: 8)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, SettingsMetrics.rowInset)
         .padding(.vertical, 9)
     }
 }
@@ -304,7 +259,7 @@ struct SettingsLinkRow: View {
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, SettingsMetrics.rowInset)
         .padding(.vertical, 9)
     }
 }
@@ -323,7 +278,7 @@ struct SettingsInfoRow: View {
         .font(.callout)
         .foregroundStyle(tint ?? Color.primary)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, SettingsMetrics.rowInset)
         .padding(.vertical, 8)
         .accessibilityElement(children: .combine)
     }
@@ -345,7 +300,8 @@ struct SettingsNote: View {
             .foregroundStyle(tint ?? Color.secondary)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, SettingsMetrics.textInset)
+            .padding(.top, 2)
     }
 }
 
@@ -379,7 +335,7 @@ struct SettingsProviderCard<Trailing: View>: View {
         }
         .padding(14)
         .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .padding(.horizontal, 20)
+        .padding(.horizontal, SettingsMetrics.cardInset)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(provider.title), \(isOn ? "on" : "off"). \(statusLine)")
     }

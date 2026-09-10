@@ -10,21 +10,39 @@ import Foundation
 
 enum NotchLimitMapping {
     /// `AccountLimitWindow` (CodexMeter) → `LimitWindow` (notch).
-    static func window(_ w: AccountLimitWindow) -> LimitWindow {
-        LimitWindow(
-            id: w.limitID,
-            label: w.windowLabel,
-            usedFraction: max(0, min(1.5, w.usedPercent / 100)),
-            resetsAt: w.resetsAt,
-            duration: TimeInterval(w.windowDurationMinutes) * 60
-        )
+    ///
+    /// Takes the whole set rather than one window: the id has to be unique
+    /// across it, and whether a row needs its limit group named depends on how
+    /// many groups there are.
+    static func windows(_ source: [AccountLimitWindow]) -> [LimitWindow] {
+        // One provider can report the same window length under more than one
+        // limit — Codex meters a per-model allowance beside the plan's own. The
+        // group name only earns its space when there is more than one.
+        let named = Set(source.map(\.displayName)).count > 1
+        return source.map { w in
+            LimitWindow(
+                // `w.id` — not `w.limitID`, which every window of a limit group
+                // shares. `ForEach(…, id: \.id)` over duplicates renders the
+                // first element once per collision, which is what put two
+                // identical "5 hours" / "Weekly" rows in the tooltip.
+                id: w.id,
+                group: named ? w.displayName : nil,
+                label: w.windowLabel,
+                usedFraction: max(0, min(1.5, w.usedPercent / 100)),
+                resetsAt: w.resetsAt,
+                duration: TimeInterval(w.windowDurationMinutes) * 60
+            )
+        }
     }
 
     /// The tightest window's id — the one with the least remaining — so the ring
     /// means what actually constrains you. Matches
     /// `MenuBarLimitMeter.remainingFraction`'s "tightest window" choice.
+    ///
+    /// Returns the same `id` the mapping above uses, or the headline lookup
+    /// finds nothing and the cell falls back to "whichever window came first".
     static func headlineID(_ windows: [AccountLimitWindow]) -> String? {
-        windows.max(by: { $0.usedPercent < $1.usedPercent })?.limitID
+        windows.max(by: { $0.usedPercent < $1.usedPercent })?.id
     }
 }
 
@@ -53,11 +71,21 @@ final class CodexNotchProvider: NotchProvider {
         guard let current = accounts.accounts.first(where: { $0.id == accounts.currentID }) else {
             return nil
         }
-        return ProviderAccount(label: current.email, plan: nil, source: "Codex", manageURL: nil)
+        return ProviderAccount(label: current.email, plan: current.planType,
+                               source: "Codex", manageURL: nil)
+    }
+
+    /// The plan of the account the readings belong to, when the saved login
+    /// carries one.
+    private var planType: String? {
+        accounts.accounts.first { $0.id == accounts.currentID }?.planType
     }
 
     func fetchSnapshot() async throws -> ProviderSnapshot {
-        let windows = (limits.snapshot?.windows ?? []).map(NotchLimitMapping.window)
+        let source = CodexPlanLimits.visibleWindows(
+            limits.snapshot?.windows ?? [], plan: planType
+        )
+        let windows = NotchLimitMapping.windows(source)
         let status: ProviderStatus
         switch limits.status {
         case .ready:       status = .ok
@@ -71,9 +99,33 @@ final class CodexNotchProvider: NotchProvider {
             id: id, displayName: displayName, glyph: glyph,
             fidelity: .official, status: status,
             windows: windows,
-            headlineID: NotchLimitMapping.headlineID(limits.snapshot?.windows ?? []),
+            headlineID: NotchLimitMapping.headlineID(source),
             todaysTokens: NotchLimitMapping.todaysTokens(usage)
         )
+    }
+}
+
+/// What a Codex plan actually meters.
+///
+/// ChatGPT Pro has no five-hour allowance — only the weekly one. The
+/// app-server still reports a five-hour window for those accounts, and drawing
+/// it puts a limit on screen that can never bind and whose reset time is not a
+/// five-hour reset. Hide it, and only for Pro: every other plan really does
+/// have one.
+enum CodexPlanLimits {
+    /// The five-hour band `AccountLimitWindow.windowLabel` recognises.
+    static let fiveHourMinutes: ClosedRange<Int> = 270...330
+
+    static func hasFiveHourLimit(plan: String?) -> Bool {
+        plan?.lowercased().trimmingCharacters(in: .whitespaces) != "pro"
+    }
+
+    static func visibleWindows(_ windows: [AccountLimitWindow], plan: String?) -> [AccountLimitWindow] {
+        guard !hasFiveHourLimit(plan: plan) else { return windows }
+        let kept = windows.filter { !fiveHourMinutes.contains($0.windowDurationMinutes) }
+        // Never blank the cell: if five hours is somehow all this account
+        // reports, an unhelpful window beats no reading at all.
+        return kept.isEmpty ? windows : kept
     }
 }
 
@@ -116,7 +168,7 @@ final class ClaudeNotchProvider: NotchProvider {
     }
 
     func fetchSnapshot() async throws -> ProviderSnapshot {
-        let windows = (claude.snapshot?.windows ?? []).map(NotchLimitMapping.window)
+        let windows = NotchLimitMapping.windows(claude.snapshot?.windows ?? [])
         let status: ProviderStatus
         switch claude.status {
         case .ready:            status = .ok

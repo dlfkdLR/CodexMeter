@@ -8,7 +8,9 @@ final class NotchLimitAdaptersTests: XCTestCase {
     // MARK: - Pure mapping
 
     func testWindowMapsPercentToFractionAndLabel() {
-        let mapped = NotchLimitMapping.window(win(id: "codex", minutes: 300, usedPercent: 73))
+        let mapped = try! XCTUnwrap(
+            NotchLimitMapping.windows([win(id: "codex", minutes: 300, usedPercent: 73)]).first
+        )
         XCTAssertEqual(mapped.id, "codex")
         XCTAssertEqual(mapped.label, "5 hours")
         XCTAssertEqual(mapped.usedFraction ?? -1, 0.73, accuracy: 0.0001)
@@ -16,10 +18,55 @@ final class NotchLimitAdaptersTests: XCTestCase {
     }
 
     func testWindowFractionClampsAtZeroAndAllowsSlightOverspend() {
-        XCTAssertEqual(NotchLimitMapping.window(win(id: "a", minutes: 300, usedPercent: -5)).usedFraction ?? -1,
+        XCTAssertEqual(NotchLimitMapping.windows([win(id: "a", minutes: 300, usedPercent: -5)])[0].usedFraction ?? -1,
                        0, accuracy: 0.0001)
-        XCTAssertEqual(NotchLimitMapping.window(win(id: "b", minutes: 300, usedPercent: 210)).usedFraction ?? -1,
+        XCTAssertEqual(NotchLimitMapping.windows([win(id: "b", minutes: 300, usedPercent: 210)])[0].usedFraction ?? -1,
                        1.5, accuracy: 0.0001)
+    }
+
+    /// The bug behind two identical "5 hours" rows: every window of a limit
+    /// group shared `limitID`, and `ForEach(id:)` renders the first element
+    /// once per collision.
+    func testEveryMappedWindowKeepsItsOwnIdentity() {
+        let mapped = NotchLimitMapping.windows([
+            windowNamed("Claude", id: "claude-five-hour", limitID: "claude", minutes: 300, usedPercent: 10),
+            windowNamed("Claude", id: "claude-seven-day", limitID: "claude", minutes: 10_080, usedPercent: 17)
+        ])
+        XCTAssertEqual(mapped.map(\.id), ["claude-five-hour", "claude-seven-day"])
+        XCTAssertEqual(Set(mapped.map(\.id)).count, 2)
+        XCTAssertEqual(mapped.map(\.label), ["5 hours", "Weekly"])
+        // One limit group, so no group heading to disambiguate.
+        XCTAssertEqual(mapped.compactMap(\.group), [])
+    }
+
+    /// Two limit groups can each report a five-hour window; the group name is
+    /// what tells the rows apart.
+    func testWindowsFromSeveralLimitGroupsAreNamed() {
+        let mapped = NotchLimitMapping.windows([
+            windowNamed("Codex", id: "a", limitID: "codex", minutes: 300, usedPercent: 6),
+            windowNamed("GPT-5.3-Codex-Spark", id: "b", limitID: "codex_bengalfox", minutes: 300, usedPercent: 6)
+        ])
+        XCTAssertEqual(mapped.map(\.group), ["Codex", "GPT-5.3-Codex-Spark"])
+        XCTAssertEqual(Set(mapped.map(\.id)).count, 2)
+    }
+
+    // MARK: - Codex plan shaping
+
+    func testProHasNoFiveHourWindowButOtherPlansDo() {
+        let windows = [win(id: "five", minutes: 300, usedPercent: 6),
+                       win(id: "weekly", minutes: 10_080, usedPercent: 48)]
+
+        XCTAssertEqual(CodexPlanLimits.visibleWindows(windows, plan: "pro").map(\.id), ["weekly"])
+        XCTAssertEqual(CodexPlanLimits.visibleWindows(windows, plan: "Pro").map(\.id), ["weekly"])
+        XCTAssertEqual(CodexPlanLimits.visibleWindows(windows, plan: "plus").map(\.id), ["five", "weekly"])
+        XCTAssertEqual(CodexPlanLimits.visibleWindows(windows, plan: nil).map(\.id), ["five", "weekly"])
+    }
+
+    /// Hiding the only window there is would blank the cell — worse than an
+    /// unhelpful row.
+    func testProKeepsAFiveHourWindowWhenItIsTheOnlyOne() {
+        let only = [win(id: "five", minutes: 300, usedPercent: 6)]
+        XCTAssertEqual(CodexPlanLimits.visibleWindows(only, plan: "pro").map(\.id), ["five"])
     }
 
     func testHeadlineIsTheTightestWindow() {
@@ -86,6 +133,12 @@ final class NotchLimitAdaptersTests: XCTestCase {
 
     private func win(id: String, minutes: Int, usedPercent: Double) -> AccountLimitWindow {
         AccountLimitWindow(id: id, limitID: id, displayName: id,
+                           windowDurationMinutes: minutes, usedPercent: usedPercent, resetsAt: nil)
+    }
+
+    private func windowNamed(_ name: String, id: String, limitID: String,
+                             minutes: Int, usedPercent: Double) -> AccountLimitWindow {
+        AccountLimitWindow(id: id, limitID: limitID, displayName: name,
                            windowDurationMinutes: minutes, usedPercent: usedPercent, resetsAt: nil)
     }
 

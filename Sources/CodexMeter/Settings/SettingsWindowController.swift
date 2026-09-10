@@ -28,8 +28,23 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     func present() {
         let environment = self.environment ?? SettingsEnvironment()
         let window = settingsWindow ?? makeWindow(environment: environment)
+        // An accessory app is restricted from activating and compositing its
+        // own windows, which is how "Settings…" can look like it did nothing.
+        // Be a regular app for as long as the window is up; `windowWillClose`
+        // puts the policy back.
+        NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.activate(ignoringOtherApps: true)
+        // Off any connected screen — a display reconfigured since it was last
+        // placed — is the other way it opens invisibly.
+        if !NSScreen.screens.contains(where: { $0.frame.intersects(window.frame) }) {
+            window.center()
+        }
         window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        NSApplication.shared.setActivationPolicy(.accessory)
     }
 
     func present(selecting pane: SettingsPane) {
@@ -48,11 +63,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.contentMinSize = Self.minimumContentSize
         window.isReleasedWhenClosed = false
         window.contentViewController = NSHostingController(
-            rootView: SettingsView(onPaneTitleChange: { [weak window] title in
-                window?.title = title
-            })
-            .environmentObject(environment)
-            .environmentObject(environment.claude)
+            rootView: SettingsView()
+                .environmentObject(environment)
+                .environmentObject(environment.claude)
         )
         window.delegate = self
         if !window.setFrameUsingName(Self.frameAutosaveName) {

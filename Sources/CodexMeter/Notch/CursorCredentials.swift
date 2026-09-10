@@ -30,10 +30,19 @@ struct CursorCredentials {
     /// path so the two facts about a Cursor installation change together.
     static let bundleID = "com.todesktop.230313mzl4w4u92"
 
+    /// Written by `cursor-agent login`. Non-secret: email and the WorkOS
+    /// subject that belongs in the cookie. The JWT itself is in the keychain.
+    static var agentConfigURL: URL {
+        URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".cursor/cli-config.json")
+    }
+
+    static let agentKeychainService = "cursor-access-token"
+    static let agentKeychainAccount = "cursor-user"
+
     /// Identity, read from the same store as the session. Non-secret: the email
     /// and plan the editor caches for its own UI.
     static func account() -> ProviderAccount? {
-        account(from: storeURL)
+        account(from: storeURL) ?? agentAccount()
     }
 
     static func account(from url: URL) -> ProviderAccount? {
@@ -51,7 +60,76 @@ struct CursorCredentials {
     }
 
     static func load() throws -> CursorCredentials {
-        try load(from: storeURL)
+        do {
+            return try load(from: storeURL)
+        } catch NotchProviderError.needsAuth {
+            // No editor session — fall through to the `cursor-agent` CLI's,
+            // read from the login keychain. Same cookie, different holder.
+            return try agentSession(
+                token: NotchKeychain.read(service: agentKeychainService, account: agentKeychainAccount),
+                configURL: agentConfigURL
+            )
+        }
+    }
+
+    /// The CLI path, factored out so it can be tested without a keychain.
+    static func agentSession(token: String?, configURL: URL,
+                             now: Date = Date()) throws -> CursorCredentials {
+        guard let trimmed = token?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            throw NotchProviderError.needsAuth
+        }
+        if agentTokenIsExpired(trimmed, now: now) { throw NotchProviderError.credentialExpired }
+        guard let accountID = agentAccountID(token: trimmed, configURL: configURL), !accountID.isEmpty else {
+            throw NotchProviderError.needsAuth
+        }
+        return CursorCredentials(accountID: accountID, accessToken: trimmed)
+    }
+
+    /// The cookie's left half: `authId` then numeric `userId` from
+    /// `cli-config.json`, then the JWT `sub` when there is no config yet.
+    static func agentAccountID(token: String, configURL: URL) -> String? {
+        if let info = agentAuthInfo(from: configURL) {
+            if let authId = info.authId { return authId }
+            if let userId = info.userId { return userId }
+        }
+        return subject(fromJWT: token)
+    }
+
+    static func agentAccount(from url: URL = agentConfigURL) -> ProviderAccount? {
+        guard let info = agentAuthInfo(from: url), info.email != nil || info.authId != nil else {
+            return nil
+        }
+        return ProviderAccount(label: info.email, plan: nil, source: "cursor-agent",
+                               manageURL: URL(string: "https://cursor.com/dashboard"))
+    }
+
+    static func agentTokenIsExpired(_ token: String, now: Date = Date()) -> Bool {
+        guard let exp = (claims(inJWT: token)?["exp"] as? NSNumber)?.doubleValue else { return false }
+        return exp <= now.timeIntervalSince1970
+    }
+
+    private struct AgentAuthInfo {
+        let email: String?
+        let authId: String?
+        let userId: String?
+    }
+
+    private static func agentAuthInfo(from url: URL) -> AgentAuthInfo? {
+        guard let data = try? Data(contentsOf: url),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let info = root["authInfo"] as? [String: Any]
+        else { return nil }
+
+        let userId: String?
+        if let number = info["userId"] as? NSNumber { userId = number.stringValue }
+        else if let text = info["userId"] as? String, !text.isEmpty { userId = text }
+        else { userId = nil }
+
+        func nonempty(_ key: String) -> String? {
+            guard let value = info[key] as? String, !value.isEmpty else { return nil }
+            return value
+        }
+        return AgentAuthInfo(email: nonempty("email"), authId: nonempty("authId"), userId: userId)
     }
 
     /// Editor store only. The path is pinned so a missing editor cannot

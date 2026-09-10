@@ -71,19 +71,17 @@ final class CodexNotchProvider: NotchProvider {
         guard let current = accounts.accounts.first(where: { $0.id == accounts.currentID }) else {
             return nil
         }
-        return ProviderAccount(label: current.email, plan: current.planType,
+        return ProviderAccount(label: current.email, plan: accounts.currentPlanType,
                                source: "Codex", manageURL: nil)
     }
 
-    /// The plan of the account the readings belong to, when the saved login
-    /// carries one.
-    private var planType: String? {
-        accounts.accounts.first { $0.id == accounts.currentID }?.planType
-    }
-
     func fetchSnapshot() async throws -> ProviderSnapshot {
+        // From the live login, not the saved vault: most people never save an
+        // account into CodexMeter, and reading the plan from an empty vault
+        // would silently draw Pro's phantom five-hour window anyway.
+        accounts.refreshCurrentPlanType()
         let source = CodexPlanLimits.visibleWindows(
-            limits.snapshot?.windows ?? [], plan: planType
+            limits.snapshot?.windows ?? [], plan: accounts.currentPlanType
         )
         let windows = NotchLimitMapping.windows(source)
         let status: ProviderStatus

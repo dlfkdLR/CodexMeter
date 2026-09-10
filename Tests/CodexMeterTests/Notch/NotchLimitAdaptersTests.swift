@@ -107,7 +107,7 @@ final class NotchLimitAdaptersTests: XCTestCase {
                                       defaults: defaults, pollingInterval: nil)
         await store.refresh()
 
-        let provider = CodexNotchProvider(limits: store, accounts: CodexAccountStore(vault: EmptyVault()))
+        let provider = CodexNotchProvider(limits: store, accounts: isolatedAccounts())
         let ps = try await provider.fetchSnapshot()
 
         XCTAssertEqual(ps.id, "codex")
@@ -122,11 +122,56 @@ final class NotchLimitAdaptersTests: XCTestCase {
         defaults.set(false, forKey: "accountLimitsEnabled")
         let store = AccountLimitStore(provider: OneShotLimitProvider(nil),
                                       defaults: defaults, pollingInterval: nil)
-        let provider = CodexNotchProvider(limits: store, accounts: CodexAccountStore(vault: EmptyVault()))
+        let provider = CodexNotchProvider(limits: store, accounts: isolatedAccounts())
         let ps = try await provider.fetchSnapshot()
         XCTAssertTrue(ps.windows.isEmpty)
         XCTAssertEqual(ps.status, .needsAuth)
         XCTAssertFalse(ps.hasReading)
+    }
+
+    /// The plan has to come from the *live* login, not the saved vault.
+    ///
+    /// The vault is empty for anyone who never added an account to CodexMeter —
+    /// which is most people — and reading the plan from there would quietly
+    /// leave Pro's phantom five-hour window on screen.
+    func testTheCodexAdapterReadsThePlanFromTheLiveLoginNotTheVault() async throws {
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "accountLimitsEnabled")
+        let snapshot = AccountLimitsSnapshot(
+            windows: [win(id: "five", minutes: 300, usedPercent: 6),
+                      win(id: "weekly", minutes: 10_080, usedPercent: 48)],
+            resetCredits: nil,
+            fetchedAt: Date(timeIntervalSince1970: 1)
+        )
+        let store = AccountLimitStore(provider: OneShotLimitProvider(snapshot),
+                                      defaults: defaults, pollingInterval: nil)
+        await store.refresh()
+
+        // Nothing saved in the vault; the signed-in login says Pro.
+        let accounts = CodexAccountStore(vault: EmptyVault(), login: StubLogin(plan: "pro"))
+        let ps = try await CodexNotchProvider(limits: store, accounts: accounts).fetchSnapshot()
+
+        XCTAssertEqual(ps.windows.map(\.id), ["weekly"],
+                       "Pro's five-hour window is still on screen")
+        XCTAssertEqual(ps.headlineID, "weekly")
+    }
+
+    func testAPlusLoginKeepsItsFiveHourWindow() async throws {
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "accountLimitsEnabled")
+        let snapshot = AccountLimitsSnapshot(
+            windows: [win(id: "five", minutes: 300, usedPercent: 6),
+                      win(id: "weekly", minutes: 10_080, usedPercent: 48)],
+            resetCredits: nil,
+            fetchedAt: Date(timeIntervalSince1970: 1)
+        )
+        let store = AccountLimitStore(provider: OneShotLimitProvider(snapshot),
+                                      defaults: defaults, pollingInterval: nil)
+        await store.refresh()
+
+        let accounts = CodexAccountStore(vault: EmptyVault(), login: StubLogin(plan: "plus"))
+        let ps = try await CodexNotchProvider(limits: store, accounts: accounts).fetchSnapshot()
+        XCTAssertEqual(ps.windows.map(\.id), ["five", "weekly"])
     }
 
     // MARK: - Helpers
@@ -140,6 +185,15 @@ final class NotchLimitAdaptersTests: XCTestCase {
                              minutes: Int, usedPercent: Double) -> AccountLimitWindow {
         AccountLimitWindow(id: id, limitID: limitID, displayName: name,
                            windowDurationMinutes: minutes, usedPercent: usedPercent, resetsAt: nil)
+    }
+
+    /// An account store wired to nothing on disk.
+    ///
+    /// `CodexAccountStore`'s default login is the real `~/.codex/auth.json`, so
+    /// a test that leaves it alone reads whichever plan the developer happens
+    /// to be on — and a Pro machine hides the five-hour window mid-assertion.
+    private func isolatedAccounts() -> CodexAccountStore {
+        CodexAccountStore(vault: EmptyVault(), login: EmptyLogin())
     }
 
     private func makeDefaults() throws -> UserDefaults {
@@ -162,4 +216,39 @@ private struct OneShotLimitProvider: AccountLimitProviding {
 private struct EmptyVault: AccountVault {
     func load() throws -> [SavedCodexAccount] { [] }
     func save(_ accounts: [SavedCodexAccount]) throws {}
+}
+
+private struct EmptyLogin: CodexLoginStoring {
+    func read() throws -> Data? { nil }
+    func replace(with data: Data, expecting original: Data?) throws {}
+}
+
+/// A signed-in `auth.json` on a named plan, shaped like the real one: the plan
+/// lives in the id token's own claims.
+private struct StubLogin: CodexLoginStoring {
+    let plan: String
+
+    func read() throws -> Data? {
+        let claims: [String: Any] = [
+            "sub": "subject-a",
+            "email": "person@example.test",
+            "https://api.openai.com/auth": [
+                "chatgpt_account_id": "workspace-a",
+                "chatgpt_plan_type": plan
+            ]
+        ]
+        let payload = try JSONSerialization.data(withJSONObject: claims, options: [.sortedKeys])
+            .base64EncodedString().replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+        return try JSONSerialization.data(withJSONObject: [
+            "auth_mode": "chatgpt",
+            "OPENAI_API_KEY": NSNull(),
+            "tokens": ["access_token": "synthetic-access",
+                       "refresh_token": "synthetic-refresh",
+                       "id_token": "e30.\(payload).synthetic-signature",
+                       "account_id": "workspace-a"]
+        ], options: [.sortedKeys])
+    }
+
+    func replace(with data: Data, expecting original: Data?) throws {}
 }

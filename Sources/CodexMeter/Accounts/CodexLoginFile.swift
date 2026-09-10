@@ -30,12 +30,26 @@ final class CodexAccountOperationLock {
 protocol CodexLoginStoring {
     func read() throws -> Data?
     func replace(with data: Data, expecting original: Data?) throws
+    /// When the login last changed, for callers that want to skip re-reading an
+    /// unchanged file. Nil when there is no login, or its date cannot be read.
+    var lastModified: Date? { get }
+}
+
+extension CodexLoginStoring {
+    /// Test doubles need not track a date; without one every look re-reads,
+    /// which is correct, just not the fast path.
+    var lastModified: Date? { nil }
 }
 
 /// All operations are relative to an opened, user-owned directory. No symlink traversal,
 /// world-readable staging file, truncation of the current login, or broad cleanup.
 struct CodexLoginFile: CodexLoginStoring {
     let directory: URL
+
+    var lastModified: Date? {
+        try? FileManager.default
+            .attributesOfItem(atPath: directory.appendingPathComponent("auth.json").path)[.modificationDate] as? Date
+    }
 
     static var defaultDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex", isDirectory: true)

@@ -4,6 +4,8 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-09-10
+
 ### Changed
 
 - **Token usage stays front and centre.** The status-bar menu leads with **Token Usage…** (⌘U); the notch's right-click menu has it too; reopening the app opens it; and Settings opens on the Usage pane by default — so "how much have I used, and where did it go" is one step, not buried behind the notch. The notch tooltip now shows today's local token total for Codex and Claude beside the limit rings.

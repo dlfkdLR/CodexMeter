@@ -48,6 +48,8 @@ final class NotchController {
             // Borrows a token from GitHub CLI; its ring only appears once one
             // turns up (`isVisibleWhenAbsent == false`).
             CopilotNotchProvider(),
+            // Borrows the Cursor editor's session from its SQLite store.
+            CursorNotchProvider(),
         ]
         let store = NotchUsageStore(providers: providers)
         self.store = store

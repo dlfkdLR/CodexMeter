@@ -252,6 +252,9 @@ struct ClaudeStatusLineInstaller: ClaudeStatusLineInstalling, @unchecked Sendabl
         }
         if bridgeMatches(source: source, destination: destination) {
             try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: destination.path)
+            // An earlier install (or a Homebrew-quarantined app bundle) may have
+            // left the deployed copy flagged; clear it so Claude Code can exec it.
+            Self.clearGatekeeperFlags(at: destination)
             return
         }
         let temporary = destination.deletingLastPathComponent()
@@ -259,10 +262,28 @@ struct ClaudeStatusLineInstaller: ClaudeStatusLineInstalling, @unchecked Sendabl
         defer { try? fileManager.removeItem(at: temporary) }
         try fileManager.copyItem(at: source, to: temporary)
         try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: temporary.path)
+        // `copyItem` carries `com.apple.quarantine` across from the app bundle.
+        // Claude Code runs this helper as its status-line command, and Gatekeeper
+        // blocks a quarantined ad-hoc binary launched that way ("cannot be opened
+        // because Apple cannot check it for malicious software"). CodexMeter
+        // wrote this file, for its own use — strip the flag it just inherited.
+        Self.clearGatekeeperFlags(at: temporary)
         if fileManager.fileExists(atPath: destination.path) {
             _ = try fileManager.replaceItemAt(destination, withItemAt: temporary)
         } else {
             try fileManager.moveItem(at: temporary, to: destination)
+        }
+        Self.clearGatekeeperFlags(at: destination)
+    }
+
+    /// Remove `com.apple.quarantine` / `com.apple.provenance` from a file we
+    /// deployed ourselves. Best-effort: a missing attribute is not an error.
+    private static func clearGatekeeperFlags(at url: URL) {
+        url.withUnsafeFileSystemRepresentation { path in
+            guard let path else { return }
+            for name in ["com.apple.quarantine", "com.apple.provenance"] {
+                _ = removexattr(path, name, 0)
+            }
         }
     }
 

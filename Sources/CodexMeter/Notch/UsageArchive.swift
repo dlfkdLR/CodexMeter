@@ -71,18 +71,30 @@ struct UsageArchive {
     }
 
     func save(_ readings: [String: (snapshot: ProviderSnapshot, fetchedAt: Date)]) {
-        let entries = readings.values.map {
-            Entry(
-                id: $0.snapshot.id,
-                displayName: $0.snapshot.displayName,
-                glyph: $0.snapshot.glyph,
-                fidelity: $0.snapshot.fidelity,
-                windows: $0.snapshot.windows,
-                fetchedAt: $0.fetchedAt,
-                headlineID: $0.snapshot.headlineID
-            )
-        }
-        guard let data = try? JSONEncoder().encode(entries) else { return }
+        // Sorted so an unchanged set of readings encodes to identical bytes —
+        // `Dictionary.values` has no stable order, and the byte compare below
+        // relies on it.
+        let entries = readings
+            .sorted { $0.key < $1.key }
+            .map { _, reading in
+                Entry(
+                    id: reading.snapshot.id,
+                    displayName: reading.snapshot.displayName,
+                    glyph: reading.snapshot.glyph,
+                    fidelity: reading.snapshot.fidelity,
+                    windows: reading.snapshot.windows,
+                    fetchedAt: reading.fetchedAt,
+                    headlineID: reading.snapshot.headlineID
+                )
+            }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys   // byte-stable, for the compare below
+        guard let data = try? encoder.encode(entries) else { return }
+        // Skip an identical write. Every provider fetch calls this, and writing
+        // to `UserDefaults.standard` posts `didChangeNotification` app-wide —
+        // which `AccountLimitStore` reacts to. An unconditional write here is
+        // one side of a feedback loop.
+        if defaults.data(forKey: key) == data { return }
         defaults.set(data, forKey: key)
     }
 

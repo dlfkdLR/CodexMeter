@@ -15,6 +15,7 @@ Heading toward **2.0.0**: the menu bar is replaced by the edge notch. Ported fro
 - **Status-bar menu.** A small always-present item — *Show Notch*, *Usage…*, *Settings…*, *Check for Updates…*, *Quit* — since the menu-bar popover is gone.
 - **GitHub Copilot ring.** The notch shows a Copilot ring — premium requests, chat, completions — when it can borrow a token from `GH_TOKEN`/`GITHUB_TOKEN`, GitHub CLI's `hosts.yml`, or `gh auth token`. No token, no ring; CodexMeter never stores one. Ported from the MIT-licensed Codenotch.
 - **Cursor ring.** A Cursor ring — the Auto (Cursor Models) allowance, with API and on-demand alongside when touched — read from the session the Cursor editor keeps in its own `state.vscdb`. No signed-in editor, no ring; nothing is stored. (The `cursor-agent` CLI path comes later.) Ported from the MIT-licensed Codenotch.
+- **Grok ring.** The weekly Grok Build allowance, read from the session Grok CLI writes to `~/.grok/auth.json` (xAI-issued sessions only). No `grok login`, no ring. Ported from the MIT-licensed Codenotch.
 
 ### Removed
 

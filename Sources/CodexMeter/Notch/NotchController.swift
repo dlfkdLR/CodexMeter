@@ -50,6 +50,8 @@ final class NotchController {
             CopilotNotchProvider(),
             // Borrows the Cursor editor's session from its SQLite store.
             CursorNotchProvider(),
+            // Borrows the Grok CLI's `~/.grok/auth.json` session.
+            GrokNotchProvider(),
         ]
         let store = NotchUsageStore(providers: providers)
         self.store = store

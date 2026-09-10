@@ -4,29 +4,28 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>CodexMeter</title>
         <item>
-            <title>2.0.3</title>
-            <pubDate>Thu, 10 Sep 2026 15:34:29 +0900</pubDate>
-            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.3</link>
-            <sparkle:version>20003</sparkle:version>
-            <sparkle:shortVersionString>2.0.3</sparkle:shortVersionString>
+            <title>2.0.4</title>
+            <pubDate>Thu, 10 Sep 2026 16:25:53 +0900</pubDate>
+            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.4</link>
+            <sparkle:version>20004</sparkle:version>
+            <sparkle:shortVersionString>2.0.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.3
+            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.4
 
-Every notch provider is now a Settings entry, with its usage in view.
+Settings ▸ Providers, rebuilt as one list.
 
 ## What changed
 
-- **All notch providers in Settings.** The **Settings ▸ Providers** list used to
-  stop at Codex and Claude Code. It now includes GitHub Copilot, Cursor, Grok,
-  OpenCode, Command Code, GLM, Ollama Cloud, and Antigravity — each with a green
-  dot when connected and an "N on" count on the header.
-- **Usage without opening the notch.** Each borrowed-credential provider's pane,
-  modelled on Codenotch's account row, shows its live limit windows as labelled
-  bars (% used / left, reset time), today's local token total where CodexMeter
-  meters it, any active block, the account the reading is borrowed from, and a
-  per-provider 80% / 100% alert mute. "Allow access…" appears only when macOS
-  actually refused the credential.
-- Codex and Claude Code keep their fuller panes — they are metered locally.
+- **One Providers pane, not a sidebar row each.** Modelled on Codenotch's
+  account list: a **Connected** group whose rows drag to reorder the notch
+  rings, and a **Not connected** group of sign-in prompts. Each row shows the
+  account the reading is borrowed from, an inline 80% / 100% mute bell, and a
+  single action — **Details** for Codex and Claude Code, **Allow Access…** when
+  macOS refused a saved login, **Open <app>** otherwise. Details drills into the
+  fuller pane in place.
+- The per-provider limit-alert mutes moved off the Notch pane onto their rows.
+- The **Usage** pane no longer leaves a bare void beside its column in a wide
+  window — the reading column is centred with the pane painted behind it.
 
 ## Verification
 
@@ -50,13 +49,13 @@ open /Applications/CodexMeter.app
 
 ## First direct-download launch
 
-Download `CodexMeter-2.0.3.dmg` and `SHA256SUMS.txt` into the same folder and
+Download `CodexMeter-2.0.4.dmg` and `SHA256SUMS.txt` into the same folder and
 verify the checksum before opening:
 
 ```bash
 cd ~/Downloads
-grep ' CodexMeter-2.0.3.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
-open CodexMeter-2.0.3.dmg
+grep ' CodexMeter-2.0.4.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
+open CodexMeter-2.0.4.dmg
 ```
 
 ## Recovery
@@ -64,10 +63,10 @@ open CodexMeter-2.0.3.dmg
 This release does not migrate any database. Published version tags are
 immutable; corrections ship as a new patch release.
 ]]></description>
-            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.3/CodexMeter-2.0.3.zip" length="5003738" type="application/octet-stream" sparkle:edSignature="9yMxWFg3Q0LLrdms5lSdUaDdHcLn42Hymmc6XGWDV52Brcj4NgGQ5NitE1+ndHlmLRDOH3senjsFhJk/WQs4CA=="></enclosure>
+            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.4/CodexMeter-2.0.4.zip" length="5089915" type="application/octet-stream" sparkle:edSignature="V4ZDlmCN+gC3mQiP0u+T65+YeRLAjCqTjoEKqJv58owocMduHhod4DgB2KV+/uA7YudUCXeKFgmPK1Fb/G+FBw=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: uBsiTpa/VIXah3OpPBB8tHo6Vmzq3z31eCYdUEJ4zcuMmY1X+AhjLOpe8hpqYia1RTqclwzhPTc7QnUD69QSCw==
-length: 3122
+edSignature: uteXLF6V/PcVBhO27iySjESbfpPp62RoWmAnjlv/cu62HjWsinba+UPIpqWAWgq+wtuAQ0pxlVFXDAli7n5pAw==
+length: 3011
 -->

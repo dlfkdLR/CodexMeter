@@ -4,6 +4,14 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.6] - 2026-09-10
+
+### Fixed
+
+- **The Providers pane no longer stutters.** It was reading each provider's borrowed account — for several of them a file or a SQLite database — on every redraw. Those reads are now cached and refreshed on a fetch, not on a render.
+- **Provider rows keep a stable order** instead of occasionally reshuffling the ones you haven't dragged.
+- **Toggling an alert mute (or dragging a provider) no longer kicks off a Codex-limits network fetch** — the limits poll now only restarts when the account-limits setting itself changes.
+
 ## [2.0.5] - 2026-09-10
 
 ### Fixed

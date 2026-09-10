@@ -1,6 +1,6 @@
 # Architecture
 
-CodexMeter is a native SwiftUI menu bar app for macOS. Local usage accounting has no network dependency. The app also offers an explicitly enabled, memory-only account-total overlay. Sparkle 2.9.6 is bundled for signed application updates.
+CodexMeter is a native SwiftUI accessory app for macOS. Through 1.x it was a `MenuBarExtra` popover with a diamond meter; 2.0 replaced that with a floating **edge notch** (a usage ring per provider, ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch); see `Sources/CodexMeter/Notch/` and `NOTICE`) plus a Settings window, with a minimal `NSStatusItem` (`StatusItemController`) as the always-present entry point. Local usage accounting has no network dependency. The app also offers an explicitly enabled, memory-only account-total overlay. Sparkle 2.9.6 is bundled for signed application updates.
 
 ```text
 Codex session JSONL
@@ -12,8 +12,17 @@ Codex session JSONL
   -> SQLite checkpoints
   -> cached UsageSnapshot
   -> UI store
-  -> menu bar popover and Settings
+  -> Settings ▸ Usage pane (the ported MenuPopoverView, embedded)
 ```
+
+The edge notch runs its own fan-in beside this. `NotchController` owns a
+`NotchUsageStore` polling `[NotchProvider]` adapters — the Codex and Claude
+adapters reflect the stores above without new fetches; the rest
+(`CopilotNotchProvider`, `CursorNotchProvider`, …) borrow a credential the
+owning CLI or editor already holds and appear only when it is present. Session
+monitors (`ClaudeSessionMonitor`, `CodexActivityMonitor`) light the activity
+arcs and drive the completion peek; `ThresholdNotifier` fires the 80% / 100%
+notifications.
 
 Optional profile totals follow a separate boundary:
 
@@ -39,7 +48,7 @@ normalized usage_events
 
 `UsageProvider` selects the local roots and an independent `UsageStore`/database. Codex keeps `CodexMeter.sqlite` unchanged; Claude uses `Claude.sqlite` under the same owner-only Application Support directory. The shared bounded reader/checkpoint machinery dispatches to `ClaudeJSONLParser` for Claude records. Claude messages are identified by hashed `message.id` across files, repeated blocks, restarts, and copied history. Conflict updates take maxima of the disjoint uncached-input/cache-read/cache-write/output components and retain the earliest observation date. Codex's cumulative normalizer and conflict behavior remain unchanged. See [Claude accounting](CLAUDE.md).
 
-The provider selection scopes the menu bar label, popover, and analytics destinations. Only Codex can render ChatGPT profile totals, account switching, or Codex account limits; switching provider resets detail navigation. The Settings window is a single `NavigationSplitView` that is no longer provider-scoped: `SettingsEnvironment` holds every store, the sidebar lists shared categories plus one entry per provider, and `ProviderSettingsView` shows that provider's account, limits, analytics options, and local-data actions. Detail panes use flat `SettingsSection`/`SettingsRow` primitives rather than a boxed `Form`.
+The `usageProvider` selection scopes the Usage pane's readings and analytics destinations. Only Codex can render ChatGPT profile totals, account switching, or Codex account limits; switching provider resets detail navigation. The Settings window is a single `NavigationSplitView` that is not provider-scoped: `SettingsEnvironment` holds every store (`ProfileUsageStore` included), the sidebar lists the shared panes — General, Usage, Notch, Diagnostics, Information — plus one entry per provider, and `ProviderSettingsView` shows that provider's account, limits, analytics options, and local-data actions. The Usage pane hosts `MenuPopoverView` in `embedded` mode (no Quit/Refresh footer). Detail panes use flat `SettingsSection`/`SettingsRow` primitives rather than a boxed `Form`.
 
 `UsageStore` refreshes every requested analytics range after an import or calendar recalculation. Maintenance invalidates the analytics cache before starting; revision/request identifiers discard older in-flight results. Claude's optional `claude_message_exclusions` table retains only hashed response identities across clear/rebuild to reject later copies of pre-cutoff messages, without changing the Codex schema or retaining cleared usage values.
 

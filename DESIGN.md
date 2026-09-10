@@ -46,6 +46,29 @@ The product uses system materials, semantic labels, SF Symbols, hairline separat
 - Quiet status communication with explicit text for warnings and estimates.
 - Motion explains change and never blocks interaction.
 
+## Two surfaces since 2.0
+
+Through 1.x the whole product was a `MenuBarExtra` popover with a diamond
+meter. 2.0 splits it in two, and they follow **different** visual systems on
+purpose:
+
+- **The edge notch** — a floating usage ring per provider welded to a screen
+  edge, ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch).
+  It keeps Codenotch's design language, which is not this one: a pure-black
+  ground (`NotchPalette.notch`), its own green/amber/red usage bands, its own
+  motion vocab (`NotchMotion`), sampled from Codenotch's design frames rather
+  than macOS materials. It lives in `Sources/CodexMeter/Notch/` and is
+  deliberately sealed off from the tokens below — see `NotchDesign.swift`. "똑같이"
+  (make it the same as Codenotch) was the brief, and it won.
+- **The Settings window** — General, Usage, Notch, Diagnostics, Information, and
+  a pane per provider. This is where the Quiet Instrument rules below still
+  apply. The **Usage** pane hosts the former popover (`MenuPopoverView`) in
+  `embedded` mode; everything in *Components* below describes it, now reached
+  from Settings rather than the menu bar.
+
+A minimal `NSStatusItem` (`StatusItemController`) is the way back in when the
+notch is hidden: Show Notch, Usage…, Settings…, Check for Updates…, Quit.
+
 ## Colors
 
 The palette follows macOS semantic colors so it remains correct in light, dark, increased-contrast, and accent-color configurations.
@@ -90,7 +113,7 @@ The palette follows macOS semantic colors so it remains correct in light, dark, 
 
 ## Layout
 
-The menu popover is a fixed compact column (372px) with content-driven height. It opens directly with enabled provider selection rather than repeating the app name and mark, and the footer keeps primary actions visible. Token Usage contains token totals, period history, and analytic destinations; the selected provider's Limits mode contains quota windows and reset timing. The selected mode expands to its full intrinsic height without an embedded scroll region, so every item remains visible at once. Major sections use dividers; details use the same width so navigation never causes a horizontal jump.
+The Usage pane hosts the embedded popover, a fixed compact column (372px) with content-driven height. It opens directly with enabled provider selection rather than repeating the app name and mark, and the footer keeps primary actions visible. Token Usage contains token totals, period history, and analytic destinations; the selected provider's Limits mode contains quota windows and reset timing. The selected mode expands to its full intrinsic height without an embedded scroll region, so every item remains visible at once. Major sections use dividers; details use the same width so navigation never causes a horizontal jump.
 
 The spacing rhythm is 4px for tightly related icon-label pairs, 8px for rows, 12px between components inside a section, 16px for detailed-screen content, and 18px at popover edges. Token Usage prioritizes today's local usage, nearby periods, and analytic shortcuts; Codex Limits prioritizes quota remaining and reset timing.
 
@@ -100,15 +123,15 @@ The spacing rhythm is 4px for tightly related icon-label pairs, 8px for rows, 12
 
 ## Elevation & Depth
 
-CodexMeter is flat by default. Depth comes from the native menu-bar window, semantic tonal fills in detail cards, dividers, and selection state—not decorative shadows, gradients, or glass effects added by the app.
+CodexMeter is flat by default. Depth comes from the native Settings window, semantic tonal fills in detail cards, dividers, and selection state—not decorative shadows, gradients, or glass effects added by the app.
 
 **The Flat-By-Default Rule.** Use tonal grouping and system materials before introducing custom elevation.
 
 ## Shapes
 
-The diamond meter mark remains the menu bar and app identity rather than being repeated inside the compact popover. Its interior fills from the bottom in proportion to how much of the tightest account-limit window is still available, so a full diamond means fresh quota and a near-empty one means the limit is close; it falls back to the outline alone when the selected provider has no usable limit snapshot. The fill eases to a new level (~0.55s, Reduce Motion respected) rather than snapping, and uses `.primary` so it tints with the menu bar appearance. Detail selections use gently rounded 8px containers, while information cards use 10px corners. Standard buttons, progress views, menus, and navigation controls retain native macOS shapes.
+The diamond meter mark (`◈`) was the menu-bar and app identity through 1.x and is retained only as a wordmark accent — the menu bar it filled was removed in 2.0, and the live reading is now the notch's ring. The `StatusItemController` icon is a plain SF Symbol `diamond`, a nod to it. Detail selections use gently rounded 8px containers, while information cards use 10px corners. Standard buttons, progress views, menus, and navigation controls retain native macOS shapes.
 
-**The Native Control Rule.** Do not redraw a platform control solely to mimic another menu-bar app.
+**The Native Control Rule.** In the Settings window, do not redraw a platform control solely to mimic another app. (The notch is the deliberate exception — it is Codenotch's language, not this one.)
 
 ## Components
 
@@ -149,7 +172,7 @@ The diamond meter mark remains the menu bar and app identity rather than being r
 ### Analytics Details
 
 - **Shape:** All destinations keep the 372pt popover width. Short content determines its own height; longer analytics scroll within a 440pt viewport, while other long details cap their viewport at 520pt.
-- **Structure:** A 44pt header owns the back button and title in the same vertical layout as the content. Do not embed `NavigationStack` or an automatic window toolbar in `MenuBarExtra`; a second navigation/safe-area owner can leave a large gap above the filters.
+- **Structure:** A 44pt header owns the back button and title in the same vertical layout as the content. Do not embed `NavigationStack` or an automatic window toolbar; a second navigation/safe-area owner can leave a large gap above the filters.
 - **Position:** Native range and metric controls keep intrinsic height directly below the title, with 12pt vertical padding. Only the chart or list scrolls, anchored at the top; filters never absorb surplus height.
 - **Navigation:** Back returns to the previous destination and preserves its range, metric, and selected chart day. Command-[ also goes back.
 - **Reading Order:** Align the name and token total on the first row; dates, session counts, and estimated costs are secondary below. Full truncated names remain available as help text. Detail totals use the same rounded, tabular type as the overview at a smaller 28pt size.

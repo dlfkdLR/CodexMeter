@@ -200,7 +200,12 @@ enum GitHubCopilotUsage {
         let entitlement = number(quota["entitlement"])
         let remaining = number(quota["remaining"])
         let used = number(quota["used"])
+        // Per-quota reset first (older shape); then the root fields. As of
+        // late 2026 the endpoint sends `quota_reset_at: 0` per quota (a
+        // placeholder) and states the real date once at the root — as a full
+        // ISO `quota_reset_date_utc` and a bare `yyyy-MM-dd` `quota_reset_date`.
         let reset = date(quota["reset_date"] ?? quota["reset_at"] ?? quota["resets_at"])
+            ?? date(root["quota_reset_date_utc"])
             ?? date(root["quota_reset_date"])
 
         if entitlement == 0 { return nil }
@@ -247,7 +252,15 @@ enum GitHubCopilotUsage {
         fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let plain = ISO8601DateFormatter()
         plain.formatOptions = [.withInternetDateTime]
-        return fractional.date(from: text) ?? plain.date(from: text)
+        if let date = fractional.date(from: text) ?? plain.date(from: text) { return date }
+
+        // `quota_reset_date` is a bare calendar day; read it as UTC midnight,
+        // which is when Copilot's monthly allowance actually rolls.
+        let dateOnly = DateFormatter()
+        dateOnly.locale = Locale(identifier: "en_US_POSIX")
+        dateOnly.timeZone = TimeZone(secondsFromGMT: 0)
+        dateOnly.dateFormat = "yyyy-MM-dd"
+        return dateOnly.date(from: text)
     }
 
     private static func label(for id: String) -> String {

@@ -4,65 +4,31 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>CodexMeter</title>
         <item>
-            <title>2.0.1</title>
-            <pubDate>Thu, 10 Sep 2026 14:33:54 +0900</pubDate>
-            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.1</link>
-            <sparkle:version>20001</sparkle:version>
-            <sparkle:shortVersionString>2.0.1</sparkle:shortVersionString>
+            <title>2.0.2</title>
+            <pubDate>Thu, 10 Sep 2026 15:05:51 +0900</pubDate>
+            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.2</link>
+            <sparkle:version>20002</sparkle:version>
+            <sparkle:shortVersionString>2.0.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.1
+            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.2
 
-Follow-ups to the 2.0 notch, and the last two provider rings.
+Small notch additions.
 
 ## What changed
 
-### Token usage stays front and centre
-
-2.0 moved the token accounting into Settings ▸ Usage, which risked burying the
-thing CodexMeter is *for*. This pulls it forward:
-
-- The status-bar menu leads with **Token Usage…** (⌘U).
-- The notch's right-click menu has it too.
-- Reopening the app (Finder/Dock) opens the Usage view.
-- The Settings window opens on the Usage pane by default.
-- The notch tooltip shows today's local token total for Codex and Claude beside
-  the limit rings — the "how much have I used" the ring's percentage doesn't
-  give.
-
-### Two more provider rings
-
-- **Antigravity** — Gemini usage read from Antigravity's own local language
-  server (the IDE or the `agy` CLI must be running; that is where the number
-  lives). Google refuses a third-party client, so this is the door Antigravity
-  itself uses.
-- The **Ollama Cloud** ring now works from a key pasted into
-  **Settings ▸ Notch ▸ Ollama Cloud** (kept in the login Keychain), not only
-  from `OLLAMA_API_KEY`.
-
-### Cursor
-
-When the Cursor editor has no session, the notch falls back to the
-`cursor-agent login` session.
-
-## Fixed
-
-- **The notch's provider polling ran even while the notch was hidden**, and a
-  feedback loop (each fetch wrote its cache to `UserDefaults`, which
-  `AccountLimitStore` reacted to) had it re-fetching every borrowed-credential
-  provider several times a second. It now runs only while the notch is on
-  screen, keyed on real limit changes.
-- The notch's right-click menu and a couple of settings strings still said
-  "Codenotch".
-- The status-bar item now installs from `applicationWillFinishLaunching` too — a
-  `Settings`-only app does not reliably reach `applicationDidFinishLaunching`.
+- **Local Ollama models.** When `ollama serve` is running, the notch shows a
+  cell with how many models are loaded, and the tooltip lists them by name and
+  resident memory. It is not a ring — a local model server has no quota. No
+  daemon, or nothing loaded, means no cell.
+- **Limit-alert mute is per provider.** The 80% / 100% notification can now be
+  muted for any of the notch's ten quota providers, not just Codex and Claude —
+  see **Settings ▸ Notch ▸ Limit Alerts**.
 
 ## Verification
 
-- 589 automated tests, 0 failures (9 environment-integration tests skipped).
+- 592 automated tests, 0 failures (9 environment-integration tests skipped).
 - `swift build` with zero warnings and zero errors.
 - Universal 2 build for Apple silicon and Intel Macs running macOS 14 or later.
-- Verified on a release build: hidden notch does no provider polling; the status
-  item installs on launch.
 - Ad-hoc signed, not Apple-notarized. SHA-256 protects the first download;
   Sparkle authenticates later updates with Ed25519 signatures.
 
@@ -73,12 +39,6 @@ brew update
 brew upgrade --cask --greedy dlfkdLR/tap/codexmeter
 ```
 
-For a new installation:
-
-```bash
-brew install --cask dlfkdLR/tap/codexmeter
-```
-
 ```bash
 xattr -dr com.apple.quarantine /Applications/CodexMeter.app
 open /Applications/CodexMeter.app
@@ -86,27 +46,24 @@ open /Applications/CodexMeter.app
 
 ## First direct-download launch
 
-Download `CodexMeter-2.0.1.dmg` and `SHA256SUMS.txt` into the same folder and
+Download `CodexMeter-2.0.2.dmg` and `SHA256SUMS.txt` into the same folder and
 verify the checksum before opening:
 
 ```bash
 cd ~/Downloads
-grep ' CodexMeter-2.0.1.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
-open CodexMeter-2.0.1.dmg
+grep ' CodexMeter-2.0.2.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
+open CodexMeter-2.0.2.dmg
 ```
-
-Only after `OK`, copy `CodexMeter.app` to Applications and use the app-scoped
-quarantine command above.
 
 ## Recovery
 
 This release does not migrate any database. Published version tags are
 immutable; corrections ship as a new patch release.
 ]]></description>
-            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.1/CodexMeter-2.0.1.zip" length="4882785" type="application/octet-stream" sparkle:edSignature="si6dmInYhPaP9ZPL/6QAgfze5dErHm17PRamDiz1AMU2Jq+RfgmWEOmsIL7yfdJ+NUTUlOaUl24KdtIBbBjiDA=="></enclosure>
+            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.2/CodexMeter-2.0.2.zip" length="4906212" type="application/octet-stream" sparkle:edSignature="AANs40uqfHczSu/JqqbXiG7lWQSWPrQ9nmZeKn2RPV/pf8C80Vbk7VK8X7JGPlXDEvt+RW2wYgNRBYPcmOsRBQ=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: yVUoMAYDp0t0rgECZVevnWEGdghPdpCHNjM4ECcmtT8+clOd7VztGfnv5uPBdZPnpge+2DeHu7p8UySVOvoNCQ==
-length: 4309
+edSignature: jw1BidpXppjmKgCnO9AhNfqGeNaUsV1Uel2VoFO+1w4eUPsD/HmJOBL6bgccKs+S2psQvvngh7YlzgCkOhJCAw==
+length: 2748
 -->

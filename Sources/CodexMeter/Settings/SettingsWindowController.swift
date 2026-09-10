@@ -113,7 +113,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
 #if DEBUG
     var settingsWindowContentSizeForTesting: NSSize? {
-        settingsWindow?.contentView?.bounds.size
+        // From the window frame, not `contentView.bounds` — a headless test
+        // runner never gives the SwiftUI hosting view a layout pass, so its
+        // bounds stay 1×1 while the window is correctly sized.
+        settingsWindow.map { $0.contentRect(forFrameRect: $0.frame).size }
     }
 
     var settingsWindowIsResizableForTesting: Bool {

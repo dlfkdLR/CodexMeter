@@ -74,20 +74,43 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.backgroundColor = .clear
         window.hasShadow = true
         window.isReleasedWhenClosed = false
-        window.contentViewController = NSHostingController(
+        // A hosting *view* as the content view, not a hosting *controller* — the
+        // controller installs auto-layout constraints that drive the window
+        // frame off the SwiftUI ideal, and a plain `HStack` root reports
+        // nothing usable before its first layout (a 1pt sliver on a headless
+        // runner). The window's own explicit sizes are the only authority.
+        // This is also what Codenotch does.
+        let host = NSHostingView(
             rootView: SettingsView()
                 .environmentObject(environment)
                 .environmentObject(environment.claude)
         )
-        window.contentMinSize = Self.minimumContentSize
+        host.sizingOptions = []
+        window.contentView = host
+        window.setContentSize(Self.defaultContentSize)
         window.delegate = self
         if !window.setFrameUsingName(Self.frameAutosaveName) {
             window.center()
         }
         window.setFrameAutosaveName(Self.frameAutosaveName)
+        // Last, after the frame is settled — the hosting view's constraints can
+        // otherwise clobber it back to zero.
+        window.contentMinSize = Self.minimumContentSize
         settingsWindow = window
         layoutTrafficLights(in: window)
         return window
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        // Enforce the floor even if the hosting view zeroed `contentMinSize`.
+        let size = window.contentRect(forFrameRect: window.frame).size
+        if size.width < Self.minimumContentSize.width || size.height < Self.minimumContentSize.height {
+            window.setContentSize(NSSize(
+                width: max(size.width, Self.minimumContentSize.width),
+                height: max(size.height, Self.minimumContentSize.height)
+            ))
+        }
     }
 
     /// Sit the traffic lights in the middle of the panel's header band, in from
@@ -123,12 +146,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         settingsWindow?.styleMask.contains(.resizable) ?? false
     }
 
-    var settingsWindowMinimumContentSizeForTesting: NSSize? {
-        settingsWindow?.contentMinSize
-    }
-
-    var settingsContentViewControllerForTesting: NSViewController? {
-        settingsWindow?.contentViewController
+    var settingsContentViewForTesting: NSView? {
+        settingsWindow?.contentView
     }
 
     func closeSettingsForTesting() {

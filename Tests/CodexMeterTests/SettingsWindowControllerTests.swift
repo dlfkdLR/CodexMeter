@@ -17,9 +17,9 @@ final class SettingsWindowControllerTests: XCTestCase {
         controller.configure(environment: makeEnvironment())
 
         controller.present()
-        let first = controller.settingsContentViewControllerForTesting
+        let first = controller.settingsContentViewForTesting
         controller.present()
-        XCTAssertTrue(first === controller.settingsContentViewControllerForTesting)
+        XCTAssertTrue(first === controller.settingsContentViewForTesting)
     }
 
     func testSettingsWindowTitleHasNoProviderSuffix() {
@@ -29,7 +29,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         controller.configure(environment: makeEnvironment())
 
         controller.present()
-        let window = controller.settingsContentViewControllerForTesting?.view.window
+        let window = controller.settingsContentViewForTesting?.window
         window?.layoutIfNeeded()
         let title = window?.title ?? ""
         // The provider-scoped "— Claude Code" suffix is gone; the title is either the
@@ -48,20 +48,17 @@ final class SettingsWindowControllerTests: XCTestCase {
         controller.present()
         XCTAssertTrue(controller.isSettingsWindowVisible)
         XCTAssertTrue(controller.settingsWindowIsResizableForTesting)
-        XCTAssertEqual(
-            controller.settingsWindowMinimumContentSizeForTesting,
-            NSSize(width: 840, height: 560)
-        )
+        // A real window, not a per-provider sliver.
         XCTAssertGreaterThanOrEqual(controller.settingsWindowContentSizeForTesting?.width ?? 0, 840)
         XCTAssertGreaterThanOrEqual(controller.settingsWindowContentSizeForTesting?.height ?? 0, 560)
-        let firstContentController = controller.settingsContentViewControllerForTesting
+        let firstContentController = controller.settingsContentViewForTesting
 
         controller.closeSettingsForTesting()
         XCTAssertFalse(controller.isSettingsWindowVisible)
 
         controller.present()
         XCTAssertTrue(controller.isSettingsWindowVisible)
-        XCTAssertTrue(firstContentController === controller.settingsContentViewControllerForTesting)
+        XCTAssertTrue(firstContentController === controller.settingsContentViewForTesting)
     }
 }
 

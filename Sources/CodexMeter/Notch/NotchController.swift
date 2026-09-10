@@ -19,6 +19,13 @@ final class NotchController: ObservableObject {
     /// second store.
     @Published private(set) var snapshots: [ProviderSnapshot] = []
 
+    /// Whose credential each provider borrows, and its sign-in route — the
+    /// Settings Providers list's row model. Cached rather than recomputed on
+    /// every SwiftUI render: `providerSummaries` calls `account()` on every
+    /// provider, and several of those open a file or a SQLite database on the
+    /// main thread. Refreshed after each fetch and when a settings pane opens.
+    @Published private(set) var providerSummaries: [ProviderSummary] = []
+
     private let window = NotchWindowController()
     private var store: NotchUsageStore?
     private var providers: [any NotchProvider] = []
@@ -100,12 +107,14 @@ final class NotchController: ObservableObject {
             .sink { [weak self] snapshots in
                 guard let self else { return }
                 self.snapshots = snapshots
+                self.providerSummaries = self.store?.providerSummaries ?? []
                 self.window.model.snapshots = snapshots
                 self.window.model.now = Date()
                 self.window.relocate(cellCount: snapshots.count)
                 self.thresholds.observe(snapshots)
             }
             .store(in: &cancellables)
+        providerSummaries = store.providerSummaries
 
         // Live agent activity — one monitor per provider ring. Built once and
         // started/stopped with the notch's visibility.
@@ -222,9 +231,10 @@ final class NotchController: ObservableObject {
     }
 
     /// The Codenotch-style row model for one provider — glyph, account, sign-in
-    /// route, and whether macOS refused the credential on the last read.
+    /// route, and whether macOS refused the credential on the last read. Reads
+    /// the cache; `refreshProvidersForSettings()` rebuilds it.
     func summary(for id: String) -> ProviderSummary? {
-        store?.providerSummaries.first { $0.id == id }
+        providerSummaries.first { $0.id == id }
     }
 
     /// The provider's mark, so a settings pane can draw it even before a
@@ -233,19 +243,11 @@ final class NotchController: ObservableObject {
         providers.first { $0.id == id }?.glyph ?? NotchProviderCatalog.glyph(for: id)
     }
 
-    /// Whose credential a provider borrows, for its settings row.
-    func account(for id: String) -> ProviderAccount? {
-        providers.first { $0.id == id }?.account()
-    }
-
-    func signInRoute(for id: String) -> SignInRoute? {
-        providers.first { $0.id == id }?.signInRoute
-    }
-
     /// One fetch, so a provider pane opened while the notch is hidden shows a
     /// live reading rather than nothing. Not a poll — the notch's own timer
-    /// only runs while it is on screen.
+    /// only runs while it is on screen. Also rebuilds the account summaries.
     func refreshProvidersForSettings() {
+        providerSummaries = store?.providerSummaries ?? []
         store?.refreshNow()
     }
 

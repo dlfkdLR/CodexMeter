@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import XCTest
 @testable import CodexMeter
@@ -336,13 +337,32 @@ final class NotchEdgeArrivalTests: XCTestCase {
     func testItLandsFoldedAndThenOpens() {
         let controller = openController()
         defer { controller.stop() }
+        XCTAssertTrue(controller.model.isExpanded)
 
-        controller.apply(edge: .top)
-        XCTAssertTrue(wait { controller.panelAlphaForTesting < 1 }, "it never went away")
-        XCTAssertTrue(wait { controller.panelAlphaForTesting == 1 }, "it never came back")
-        XCTAssertFalse(controller.model.isExpanded,
-                       "it arrived at full size instead of opening into place")
-        XCTAssertTrue(wait { controller.model.isExpanded }, "it never opened")
+        // Record every `isExpanded` change as it is published rather than
+        // polling for the folded state: the folded window is one 50ms beat
+        // long, and a loaded CI runner can step over it between two `pump`s.
+        var states: [Bool] = []
+        let subscription = controller.model.$isExpanded.sink { states.append($0) }
+        defer { subscription.cancel() }
+
+        controller.apply(edge: .bottom)
+        // Gate on the crossing actually starting before checking anything —
+        // the panel is at full alpha and expanded until the fade-out begins.
+        XCTAssertTrue(wait(upTo: 4) { controller.panelAlphaForTesting < 1 }, "it never went away")
+        XCTAssertTrue(wait(upTo: 4) {
+            controller.panelAlphaForTesting == 1 && controller.model.isExpanded
+        }, "it never arrived open")
+
+        // The recorder caught the fold: the sequence went open → shut → open,
+        // not a straight open-to-open that animates nothing.
+        XCTAssertEqual(states.first, true)
+        XCTAssertTrue(states.contains(false),
+                      "it arrived at full size instead of folding first")
+        XCTAssertEqual(states.last, true, "it never re-opened")
+        XCTAssertGreaterThan(states.lastIndex(of: true) ?? -1,
+                             states.lastIndex(of: false) ?? Int.max,
+                             "it opened before it finished folding")
     }
 
     /// And it is on screen while it opens, not still fading in underneath.

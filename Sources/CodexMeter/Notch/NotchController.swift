@@ -58,6 +58,8 @@ final class NotchController {
             CommandCodeNotchProvider(),
             // Borrows a Z.ai GLM Coding Plan key from Claude Code / ZCode / OpenCode.
             GLMNotchProvider(),
+            // Ollama Cloud, keyed by OLLAMA_API_KEY in the environment.
+            OllamaNotchProvider(),
         ]
         let store = NotchUsageStore(providers: providers)
         self.store = store

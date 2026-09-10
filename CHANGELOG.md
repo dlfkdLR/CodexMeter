@@ -19,6 +19,7 @@ Heading toward **2.0.0**: the menu bar is replaced by the edge notch. Ported fro
 - **OpenCode ring.** The Go plan's rolling / weekly / monthly windows, from `opencode.ai/zen/go/v1/usage` using the `opencode-go` key OpenCode stores on sign-in. No key, no ring. A 429 backs off on a schedule that survives a relaunch. Ported from the MIT-licensed Codenotch.
 - **Command Code ring.** Monthly spend over the GOAT plan cap, plus 5-hour and weekly windows in the tooltip, from `api.commandcode.ai/alpha` using the key in `~/.commandcode/auth.json`. No key, no ring. Ported from the MIT-licensed Codenotch.
 - **GLM ring.** The GLM Coding Plan's session / weekly / monthly-MCP windows, from Z.ai's monitor endpoint, using a plan key held by Claude Code (only when its base URL is a Z.ai host), ZCode, or OpenCode. No such key, no ring. Ported from the MIT-licensed Codenotch.
+- **Ollama Cloud ring.** The monthly usage fraction (or session/weekly on legacy plans), plus per-model request counts in the tooltip, from `ollama.com/api/usage` when `OLLAMA_API_KEY` is exported. No key, no ring. (A key entered in Settings and the local `ollama serve` model list are follow-ups.) Ported from the MIT-licensed Codenotch.
 
 ### Removed
 

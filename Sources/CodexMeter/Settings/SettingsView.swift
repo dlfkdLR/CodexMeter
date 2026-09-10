@@ -30,7 +30,12 @@ struct SettingsView: View {
             pane(for: selection)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 840, maxWidth: .infinity, minHeight: 560, maxHeight: .infinity)
+        // An explicit ideal so the hosting controller sizes the window off
+        // this, not off a plain `HStack`'s meaningless intrinsic size.
+        .frame(
+            minWidth: 840, idealWidth: 960, maxWidth: .infinity,
+            minHeight: 560, idealHeight: 620, maxHeight: .infinity
+        )
         .background {
             if reduceTransparency {
                 Color(nsColor: .windowBackgroundColor)

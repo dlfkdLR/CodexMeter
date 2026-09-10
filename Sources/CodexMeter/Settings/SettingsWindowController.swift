@@ -74,15 +74,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.backgroundColor = .clear
         window.hasShadow = true
         window.isReleasedWhenClosed = false
-        let host = NSHostingController(
+        window.contentViewController = NSHostingController(
             rootView: SettingsView()
                 .environmentObject(environment)
                 .environmentObject(environment.claude)
         )
-        // Don't let SwiftUI's ideal size drive the window frame — the view's
-        // own `minWidth`/`minHeight` plus this floor are the authority.
-        host.sizingOptions = []
-        window.contentViewController = host
         window.contentMinSize = Self.minimumContentSize
         window.delegate = self
         if !window.setFrameUsingName(Self.frameAutosaveName) {

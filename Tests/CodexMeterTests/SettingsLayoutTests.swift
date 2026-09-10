@@ -72,9 +72,7 @@ final class SettingsLayoutTests: XCTestCase {
             )
             host.sizingOptions = []
             let window = NSWindow(contentRect: NSRect(origin: .zero, size: winSize),
-                                  styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
-            window.titlebarAppearsTransparent = true
-            window.titleVisibility = .hidden
+                                  styleMask: [.titled], backing: .buffered, defer: false)
             window.contentView = host
             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
             host.frame = NSRect(origin: .zero, size: winSize)

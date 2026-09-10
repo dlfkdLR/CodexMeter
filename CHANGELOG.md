@@ -4,6 +4,8 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.4] - 2026-09-10
+
 ### Changed
 
 - **Settings ▸ Providers is one pane, not a sidebar row each.** Modelled on Codenotch's account list: a **Connected** group whose rows drag to reorder the notch rings, and a **Not connected** group of sign-in prompts. Each row shows the borrowed account, an inline 80% / 100% mute bell, and a single action — *Details* for Codex and Claude Code, *Allow Access…* when macOS refused a credential, *Open <app>* otherwise. *Details* drills into the fuller pane in place.

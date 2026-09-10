@@ -3,10 +3,10 @@ import SwiftUI
 /// Shared settings that are not tied to one service. Per-provider settings
 /// (account, limits, local data, analytics options) live in `SettingsPane.provider`.
 enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
-    case general
     case usage
     case providers
     case notch
+    case general
     case advanced
     case about
 

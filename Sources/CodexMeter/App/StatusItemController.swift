@@ -81,6 +81,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         settingsItem.target = self
         menu.addItem(settingsItem)
 
+        // The account switcher the menu-bar popover used to carry.
+        menu.addItem(CodexAccountMenu.item())
+
         let updatesItem = NSMenuItem(
             title: "Check for Updates…",
             action: #selector(checkForUpdates),

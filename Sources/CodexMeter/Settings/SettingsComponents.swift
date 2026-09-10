@@ -1,6 +1,46 @@
+import AppKit
 import SwiftUI
 
 // MARK: - Sidebar
+
+/// A rounded-square badge behind a white symbol — System Settings' own sidebar
+/// icon style, ported from Codenotch.
+struct SidebarIcon: View {
+    let systemName: String
+    let tint: Color
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 5.5, style: .continuous)
+            .fill(tint.gradient)
+            .frame(width: 20, height: 20)
+            .overlay {
+                Image(systemName: systemName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white)
+            }
+    }
+}
+
+/// Real window vibrancy — blends against what is *behind* the window, not what
+/// is inside it, so the settings panel reads as a floating glass surface.
+/// Ported from Codenotch's `VisualEffect`.
+struct SettingsWindowVibrancy: NSViewRepresentable {
+    var material: NSVisualEffectView.Material = .underWindowBackground
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.state = .active
+        apply(to: view)
+        return view
+    }
+
+    func updateNSView(_ view: NSVisualEffectView, context: Context) { apply(to: view) }
+
+    private func apply(to view: NSVisualEffectView) {
+        view.material = material
+        view.blendingMode = .behindWindow
+    }
+}
 
 /// One sidebar row: an icon chip, a single-line title, and an optional trailing
 /// status dot. Categories get a tinted SF Symbol chip; providers show their real
@@ -88,8 +128,10 @@ struct SettingsSidebarSearchField: View {
 
 // MARK: - Detail primitives
 
-/// The flat replacement for `Form { … }.formStyle(.grouped)`. No in-pane title
-/// block — the window title carries the pane name.
+/// A scrolling pane of grouped `SettingsSection` cards — CodexMeter's stand-in
+/// for `Form { … }.formStyle(.grouped)`, floating on the settings window's
+/// vibrancy. No in-pane title block: `SettingsView` draws the pane title fixed
+/// above the scroll.
 struct SettingsForm<Content: View>: View {
     @ViewBuilder var content: Content
 
@@ -98,15 +140,18 @@ struct SettingsForm<Content: View>: View {
             VStack(alignment: .leading, spacing: 6) {
                 content
             }
-            .padding(.top, 8)
-            .padding(.bottom, 26)
+            .padding(.top, 4)
+            .padding(.bottom, 28)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .scrollContentBackground(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.background)
     }
 }
+
+/// The inset a grouped section card keeps from the pane's edges.
+private let settingsCardInset: CGFloat = 16
 
 struct SettingsSection<Content: View>: View {
     var title: String?
@@ -127,10 +172,20 @@ struct SettingsSection<Content: View>: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, settingsCardInset + 12)
                 .accessibilityAddTraits(.isHeader)
             }
             _VariadicView.Tree(SettingsDividedRows()) { content }
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color(nsColor: .controlBackgroundColor))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(.quaternary, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .padding(.horizontal, settingsCardInset)
         }
         .padding(.top, 18)
     }
@@ -144,7 +199,7 @@ private struct SettingsDividedRows: _VariadicView_MultiViewRoot {
             ForEach(children) { child in
                 child
                 if child.id != lastID {
-                    Divider().padding(.leading, 20)
+                    Divider().padding(.leading, 16)
                 }
             }
         }
@@ -345,7 +400,8 @@ struct SettingsNote: View {
             .foregroundStyle(tint ?? Color.secondary)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 28)
+            .padding(.top, 2)
     }
 }
 

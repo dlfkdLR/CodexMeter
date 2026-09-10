@@ -14,8 +14,17 @@ final class StatusItemControllerTests: XCTestCase {
         let titles = menu.items.map(\.title)
         XCTAssertEqual(
             titles,
-            ["Token Usage…", "", "Show Notch", "Settings…", "Check for Updates…", "", "Quit CodexMeter"]
+            ["Token Usage…", "", "Show Notch", "Settings…", "Codex Account",
+             "Check for Updates…", "", "Quit CodexMeter"]
         )
+    }
+
+    func testCodexAccountItemCarriesASwitcherSubmenu() throws {
+        let item = try XCTUnwrap(menu.items.first { $0.title == "Codex Account" })
+        let submenu = try XCTUnwrap(item.submenu)
+        let titles = submenu.items.map(\.title)
+        XCTAssertTrue(titles.contains("Add Account…"))
+        XCTAssertTrue(titles.contains("Manage Accounts…"))
     }
 
     func testShowNotchReflectsThePreference() {

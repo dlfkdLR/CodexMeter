@@ -13,11 +13,11 @@ final class CodexAccountsLayoutTests: XCTestCase {
         // the single "Providers" pane (Codenotch's account-list model), not as
         // its own sidebar row.
         XCTAssertEqual(SettingsCategory.allCases.map(\.title),
-                       ["General", "Usage", "Providers", "Notch", "Diagnostics", "Information"])
-        // The per-provider panes stay addressable (search deep-links, the
-        // Providers pane's own drill-in) even though they are not sidebar rows.
+                       ["Usage", "Providers", "Notch", "General", "Diagnostics", "Information"])
+        // The per-provider panes stay addressable (deep-links, the Providers
+        // pane's own drill-in) even though they are not sidebar rows.
         XCTAssertEqual(SettingsPane.allCases.map(\.title),
-                       ["General", "Usage", "Providers", "Notch", "Diagnostics", "Information",
+                       ["Usage", "Providers", "Notch", "General", "Diagnostics", "Information",
                         "Codex", "Claude Code",
                         "GitHub Copilot", "Cursor", "Grok", "OpenCode",
                         "Command Code", "GLM", "Ollama Cloud", "Antigravity"])

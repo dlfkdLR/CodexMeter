@@ -821,6 +821,18 @@ final class NotchWindowController {
         usage.isEnabled = true
         menu.addItem(usage)
 
+        let settings = NSMenuItem(
+            title: "Settings…",
+            action: #selector(MenuActions.openSettings(_:)),
+            keyEquivalent: ","
+        )
+        settings.target = menuActions
+        settings.isEnabled = true
+        menu.addItem(settings)
+
+        // The Codex account switcher the menu-bar popover used to carry.
+        menu.addItem(CodexAccountMenu.item())
+
         for (index, entry) in signInItems.enumerated() {
             let item = NSMenuItem(
                 title: entry.title,
@@ -845,7 +857,8 @@ final class NotchWindowController {
         refresh: { [weak self] in self?.onRefresh?() },
         signIn: { [weak self] index in self?.signInItems[safe: index]?.action() },
         togglePinned: { [weak self] in self?.togglePinned() },
-        openUsage: { [weak self] in self?.onOpenUsage?() }
+        openUsage: { [weak self] in self?.onOpenUsage?() },
+        openSettings: { [weak self] in self?.onOpenSettings?() }
     )
 }
 
@@ -857,22 +870,26 @@ final class MenuActions: NSObject {
     private let signIn: (Int) -> Void
     private let pin: () -> Void
     private let usage: () -> Void
+    private let settings: () -> Void
 
     init(
         refresh: @escaping () -> Void,
         signIn: @escaping (Int) -> Void,
         togglePinned: @escaping () -> Void,
-        openUsage: @escaping () -> Void
+        openUsage: @escaping () -> Void,
+        openSettings: @escaping () -> Void
     ) {
         self.refresh = refresh
         self.signIn = signIn
         self.pin = togglePinned
         self.usage = openUsage
+        self.settings = openSettings
     }
 
     @objc func refreshNow(_ sender: Any?) { refresh() }
     @objc func togglePinned(_ sender: Any?) { pin() }
     @objc func openUsage(_ sender: Any?) { usage() }
+    @objc func openSettings(_ sender: Any?) { settings() }
 
     @objc func signIn(_ sender: Any?) {
         guard let item = sender as? NSMenuItem else { return }

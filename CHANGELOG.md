@@ -18,6 +18,7 @@ Heading toward **2.0.0**: the menu bar is replaced by the edge notch. Ported fro
 - **Grok ring.** The weekly Grok Build allowance, read from the session Grok CLI writes to `~/.grok/auth.json` (xAI-issued sessions only). No `grok login`, no ring. Ported from the MIT-licensed Codenotch.
 - **OpenCode ring.** The Go plan's rolling / weekly / monthly windows, from `opencode.ai/zen/go/v1/usage` using the `opencode-go` key OpenCode stores on sign-in. No key, no ring. A 429 backs off on a schedule that survives a relaunch. Ported from the MIT-licensed Codenotch.
 - **Command Code ring.** Monthly spend over the GOAT plan cap, plus 5-hour and weekly windows in the tooltip, from `api.commandcode.ai/alpha` using the key in `~/.commandcode/auth.json`. No key, no ring. Ported from the MIT-licensed Codenotch.
+- **GLM ring.** The GLM Coding Plan's session / weekly / monthly-MCP windows, from Z.ai's monitor endpoint, using a plan key held by Claude Code (only when its base URL is a Z.ai host), ZCode, or OpenCode. No such key, no ring. Ported from the MIT-licensed Codenotch.
 
 ### Removed
 

@@ -18,13 +18,11 @@ struct NotchSettingsView: View {
     @AppStorage("notchSessionBlockedSoundName") private var blockedSoundName = "Funk"
 
     @AppStorage("notchThresholdAlerts") private var thresholdAlerts = AppPreferences.defaultNotchThresholdAlerts
-    @AppStorage(AppPreferences.mutedAlertProvidersKey) private var mutedAlerts = ""
 
     @State private var ollamaKeyDraft = ""
     @State private var ollamaKeyStored = false
     @State private var ollamaEnvActive = false
 
-    private let alertProviders = NotchProviderCatalog.all
 
     var body: some View {
         SettingsForm {
@@ -152,17 +150,9 @@ struct NotchSettingsView: View {
                     get: { thresholdAlerts },
                     set: { thresholdAlerts = $0 }
                 )
-                ForEach(alertProviders, id: \.id) { provider in
-                    SettingsToggleRow(
-                        provider.name,
-                        get: { _ = mutedAlerts; return !AppPreferences.isAlertMuted(provider.id) },
-                        set: { AppPreferences.setAlertMuted(!$0, for: provider.id) }
-                    )
-                    .disabled(!thresholdAlerts)
-                }
             }
             .disabled(!showEdgeNotch)
-            SettingsNote("A single macOS notification each time a limit window crosses 80%, then 100% — once per crossing, and again only after the window resets.")
+            SettingsNote("A single macOS notification each time a limit window crosses 80%, then 100% — once per crossing, and again only after the window resets. Mute an individual provider from its row in Settings ▸ Providers.")
 
             SettingsSection(title: "Ollama Cloud") {
                 SettingsRow(title: "API key") {

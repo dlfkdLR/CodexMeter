@@ -4,7 +4,6 @@ struct SettingsView: View {
     var onPaneTitleChange: (String) -> Void = { _ in }
 
     @EnvironmentObject private var env: SettingsEnvironment
-    @EnvironmentObject private var claude: ClaudeIntegrationStore
     @State private var selection: SettingsPane? = .category(.usage)
     @State private var search = ""
 
@@ -23,37 +22,6 @@ struct SettingsView: View {
                                 tint: category.chipTint
                             )
                             .tag(SettingsPane.category(category))
-                        }
-                    }
-                    if !visibleProviders.isEmpty || !visibleNotchProviders.isEmpty {
-                        Section {
-                            ForEach(visibleProviders) { provider in
-                                SettingsChipLabel(
-                                    title: provider.title,
-                                    logoProvider: provider,
-                                    statusDot: providerIsOn(provider) ? .green : nil,
-                                    dimmed: !providerIsOn(provider)
-                                )
-                                .tag(SettingsPane.provider(provider))
-                            }
-                            ForEach(visibleNotchProviders, id: \.id) { entry in
-                                SettingsChipLabel(
-                                    title: entry.name,
-                                    systemImage: "circle.dotted",
-                                    tint: .secondary,
-                                    statusDot: notchProviderConnected(entry.id) ? .green : nil,
-                                    dimmed: !notchProviderConnected(entry.id)
-                                )
-                                .tag(SettingsPane.notchProvider(id: entry.id))
-                            }
-                        } header: {
-                            HStack {
-                                Text("Providers")
-                                Spacer()
-                                Text("\(onCount) on")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
                         }
                     }
                 }
@@ -90,6 +58,7 @@ struct SettingsView: View {
         switch selection {
         case .category(.general): GeneralSettingsView()
         case .category(.usage): UsageSettingsView()
+        case .category(.providers): ProvidersSettingsView()
         case .category(.notch): NotchSettingsView()
         case .category(.advanced): AdvancedSettingsView()
         case .category(.about): AboutSettingsView()
@@ -104,34 +73,19 @@ struct SettingsView: View {
         }
     }
 
-    private func providerIsOn(_ provider: UsageProvider) -> Bool {
-        provider == .codex ? true : claude.isAvailable
-    }
-
-    @ObservedObject private var notch = NotchController.shared
-
-    private func notchProviderConnected(_ id: String) -> Bool {
-        notch.snapshot(for: id)?.hasReading == true
-    }
-
-    private var onCount: Int {
-        1 + (claude.isAvailable ? 1 : 0)
-            + NotchProviderCatalog.all
-                .filter { $0.id != "codex" && $0.id != "claude" && notchProviderConnected($0.id) }
-                .count
-    }
-
     private var visibleCategories: [SettingsCategory] {
-        SettingsCategory.allCases.filter { SettingsPane.category($0).matches(search) }
+        SettingsCategory.allCases.filter { category in
+            SettingsPane.category(category).matches(search)
+                // "claude", "cursor", "grok"… land on the Providers pane, which
+                // is where every provider now lives.
+                || (category == .providers && matchesAnyProvider)
+        }
     }
 
-    private var visibleProviders: [UsageProvider] {
-        UsageProvider.allCases.filter { SettingsPane.provider($0).matches(search) }
-    }
-
-    private var visibleNotchProviders: [(id: String, name: String)] {
-        NotchProviderCatalog.all
-            .filter { $0.id != "codex" && $0.id != "claude" }
-            .filter { SettingsPane.notchProvider(id: $0.id).matches(search) }
+    private var matchesAnyProvider: Bool {
+        let trimmed = search.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return false }
+        return UsageProvider.allCases.contains { SettingsPane.provider($0).matches(search) }
+            || NotchProviderCatalog.all.contains { $0.name.localizedCaseInsensitiveContains(trimmed) }
     }
 }

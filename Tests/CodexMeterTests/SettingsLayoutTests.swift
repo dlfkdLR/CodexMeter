@@ -156,6 +156,7 @@ private struct SettingsPaneHarness: View {
         switch pane {
         case .category(.general): GeneralSettingsView()
         case .category(.usage): UsageSettingsView()
+        case .category(.providers): ProvidersSettingsView()
         case .category(.notch): NotchSettingsView()
         case .category(.advanced): AdvancedSettingsView()
         case .category(.about): AboutSettingsView()

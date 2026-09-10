@@ -19,7 +19,7 @@ struct NotchProviderSettingsView: View {
             ?? NotchProviderCatalog.all.first { $0.id == providerID }?.name
             ?? providerID.capitalized
     }
-    private var glyph: ProviderGlyph { notch.glyph(for: providerID) ?? .third }
+    private var glyph: ProviderGlyph { notch.glyph(for: providerID) }
     private var snapshot: ProviderSnapshot? { notch.snapshot(for: providerID) }
     private var summary: ProviderSummary? { notch.summary(for: providerID) }
     private var account: ProviderAccount? { summary?.account }

@@ -1,8 +1,9 @@
 import Foundation
 
 // Ported from vinzdg/codenotch (MIT) — Model/UsageArchive.swift. Trimmed:
-// the per-provider request-backoff (Phase 1 rings read local stores, not a
-// rate-limited endpoint) and Codex token activity are dropped for now.
+// Codex token activity is dropped for now. The per-provider request-backoff
+// came back with the OpenCode provider (Phase 5), which meters a rate-limited
+// endpoint.
 
 /// The last good reading for each provider, remembered across launches.
 ///
@@ -23,9 +24,29 @@ struct UsageArchive {
 
     private let defaults: UserDefaults
     private let key = "notchLastGoodReadings"
+    private let backoffKey = "notchBackoffUntil"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+    }
+
+    /// When a rate-limited provider may be tried again. Kept per provider —
+    /// the limit is per account — and on disk, so a penalty in progress
+    /// survives a relaunch rather than being spent hammering the endpoint.
+    func loadBackoffUntil(providerID: String) -> Date? {
+        guard let date = defaults.object(forKey: "\(backoffKey).\(providerID)") as? Date,
+              date > Date()
+        else { return nil }
+        return date
+    }
+
+    func saveBackoffUntil(_ date: Date?, providerID: String) {
+        let key = "\(backoffKey).\(providerID)"
+        if let date {
+            defaults.set(date, forKey: key)
+        } else {
+            defaults.removeObject(forKey: key)
+        }
     }
 
     func load() -> [String: (snapshot: ProviderSnapshot, fetchedAt: Date)] {

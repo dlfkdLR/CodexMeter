@@ -36,6 +36,23 @@ struct SavedCodexAccount: Codable, Identifiable, Equatable, Sendable {
     let workspaceID: String
     let loginData: Data
 
+    /// The ChatGPT plan this login is on ("pro", "plus", "team", …), read from
+    /// the id token's own claim. Display and shaping metadata only — it decides
+    /// which limits are worth drawing, never what the app is allowed to do.
+    /// Optional so an older saved account, or a token without the claim, simply
+    /// has no plan rather than a wrong one.
+    var planType: String? {
+        guard let root = try? JSONSerialization.jsonObject(with: loginData) as? [String: Any],
+              let tokens = root["tokens"] as? [String: Any],
+              let idToken = tokens["id_token"] as? String,
+              let claims = Self.claims(idToken),
+              let auth = claims["https://api.openai.com/auth"] as? [String: Any],
+              let plan = auth["chatgpt_plan_type"] as? String,
+              Self.validLabel(plan)
+        else { return nil }
+        return plan
+    }
+
     init(loginData: Data) throws {
         guard loginData.count <= 262_144,
               let root = try? JSONSerialization.jsonObject(with: loginData) as? [String: Any],

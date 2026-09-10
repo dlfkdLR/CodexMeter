@@ -10,9 +10,12 @@ final class AppPreferencesTests: XCTestCase {
 
         AppPreferences.registerDefaults(in: defaults)
 
+        // The two that reach outside this Mac stay off until asked for: one
+        // fetches ChatGPT account totals, the other edits Claude Code's config.
         XCTAssertFalse(defaults.bool(forKey: "profileSyncEnabled"))
         XCTAssertFalse(defaults.bool(forKey: "claudeEnabled"))
-        XCTAssertFalse(defaults.bool(forKey: "showEdgeNotch"))
+        // The notch is not an integration — it is what the app looks like.
+        XCTAssertTrue(defaults.bool(forKey: "showEdgeNotch"))
     }
 
     func testPreparingDataDirectoryEnforcesOwnerOnlyPermissions() throws {

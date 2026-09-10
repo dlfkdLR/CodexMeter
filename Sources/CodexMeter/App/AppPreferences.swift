@@ -12,7 +12,9 @@ enum AppPreferences {
     static let defaultSessionsEnabled = true
     static let defaultAgentDetailsEnabled = true
     static let defaultAttachmentMetadataEnabled = true
-    static let defaultShowEdgeNotch = false
+    /// On by default: the notch is what 2.x is, and a first launch that shows
+    /// nothing but a status-bar glyph does not look like a working app.
+    static let defaultShowEdgeNotch = true
     static let defaultNotchEdge = NotchEdge.right.rawValue
     static let defaultNotchSessionEndSound = true
     static let defaultNotchAnnounceSessionEnd = true

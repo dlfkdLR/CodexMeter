@@ -63,14 +63,37 @@ final class OllamaNotchProvider: NotchProvider {
     }
 }
 
-/// The Ollama Cloud API key. Environment only for now — a keychain-stored key
-/// entered in Settings is a follow-up.
+/// The Ollama Cloud API key: `OLLAMA_API_KEY` from the environment first, then a
+/// key the user pasted into Settings ▸ Notch (kept in the login Keychain under a
+/// service no other app uses).
 enum OllamaCredentials {
+    static let keychainService = "dev.codexmeter.ollama-api-key"
+    static let keychainAccount = "codexmeter"
+
     static func load() -> String? {
-        guard let env = ProcessInfo.processInfo.environment["OLLAMA_API_KEY"], !env.isEmpty
-        else { return nil }
-        return env
+        if let env = ProcessInfo.processInfo.environment["OLLAMA_API_KEY"], !env.isEmpty {
+            return env
+        }
+        return NotchKeychain.read(service: keychainService, account: keychainAccount)
     }
 
     static var isPresent: Bool { load() != nil }
+
+    /// Whether a key came from the user's own paste (vs. the environment) —
+    /// the Settings row only offers to clear what it can clear.
+    static var hasStoredKey: Bool {
+        NotchKeychain.read(service: keychainService, account: keychainAccount) != nil
+    }
+
+    @discardableResult
+    static func store(_ key: String) -> Bool {
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return delete() }
+        return NotchKeychain.store(trimmed, service: keychainService, account: keychainAccount)
+    }
+
+    @discardableResult
+    static func delete() -> Bool {
+        NotchKeychain.delete(service: keychainService, account: keychainAccount)
+    }
 }

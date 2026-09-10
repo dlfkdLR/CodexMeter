@@ -118,3 +118,51 @@ final class NotchOllamaProviderTests: XCTestCase {
         XCTAssertEqual(provider.account()?.source, "Ollama")
     }
 }
+
+final class NotchKeychainTests: XCTestCase {
+    private let service = "dev.codexmeter.test-\(UUID().uuidString)"
+    private let account = "codexmeter"
+
+    /// Opt-in, like `CodexAccountSwitchingTests`' keychain round-trip: a test
+    /// must never prompt for or touch a real login keychain on CI or another
+    /// developer's machine. Uses a unique synthetic service that is deleted
+    /// afterwards.
+    override func setUpWithError() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["CODEXMETER_NOTCH_KEYCHAIN_INTEGRATION"] == "1",
+                          "Set CODEXMETER_NOTCH_KEYCHAIN_INTEGRATION=1 to exercise a synthetic Keychain item.")
+    }
+
+    override func tearDown() {
+        NotchKeychain.delete(service: service, account: account)
+        super.tearDown()
+    }
+
+    func testStoreReadDelete() {
+        XCTAssertNil(NotchKeychain.read(service: service, account: account))
+
+        XCTAssertTrue(NotchKeychain.store("ollama_secret", service: service, account: account))
+        XCTAssertEqual(NotchKeychain.read(service: service, account: account), "ollama_secret")
+
+        // Replace in place.
+        XCTAssertTrue(NotchKeychain.store("ollama_rotated", service: service, account: account))
+        XCTAssertEqual(NotchKeychain.read(service: service, account: account), "ollama_rotated")
+
+        XCTAssertTrue(NotchKeychain.delete(service: service, account: account))
+        XCTAssertNil(NotchKeychain.read(service: service, account: account))
+        XCTAssertTrue(NotchKeychain.delete(service: service, account: account), "deleting nothing is not an error")
+    }
+
+    func testOllamaCredentialsRoundTripsThroughTheStore() {
+        defer { OllamaCredentials.delete() }
+        // Guard: only meaningful without the env var set.
+        try? XCTSkipIf(ProcessInfo.processInfo.environment["OLLAMA_API_KEY"] != nil)
+
+        XCTAssertFalse(OllamaCredentials.hasStoredKey)
+        XCTAssertTrue(OllamaCredentials.store("  ollama_pasted  "))
+        XCTAssertEqual(OllamaCredentials.load(), "ollama_pasted", "trimmed on the way in")
+        XCTAssertTrue(OllamaCredentials.hasStoredKey)
+
+        OllamaCredentials.delete()
+        XCTAssertNil(OllamaCredentials.load())
+    }
+}

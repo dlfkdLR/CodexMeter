@@ -11,6 +11,7 @@ All notable changes to CodexMeter will be documented in this file.
 ### Added
 
 - **Antigravity ring.** Gemini usage as Antigravity sees it, read from Antigravity's own local language server — the IDE or the `agy` CLI must be running (that is where the number lives). No process, no ring. Ported from the MIT-licensed Codenotch.
+- **Ollama Cloud key in Settings.** Paste an API key into **Settings ▸ Notch ▸ Ollama Cloud** — kept in the login Keychain — instead of exporting `OLLAMA_API_KEY`. The env var still wins when set.
 
 ### Fixed
 

@@ -4,6 +4,8 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-09-10
+
 ### Added
 
 - **Every notch provider is now a Settings entry.** The Settings sidebar's **Providers** list used to stop at Codex and Claude Code; it now includes GitHub Copilot, Cursor, Grok, OpenCode, Command Code, GLM, Ollama Cloud, and Antigravity, each with a green dot when connected.

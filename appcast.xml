@@ -4,25 +4,29 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>CodexMeter</title>
         <item>
-            <title>2.0.2</title>
-            <pubDate>Thu, 10 Sep 2026 15:05:51 +0900</pubDate>
-            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.2</link>
-            <sparkle:version>20002</sparkle:version>
-            <sparkle:shortVersionString>2.0.2</sparkle:shortVersionString>
+            <title>2.0.3</title>
+            <pubDate>Thu, 10 Sep 2026 15:34:29 +0900</pubDate>
+            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.3</link>
+            <sparkle:version>20003</sparkle:version>
+            <sparkle:shortVersionString>2.0.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.2
+            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.3
 
-Small notch additions.
+Every notch provider is now a Settings entry, with its usage in view.
 
 ## What changed
 
-- **Local Ollama models.** When `ollama serve` is running, the notch shows a
-  cell with how many models are loaded, and the tooltip lists them by name and
-  resident memory. It is not a ring — a local model server has no quota. No
-  daemon, or nothing loaded, means no cell.
-- **Limit-alert mute is per provider.** The 80% / 100% notification can now be
-  muted for any of the notch's ten quota providers, not just Codex and Claude —
-  see **Settings ▸ Notch ▸ Limit Alerts**.
+- **All notch providers in Settings.** The **Settings ▸ Providers** list used to
+  stop at Codex and Claude Code. It now includes GitHub Copilot, Cursor, Grok,
+  OpenCode, Command Code, GLM, Ollama Cloud, and Antigravity — each with a green
+  dot when connected and an "N on" count on the header.
+- **Usage without opening the notch.** Each borrowed-credential provider's pane,
+  modelled on Codenotch's account row, shows its live limit windows as labelled
+  bars (% used / left, reset time), today's local token total where CodexMeter
+  meters it, any active block, the account the reading is borrowed from, and a
+  per-provider 80% / 100% alert mute. "Allow access…" appears only when macOS
+  actually refused the credential.
+- Codex and Claude Code keep their fuller panes — they are metered locally.
 
 ## Verification
 
@@ -46,13 +50,13 @@ open /Applications/CodexMeter.app
 
 ## First direct-download launch
 
-Download `CodexMeter-2.0.2.dmg` and `SHA256SUMS.txt` into the same folder and
+Download `CodexMeter-2.0.3.dmg` and `SHA256SUMS.txt` into the same folder and
 verify the checksum before opening:
 
 ```bash
 cd ~/Downloads
-grep ' CodexMeter-2.0.2.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
-open CodexMeter-2.0.2.dmg
+grep ' CodexMeter-2.0.3.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
+open CodexMeter-2.0.3.dmg
 ```
 
 ## Recovery
@@ -60,10 +64,10 @@ open CodexMeter-2.0.2.dmg
 This release does not migrate any database. Published version tags are
 immutable; corrections ship as a new patch release.
 ]]></description>
-            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.2/CodexMeter-2.0.2.zip" length="4906212" type="application/octet-stream" sparkle:edSignature="AANs40uqfHczSu/JqqbXiG7lWQSWPrQ9nmZeKn2RPV/pf8C80Vbk7VK8X7JGPlXDEvt+RW2wYgNRBYPcmOsRBQ=="></enclosure>
+            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.3/CodexMeter-2.0.3.zip" length="5003738" type="application/octet-stream" sparkle:edSignature="9yMxWFg3Q0LLrdms5lSdUaDdHcLn42Hymmc6XGWDV52Brcj4NgGQ5NitE1+ndHlmLRDOH3senjsFhJk/WQs4CA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: jw1BidpXppjmKgCnO9AhNfqGeNaUsV1Uel2VoFO+1w4eUPsD/HmJOBL6bgccKs+S2psQvvngh7YlzgCkOhJCAw==
-length: 2748
+edSignature: uBsiTpa/VIXah3OpPBB8tHo6Vmzq3z31eCYdUEJ4zcuMmY1X+AhjLOpe8hpqYia1RTqclwzhPTc7QnUD69QSCw==
+length: 3122
 -->

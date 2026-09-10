@@ -17,6 +17,7 @@ Heading toward **2.0.0**: the menu bar is replaced by the edge notch. Ported fro
 - **Cursor ring.** A Cursor ring — the Auto (Cursor Models) allowance, with API and on-demand alongside when touched — read from the session the Cursor editor keeps in its own `state.vscdb`. No signed-in editor, no ring; nothing is stored. (The `cursor-agent` CLI path comes later.) Ported from the MIT-licensed Codenotch.
 - **Grok ring.** The weekly Grok Build allowance, read from the session Grok CLI writes to `~/.grok/auth.json` (xAI-issued sessions only). No `grok login`, no ring. Ported from the MIT-licensed Codenotch.
 - **OpenCode ring.** The Go plan's rolling / weekly / monthly windows, from `opencode.ai/zen/go/v1/usage` using the `opencode-go` key OpenCode stores on sign-in. No key, no ring. A 429 backs off on a schedule that survives a relaunch. Ported from the MIT-licensed Codenotch.
+- **Command Code ring.** Monthly spend over the GOAT plan cap, plus 5-hour and weekly windows in the tooltip, from `api.commandcode.ai/alpha` using the key in `~/.commandcode/auth.json`. No key, no ring. Ported from the MIT-licensed Codenotch.
 
 ### Removed
 

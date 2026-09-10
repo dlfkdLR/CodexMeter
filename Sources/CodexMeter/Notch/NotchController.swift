@@ -54,6 +54,8 @@ final class NotchController {
             GrokNotchProvider(),
             // Borrows the OpenCode Go key from `~/.local/share/opencode/auth.json`.
             OpenCodeNotchProvider(),
+            // Borrows the Command Code desktop key from `~/.commandcode/auth.json`.
+            CommandCodeNotchProvider(),
         ]
         let store = NotchUsageStore(providers: providers)
         self.store = store

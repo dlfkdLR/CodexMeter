@@ -24,8 +24,7 @@ struct NotchSettingsView: View {
     @State private var ollamaKeyStored = false
     @State private var ollamaEnvActive = false
 
-    /// The notch's two providers today; Phase 5 will make this the store's list.
-    private let alertProviders = [(id: "codex", name: "Codex"), (id: "claude", name: "Claude Code")]
+    private let alertProviders = NotchProviderCatalog.all
 
     var body: some View {
         SettingsForm {

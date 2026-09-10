@@ -4,6 +4,13 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.5] - 2026-09-10
+
+### Fixed
+
+- **The Claude limits helper is no longer blocked on a Homebrew install.** Homebrew quarantines the app bundle; the `CodexMeterClaudeBridge` helper deployed for Claude Code's status line inherited the flag and macOS refused to run it. CodexMeter now strips `com.apple.quarantine` from the copy it writes, self-healing on the next launch for anyone already affected.
+- **The Usage pane no longer leaves a wide empty gap beside its column** — the reading column sits against the leading edge like every other pane, with the pane painted behind it. (Supersedes the 2.0.4 centring, which stranded it mid-pane.)
+
 ## [2.0.4] - 2026-09-10
 
 ### Changed

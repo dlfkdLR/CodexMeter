@@ -4,7 +4,9 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
-Heading toward **2.0.0**: the menu bar is replaced by the edge notch. Ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch); see `NOTICE`.
+## [2.0.0] - 2026-09-10
+
+The menu bar is replaced by the edge notch. Ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch); see `NOTICE`. `CFBundleVersion` jumps `1410` → `20000` so Sparkle offers the update to 1.x installs.
 
 ### Added
 

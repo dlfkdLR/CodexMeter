@@ -26,6 +26,8 @@ The verifier requires an ad-hoc signature, rejects an Apple certificate authorit
 
 The macOS app uses one immutable `vVERSION` tag and one public release in `dlfkdLR/CodexMeter`.
 
+`BUILD_NUMBER` (→ `CFBundleVersion`) is what Sparkle compares to decide whether an update is newer. It must **only ever increase**. Through 1.x it was the version digits concatenated (`1.4.10` → `1410`); `2.0.0` would have been `200`, a regression, so 2.0.0 uses `20000` and later 2.x releases continue from there (`2.0.1` → `20001`, `2.1.0` → `20100`).
+
 1. Merge the reviewed release commit to `main` after CI passes.
 2. Create and push `vVERSION` at that exact commit. Never move or replace a published tag.
 3. Run `Scripts/release_stable.sh` on the tagged commit for the macOS ZIP, DMG, checksums, and signed appcast.
@@ -66,7 +68,7 @@ The public Cask lives in `dlfkdLR/homebrew-tap`.
 2. Update `Casks/codexmeter.rb` with the published URL, version, and exact ZIP SHA-256.
 3. Keep `auto_updates true`, the macOS 14 requirement, and the certificate/notarization caveat.
 4. Run `brew style`, `brew audit --cask --online dlfkdLR/tap/codexmeter`, and a clean install/uninstall cycle.
-5. Verify the installed app version, build number, architecture, updater metadata, first-run icon-only state, Settings window, refresh animation, and live totals.
+5. Verify the installed app version, build number, architecture, updater metadata, the status-bar item and its menu, the Settings window, the notch (enable it, check a ring renders), and live totals.
 
 The personal Tap provides convenient installation and checksum-based artifact integrity; it does not make the app Apple-trusted. Homebrew 6 does not provide the former `--no-quarantine` option.
 

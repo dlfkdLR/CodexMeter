@@ -4,6 +4,20 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.7] - 2026-09-11
+
+### Fixed
+
+- **The same limit was drawn twice.** Every window of a provider shared one identifier, so the notch tooltip rendered the first one once per duplicate — the "Weekly / Weekly" and "5 hours / 5 hours" pairs, identical down to the reset time.
+- **Two limit groups, one label.** Codex meters a per-model allowance beside the plan's own and both printed as "5 hours"; rows now name their group when there is more than one.
+- **ChatGPT Pro has no five-hour allowance,** only the weekly one — but the app-server reports a five-hour window anyway, with a reset that is not five hours away. It is hidden for Pro accounts and nobody else.
+- **Settings would not open.** An accessory app is restricted from activating its own windows, so "Settings…" could look like it did nothing. It now comes forward reliably, and re-centres if it was left on a display that is gone.
+
+### Changed
+
+- **The notch is on by default.** A first launch showing nothing but a status-bar glyph does not look like a working app.
+- **Settings rebuilt.** Tinted icon badges in the sidebar and panes made of grouped rounded cards, in the shape macOS System Settings uses. The settings search field is gone.
+
 ## [2.0.6] - 2026-09-10
 
 ### Fixed

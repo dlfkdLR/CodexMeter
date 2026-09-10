@@ -4,6 +4,12 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.8] - 2026-09-11
+
+### Fixed
+
+- **ChatGPT Pro's phantom five-hour window is actually hidden now.** 2.0.7 read the plan from the account saved inside CodexMeter — empty unless you explicitly added one, so for most people the plan came back unknown and the window stayed on screen. It now reads the plan from the Codex login you are actually signed in with.
+
 ## [2.0.7] - 2026-09-11
 
 ### Fixed

@@ -290,17 +290,22 @@ final class ClaudeIntegrationStoreTests: XCTestCase {
         fixture.defaults.set(true, forKey: "claudeEnabled")
         let account = ClaudeAccount(email: "person@example.com", subscriptionType: "pro", authenticationMethod: "claude.ai")
         let installer = RecordingClaudeInstaller()
+        let authenticator = GatedClaudeAuthenticator(account: account)
         let store = ClaudeIntegrationStore(
-            authenticator: DelayedClaudeAuthenticator(account: account),
+            authenticator: authenticator,
             installer: installer,
             defaults: fixture.defaults,
             limitsURL: fixture.limitsURL,
             automaticallyRefresh: false
         )
 
+        // Park the add inside `accountStatus()`, disable while it is parked,
+        // then let it return — no sleeps, so a slow runner cannot let the add
+        // finish before the disable lands.
         let addTask = Task { await store.addCurrentAccount() }
-        try await Task.sleep(for: .milliseconds(10))
+        await authenticator.waitUntilEntered()
         await store.setEnabled(false)
+        await authenticator.proceed()
         await addTask.value
 
         XCTAssertFalse(store.isEnabled)
@@ -441,6 +446,40 @@ private struct DelayedClaudeAuthenticator: ClaudeAuthenticating {
         return account
     }
 
+}
+
+/// An authenticator that parks inside `accountStatus()` until the test lets it
+/// out — so a test can guarantee it acts on the store while an add is pending,
+/// with no reliance on sleep timing.
+private actor GatedClaudeAuthenticator: ClaudeAuthenticating {
+    let account: ClaudeAccount
+    private var enteredContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+    private var hasEntered = false
+    private var isReleased = false
+
+    init(account: ClaudeAccount) { self.account = account }
+
+    func accountStatus() async throws -> ClaudeAccount? {
+        hasEntered = true
+        enteredContinuation?.resume()
+        enteredContinuation = nil
+        if !isReleased {
+            await withCheckedContinuation { releaseContinuation = $0 }
+        }
+        return account
+    }
+
+    func waitUntilEntered() async {
+        if hasEntered { return }
+        await withCheckedContinuation { enteredContinuation = $0 }
+    }
+
+    func proceed() {
+        isReleased = true
+        releaseContinuation?.resume()
+        releaseContinuation = nil
+    }
 }
 
 private final class RecordingClaudeInstaller: ClaudeStatusLineInstalling, @unchecked Sendable {

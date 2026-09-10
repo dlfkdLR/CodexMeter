@@ -71,6 +71,8 @@ final class NotchController {
             GLMNotchProvider(),
             // Ollama Cloud, keyed by OLLAMA_API_KEY in the environment.
             OllamaNotchProvider(),
+            // Antigravity's own local language server (IDE or agy CLI must be running).
+            AntigravityNotchProvider(),
         ]
         let store = NotchUsageStore(providers: providers)
         self.store = store

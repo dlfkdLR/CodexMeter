@@ -8,6 +8,10 @@ All notable changes to CodexMeter will be documented in this file.
 
 - **Token usage stays front and centre.** The status-bar menu leads with **Token Usage…** (⌘U); the notch's right-click menu has it too; reopening the app opens it; and Settings opens on the Usage pane by default — so "how much have I used, and where did it go" is one step, not buried behind the notch. The notch tooltip now shows today's local token total for Codex and Claude beside the limit rings.
 
+### Added
+
+- **Antigravity ring.** Gemini usage as Antigravity sees it, read from Antigravity's own local language server — the IDE or the `agy` CLI must be running (that is where the number lives). No process, no ring. Ported from the MIT-licensed Codenotch.
+
 ### Fixed
 
 - The notch's right-click menu and a couple of settings strings still said "Codenotch" — now "CodexMeter".

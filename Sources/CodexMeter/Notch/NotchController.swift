@@ -73,6 +73,8 @@ final class NotchController {
             OllamaNotchProvider(),
             // Antigravity's own local language server (IDE or agy CLI must be running).
             AntigravityNotchProvider(),
+            // Local `ollama serve` model listing (no ring — a local server has no quota).
+            OllamaLocalProvider(),
         ]
         let store = NotchUsageStore(providers: providers)
         self.store = store

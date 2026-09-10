@@ -119,6 +119,45 @@ final class NotchOllamaProviderTests: XCTestCase {
     }
 }
 
+/// `/api/ps` — what `ollama serve` has resident right now.
+final class NotchOllamaLocalTests: XCTestCase {
+    private let ps = Data("""
+    {"models":[
+      {"name":"llama3.1:8b","model":"llama3.1:8b","size":6538219520,"size_vram":6538219520},
+      {"name":"qwen2.5-coder:14b","size":9998219520,"size_vram":0},
+      {"name":"llama3.1:8b","size":1,"size_vram":1}
+    ]}
+    """.utf8)
+
+    func testModelsAreDedupedAndSortedWithMemoryInMB() {
+        let models = OllamaLocalUsage.models(in: ps)
+        XCTAssertEqual(models.map(\.name), ["llama3.1:8b", "qwen2.5-coder:14b"])
+        XCTAssertEqual(models[0].megabytes, Int((6538219520.0 / 1_048_576).rounded()))
+        // size_vram 0 → falls back to size
+        XCTAssertEqual(models[1].megabytes, Int((9998219520.0 / 1_048_576).rounded()))
+    }
+
+    func testGarbageOrEmptyIsNoModels() {
+        XCTAssertTrue(OllamaLocalUsage.models(in: Data("not json".utf8)).isEmpty)
+        XCTAssertTrue(OllamaLocalUsage.models(in: Data(#"{"models":[]}"#.utf8)).isEmpty)
+    }
+
+    @MainActor
+    func testProviderIsHiddenWithoutADaemon() async {
+        // Nothing listening on this port.
+        let provider = OllamaLocalProvider(endpoint: URL(string: "http://127.0.0.1:1")!)
+        XCTAssertEqual(provider.id, "ollama-local")
+        XCTAssertFalse(provider.isVisibleWhenAbsent)
+        do {
+            _ = try await provider.fetchSnapshot()
+            XCTFail("expected needsAuth")
+        } catch NotchProviderError.needsAuth {
+        } catch {
+            XCTFail("expected needsAuth, got \(error)")
+        }
+    }
+}
+
 final class NotchKeychainTests: XCTestCase {
     private let service = "dev.codexmeter.test-\(UUID().uuidString)"
     private let account = "codexmeter"

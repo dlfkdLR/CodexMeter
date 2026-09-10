@@ -11,11 +11,17 @@ import Combine
 /// and a chime when an agent finishes. Multi-monitor and the full notch
 /// settings pane come later.
 @MainActor
-final class NotchController {
+final class NotchController: ObservableObject {
     static let shared = NotchController()
+
+    /// The latest reading for every provider, mirrored so the Settings
+    /// Providers list can show connection state and limits without owning a
+    /// second store.
+    @Published private(set) var snapshots: [ProviderSnapshot] = []
 
     private let window = NotchWindowController()
     private var store: NotchUsageStore?
+    private var providers: [any NotchProvider] = []
     private var monitors: [String: any AgentActivityMonitor] = [:]
     private var completions = SessionCompletionWatcher()
     private let thresholds = ThresholdNotifier(
@@ -53,7 +59,7 @@ final class NotchController {
         self.codexLimits = codexLimits
         self.claudeIntegration = claudeIntegration
 
-        let providers: [any NotchProvider] = [
+        providers = [
             CodexNotchProvider(limits: codexLimits, accounts: codexAccounts, usage: codexUsage),
             ClaudeNotchProvider(claude: claudeIntegration, usage: claudeUsage),
             // Borrows a token from GitHub CLI; its ring only appears once one
@@ -93,6 +99,7 @@ final class NotchController {
             .receive(on: RunLoop.main)
             .sink { [weak self] snapshots in
                 guard let self else { return }
+                self.snapshots = snapshots
                 self.window.model.snapshots = snapshots
                 self.window.model.now = Date()
                 self.window.relocate(cellCount: snapshots.count)
@@ -206,6 +213,45 @@ final class NotchController {
         guard configured else { return }
         window.model.alongOffset = 0
         UserDefaults.standard.set(0.0, forKey: offsetKey)
+    }
+
+    // MARK: - The Settings ▸ Providers list
+
+    func snapshot(for id: String) -> ProviderSnapshot? {
+        snapshots.first { $0.id == id }
+    }
+
+    /// The Codenotch-style row model for one provider — glyph, account, sign-in
+    /// route, and whether macOS refused the credential on the last read.
+    func summary(for id: String) -> ProviderSummary? {
+        store?.providerSummaries.first { $0.id == id }
+    }
+
+    /// The provider's mark, so a settings pane can draw it even before a
+    /// snapshot has arrived.
+    func glyph(for id: String) -> ProviderGlyph? {
+        providers.first { $0.id == id }?.glyph
+    }
+
+    /// Whose credential a provider borrows, for its settings row.
+    func account(for id: String) -> ProviderAccount? {
+        providers.first { $0.id == id }?.account()
+    }
+
+    func signInRoute(for id: String) -> SignInRoute? {
+        providers.first { $0.id == id }?.signInRoute
+    }
+
+    /// One fetch, so a provider pane opened while the notch is hidden shows a
+    /// live reading rather than nothing. Not a poll — the notch's own timer
+    /// only runs while it is on screen.
+    func refreshProvidersForSettings() {
+        store?.refreshNow()
+    }
+
+    /// Re-ask for one provider — its "Try again" / "Allow access…" button.
+    func refresh(providerID: String) {
+        store?.refresh(providerID: providerID)
     }
 
     // MARK: - Completion peek + chime

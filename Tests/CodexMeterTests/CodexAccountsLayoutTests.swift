@@ -12,9 +12,14 @@ final class CodexAccountsLayoutTests: XCTestCase {
         // Shared, provider-independent categories only.
         XCTAssertEqual(SettingsCategory.allCases.map(\.title),
                        ["General", "Usage", "Notch", "Diagnostics", "Information"])
-        // Providers are their own sidebar entries, not a shared category.
+        // Providers are their own sidebar entries, not a shared category: the
+        // two locally-metered ones first, then the notch's borrowed-credential
+        // providers.
         XCTAssertEqual(SettingsPane.allCases.map(\.title),
-                       ["General", "Usage", "Notch", "Diagnostics", "Information", "Codex", "Claude Code"])
+                       ["General", "Usage", "Notch", "Diagnostics", "Information",
+                        "Codex", "Claude Code",
+                        "GitHub Copilot", "Cursor", "Grok", "OpenCode",
+                        "Command Code", "GLM", "Ollama Cloud", "Antigravity"])
     }
 
     func testMenuTitlesDisambiguateWorkspacesAndDoNotContainCredentials() throws {

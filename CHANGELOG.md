@@ -4,6 +4,11 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Every notch provider is now a Settings entry.** The Settings sidebar's **Providers** list used to stop at Codex and Claude Code; it now includes GitHub Copilot, Cursor, Grok, OpenCode, Command Code, GLM, Ollama Cloud, and Antigravity, each with a green dot when connected.
+- **Usage is visible in Settings, not just the notch.** Each borrowed-credential provider's pane shows its live limit windows as labelled bars (% used / left, reset time), today's local token total where CodexMeter meters it, any active block, the account the reading is borrowed from, and a per-provider 80% / 100% alert mute — modelled on Codenotch's account row. "Allow access…" appears only when macOS actually refused the credential.
+
 ## [2.0.2] - 2026-09-10
 
 ### Added

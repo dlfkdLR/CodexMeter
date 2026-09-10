@@ -216,6 +216,69 @@ final class NotchCursorCredentialsTests: XCTestCase {
                        "auth0|user_ABC")
     }
 
+    // MARK: - cursor-agent CLI fallback
+
+    private func writeAgentConfig(authId: String?, userId: Int?, email: String?) throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("cursor-cli-\(UUID().uuidString).json")
+        var info: [String: Any] = [:]
+        if let authId { info["authId"] = authId }
+        if let userId { info["userId"] = userId }
+        if let email { info["email"] = email }
+        try JSONSerialization.data(withJSONObject: ["authInfo": info]).write(to: url)
+        return url
+    }
+
+    func testAgentCookieUsesAuthIdFromCliConfig() throws {
+        let token = Self.jwt(sub: "auth0|user_JWT")
+        let config = try writeAgentConfig(authId: "auth0|user_CLI", userId: 42, email: "cli@example.com")
+        defer { try? FileManager.default.removeItem(at: config) }
+
+        let creds = try CursorCredentials.agentSession(token: token, configURL: config)
+        XCTAssertEqual(creds.accountID, "auth0|user_CLI")
+        XCTAssertEqual(creds.sessionCookie, "WorkosCursorSessionToken=auth0|user_CLI::\(token)")
+    }
+
+    func testAgentAccountIDFallsBackToUserIdThenJWTSub() throws {
+        let token = Self.jwt(sub: "auth0|user_JWT")
+        let withUser = try writeAgentConfig(authId: nil, userId: 99, email: nil)
+        defer { try? FileManager.default.removeItem(at: withUser) }
+        XCTAssertEqual(CursorCredentials.agentAccountID(token: token, configURL: withUser), "99")
+
+        let missing = URL(fileURLWithPath: "/tmp/not-here-\(UUID().uuidString).json")
+        XCTAssertEqual(CursorCredentials.agentAccountID(token: token, configURL: missing), "auth0|user_JWT")
+    }
+
+    func testExpiredAgentTokenKeepsTheLastReading() {
+        let expired = Self.jwt(sub: "auth0|u", exp: 1)
+        XCTAssertThrowsError(
+            try CursorCredentials.agentSession(token: expired,
+                                               configURL: URL(fileURLWithPath: "/tmp/x.json"))
+        ) { error in
+            guard case NotchProviderError.credentialExpired = error else {
+                return XCTFail("expected credentialExpired, got \(error)")
+            }
+        }
+    }
+
+    func testNoAgentTokenIsSignedOut() {
+        XCTAssertThrowsError(
+            try CursorCredentials.agentSession(token: nil, configURL: URL(fileURLWithPath: "/tmp/x.json"))
+        ) { error in
+            guard case NotchProviderError.needsAuth = error else {
+                return XCTFail("expected needsAuth, got \(error)")
+            }
+        }
+    }
+
+    func testAgentAccountReadsEmailFromCliConfig() throws {
+        let config = try writeAgentConfig(authId: "auth0|user_CLI", userId: 1, email: "cli@example.com")
+        defer { try? FileManager.default.removeItem(at: config) }
+        let account = try XCTUnwrap(CursorCredentials.agentAccount(from: config))
+        XCTAssertEqual(account.label, "cli@example.com")
+        XCTAssertEqual(account.source, "cursor-agent")
+    }
+
     func testSignInOpensTheEditorWhenItIsInstalled() {
         guard case .openApp(let bundleID, let name) =
                 CursorCredentials.signInRoute(editorInstalled: true) else {
@@ -251,7 +314,7 @@ final class NotchCursorCredentialsTests: XCTestCase {
     }
 
     /// Unsigned, for tests only — the server never sees these.
-    private static func jwt(sub: String) -> String {
+    private static func jwt(sub: String, exp: TimeInterval = Date().timeIntervalSince1970 + 3600) -> String {
         func encode(_ object: [String: Any]) -> String {
             let data = try! JSONSerialization.data(withJSONObject: object)
             return data.base64EncodedString()
@@ -260,7 +323,7 @@ final class NotchCursorCredentialsTests: XCTestCase {
                 .trimmingCharacters(in: CharacterSet(charactersIn: "="))
         }
         return encode(["alg": "none", "typ": "JWT"])
-            + "." + encode(["sub": sub, "exp": Date().timeIntervalSince1970 + 3600])
+            + "." + encode(["sub": sub, "exp": exp])
             + ".sig"
     }
 }

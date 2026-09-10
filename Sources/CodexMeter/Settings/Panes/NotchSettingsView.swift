@@ -20,6 +20,10 @@ struct NotchSettingsView: View {
     @AppStorage("notchThresholdAlerts") private var thresholdAlerts = AppPreferences.defaultNotchThresholdAlerts
     @AppStorage(AppPreferences.mutedAlertProvidersKey) private var mutedAlerts = ""
 
+    @State private var ollamaKeyDraft = ""
+    @State private var ollamaKeyStored = false
+    @State private var ollamaEnvActive = false
+
     /// The notch's two providers today; Phase 5 will make this the store's list.
     private let alertProviders = [(id: "codex", name: "Codex"), (id: "claude", name: "Claude Code")]
 
@@ -160,6 +164,40 @@ struct NotchSettingsView: View {
             }
             .disabled(!showEdgeNotch)
             SettingsNote("A single macOS notification each time a limit window crosses 80%, then 100% — once per crossing, and again only after the window resets.")
+
+            SettingsSection(title: "Ollama Cloud") {
+                SettingsRow(title: "API key") {
+                    SecureField("ollama_…", text: $ollamaKeyDraft)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 220)
+                        .onSubmit(saveOllamaKey)
+                }
+                SettingsButtonRow(title: ollamaKeyStored ? "Replace" : "Save",
+                                  isEnabled: !ollamaKeyDraft.isEmpty, action: saveOllamaKey)
+                if ollamaKeyStored {
+                    SettingsButtonRow(title: "Remove", role: .destructive) {
+                        _ = OllamaCredentials.delete()
+                        ollamaKeyStored = false
+                        ollamaKeyDraft = ""
+                    }
+                }
+            }
+            .disabled(!showEdgeNotch)
+            SettingsNote(ollamaEnvActive
+                ? "OLLAMA_API_KEY is set in the environment and takes precedence over a key entered here."
+                : "Kept in the login Keychain. The Ollama ring appears once a key is present.")
+        }
+        .onAppear {
+            ollamaKeyStored = OllamaCredentials.hasStoredKey
+            ollamaEnvActive = ProcessInfo.processInfo.environment["OLLAMA_API_KEY"]?.isEmpty == false
+        }
+    }
+
+    private func saveOllamaKey() {
+        guard !ollamaKeyDraft.isEmpty else { return }
+        if OllamaCredentials.store(ollamaKeyDraft) {
+            ollamaKeyStored = true
+            ollamaKeyDraft = ""
         }
     }
 }

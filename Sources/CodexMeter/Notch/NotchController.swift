@@ -52,6 +52,8 @@ final class NotchController {
             CursorNotchProvider(),
             // Borrows the Grok CLI's `~/.grok/auth.json` session.
             GrokNotchProvider(),
+            // Borrows the OpenCode Go key from `~/.local/share/opencode/auth.json`.
+            OpenCodeNotchProvider(),
         ]
         let store = NotchUsageStore(providers: providers)
         self.store = store

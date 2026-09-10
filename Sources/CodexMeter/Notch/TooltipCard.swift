@@ -364,6 +364,13 @@ private struct ProviderTooltip: View {
                     .foregroundStyle(NotchPalette.textPrimary)
             }
 
+            if let today = snapshot.todaysTokens {
+                (Text("Today  ").foregroundColor(NotchPalette.textSecondary)
+                 + Text("\(today.formatted()) tokens").foregroundColor(NotchPalette.textPrimary))
+                    .font(NotchType.cardBody)
+                    .padding(.top, NotchLayout.headerToBlock)
+            }
+
             if let block = snapshot.block {
                 BlockedRow(text: block.summary(now: now))
                     .padding(.top, NotchLayout.headerToBlock)

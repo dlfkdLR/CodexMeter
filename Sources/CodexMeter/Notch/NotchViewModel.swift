@@ -325,7 +325,7 @@ final class NotchViewModel: ObservableObject {
     var sessionCap: Int { sessionCap(cellCount: snapshots.count) }
 
     private var hasTokenUsage: Bool {
-        false
+        snapshots.contains { $0.todaysTokens != nil }
     }
 
     func sessionCap(cellCount: Int) -> Int {

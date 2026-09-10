@@ -24,6 +24,9 @@ final class NotchWindowController {
     var onRefreshProvider: ((String) -> Void)?
     /// Open the settings window, asked for by clicking the handle.
     var onOpenSettings: (() -> Void)?
+    /// Open the token-usage view — CodexMeter's reason for being. From the
+    /// context menu.
+    var onOpenUsage: (() -> Void)?
     /// An ⌥-drag on the pill settled at a new `model.alongOffset`. The
     /// controller only holds the live value; persisting it per edge is
     /// Preferences' job, the same division `apply(edge:)` already keeps.
@@ -795,7 +798,7 @@ final class NotchWindowController {
         keepOpen.state = model.staysOpen ? .on : .off
         keepOpen.isEnabled = !model.isAlwaysOn
         keepOpen.toolTip = model.isAlwaysOn
-            ? "Codenotch is set to Always show. Change it in Settings."
+            ? "CodexMeter is set to Always show. Change it in Settings."
             : nil
         menu.addItem(keepOpen)
         menu.addItem(.separator())
@@ -808,6 +811,15 @@ final class NotchWindowController {
         refresh.target = menuActions
         refresh.isEnabled = true
         menu.addItem(refresh)
+
+        let usage = NSMenuItem(
+            title: "Token Usage…",
+            action: #selector(MenuActions.openUsage(_:)),
+            keyEquivalent: ""
+        )
+        usage.target = menuActions
+        usage.isEnabled = true
+        menu.addItem(usage)
 
         for (index, entry) in signInItems.enumerated() {
             let item = NSMenuItem(
@@ -822,7 +834,7 @@ final class NotchWindowController {
         }
         menu.addItem(.separator())
         menu.addItem(
-            withTitle: "Quit Codenotch",
+            withTitle: "Quit CodexMeter",
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ).isEnabled = true
@@ -832,7 +844,8 @@ final class NotchWindowController {
     private lazy var menuActions = MenuActions(
         refresh: { [weak self] in self?.onRefresh?() },
         signIn: { [weak self] index in self?.signInItems[safe: index]?.action() },
-        togglePinned: { [weak self] in self?.togglePinned() }
+        togglePinned: { [weak self] in self?.togglePinned() },
+        openUsage: { [weak self] in self?.onOpenUsage?() }
     )
 }
 
@@ -843,19 +856,23 @@ final class MenuActions: NSObject {
     private let refresh: () -> Void
     private let signIn: (Int) -> Void
     private let pin: () -> Void
+    private let usage: () -> Void
 
     init(
         refresh: @escaping () -> Void,
         signIn: @escaping (Int) -> Void,
-        togglePinned: @escaping () -> Void
+        togglePinned: @escaping () -> Void,
+        openUsage: @escaping () -> Void
     ) {
         self.refresh = refresh
         self.signIn = signIn
         self.pin = togglePinned
+        self.usage = openUsage
     }
 
     @objc func refreshNow(_ sender: Any?) { refresh() }
     @objc func togglePinned(_ sender: Any?) { pin() }
+    @objc func openUsage(_ sender: Any?) { usage() }
 
     @objc func signIn(_ sender: Any?) {
         guard let item = sender as? NSMenuItem else { return }

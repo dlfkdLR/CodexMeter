@@ -36,7 +36,7 @@ final class SettingsWindowControllerTests: XCTestCase {
         // default or the selected pane name, never a per-provider window.
         XCTAssertFalse(title.contains("—"))
         XCTAssertFalse(title.contains("Claude Code"))
-        XCTAssertTrue(title == "CodexMeter Settings" || title == "General", title)
+        XCTAssertTrue(["CodexMeter Settings", "Usage", "General"].contains(title), title)
     }
 
     func testSettingsWindowBecomesVisibleAndCanReopen() {

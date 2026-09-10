@@ -4,6 +4,14 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Token usage stays front and centre.** The status-bar menu leads with **Token Usage…** (⌘U); the notch's right-click menu has it too; reopening the app opens it; and Settings opens on the Usage pane by default — so "how much have I used, and where did it go" is one step, not buried behind the notch. The notch tooltip now shows today's local token total for Codex and Claude beside the limit rings.
+
+### Fixed
+
+- The notch's right-click menu and a couple of settings strings still said "Codenotch" — now "CodexMeter".
+
 ## [2.0.0] - 2026-09-10
 
 The menu bar is replaced by the edge notch. Ported from the MIT-licensed [Codenotch](https://github.com/vinzdg/codenotch); see `NOTICE`. `CFBundleVersion` jumps `1410` → `20000` so Sparkle offers the update to 1.x installs.

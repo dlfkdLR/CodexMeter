@@ -176,6 +176,11 @@ struct ProviderSnapshot: Identifiable, Equatable {
     /// Set when something is blocked right now. Deliberately separate from the
     /// windows: it is not a measurement, it is a door being shut.
     var block: UsageBlock?
+    /// Tokens this provider has spent on this Mac today, when CodexMeter's own
+    /// local accounting has a figure. Shown in the tooltip — the "how much have
+    /// I used" the ring's percentage does not give. `nil` for the borrowed-
+    /// credential providers, which CodexMeter does not meter locally.
+    var todaysTokens: Int?
 
     /// The number on the cell: the provider's declared primary window — for
     /// Claude, the current session.
@@ -244,7 +249,7 @@ struct ProviderSnapshot: Identifiable, Equatable {
         case .accessDenied:
             // Says what happened and what fixes it. "Sign in to Claude Code"
             // would send someone who *is* signed in to fix the wrong thing.
-            return "Codenotch was refused access to \(displayName)'s saved "
+            return "CodexMeter was refused access to \(displayName)'s saved "
                  + "login. Click this ring to ask again, and choose Always Allow."
         case .unsupported(let why): return why
         case .error(let why): return "Couldn't read usage — \(why)"

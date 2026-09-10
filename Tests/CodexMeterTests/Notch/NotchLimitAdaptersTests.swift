@@ -32,6 +32,19 @@ final class NotchLimitAdaptersTests: XCTestCase {
         XCTAssertNil(NotchLimitMapping.headlineID([]))
     }
 
+    /// The tooltip's "Today" line — CodexMeter's local token count, which the
+    /// ring's percentage never gives. Nil for no store and for a zero total.
+    func testTodaysTokensReflectsLocalAccounting() {
+        XCTAssertNil(NotchLimitMapping.todaysTokens(nil))
+        XCTAssertNil(NotchLimitMapping.todaysTokens(UsageStore(automaticallyRefresh: false)),
+                     "a fresh store has spent nothing")
+
+        var snapshot = UsageSnapshot.empty
+        snapshot.today = TokenUsage(inputTokens: 1000, cachedInputTokens: 100, outputTokens: 350)
+        let store = UsageStore(initialSnapshot: snapshot, automaticallyRefresh: false)
+        XCTAssertEqual(NotchLimitMapping.todaysTokens(store), 1350)
+    }
+
     // MARK: - Codex adapter over a stub store
 
     func testCodexAdapterMapsAReadySnapshot() async throws {

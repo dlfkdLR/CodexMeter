@@ -60,6 +60,14 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.autoenablesItems = false
         menu.removeAllItems()
 
+        // First and by name: token totals and where they went are what
+        // CodexMeter is for.
+        let usageItem = NSMenuItem(title: "Token Usage…", action: #selector(openUsage), keyEquivalent: "u")
+        usageItem.target = self
+        menu.addItem(usageItem)
+
+        menu.addItem(.separator())
+
         let notchItem = NSMenuItem(
             title: "Show Notch",
             action: #selector(toggleNotch),
@@ -68,12 +76,6 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         notchItem.target = self
         notchItem.state = notchIsOn ? .on : .off
         menu.addItem(notchItem)
-
-        menu.addItem(.separator())
-
-        let usageItem = NSMenuItem(title: "Usage…", action: #selector(openUsage), keyEquivalent: "")
-        usageItem.target = self
-        menu.addItem(usageItem)
 
         let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self

@@ -16,4 +16,24 @@ enum NotchProviderCatalog {
         ("ollama", "Ollama Cloud"),
         ("gemini", "Antigravity"),
     ]
+
+    /// The mark for a provider id, known without building the provider — so the
+    /// Settings list draws the right glyph before the notch is configured.
+    static func glyph(for id: String) -> ProviderGlyph {
+        switch id {
+        case "codex":       return .openai
+        case "claude":      return .claude
+        case "copilot":     return .copilot
+        case "cursor":      return .cursor
+        case "grok":        return .grok
+        case "opencode":    return .opencode
+        case "commandcode": return .commandcode
+        case "glm":         return .glm
+        case "ollama":      return .ollama
+        case "ollama-local": return .ollamaLocal
+        case "gemini":      return .antigravity
+        case "gemini-api":  return .geminiSpark
+        default:            return .third
+        }
+    }
 }

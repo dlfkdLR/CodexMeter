@@ -82,7 +82,7 @@ final class NotchController: ObservableObject {
             // Local `ollama serve` model listing (no ring — a local server has no quota).
             OllamaLocalProvider(),
         ]
-        let store = NotchUsageStore(providers: providers)
+        let store = NotchUsageStore(providers: providers, order: Self.storedProviderOrder())
         self.store = store
 
         window.onRefresh = { [weak store] in store?.refreshNow() }
@@ -229,8 +229,8 @@ final class NotchController: ObservableObject {
 
     /// The provider's mark, so a settings pane can draw it even before a
     /// snapshot has arrived.
-    func glyph(for id: String) -> ProviderGlyph? {
-        providers.first { $0.id == id }?.glyph
+    func glyph(for id: String) -> ProviderGlyph {
+        providers.first { $0.id == id }?.glyph ?? NotchProviderCatalog.glyph(for: id)
     }
 
     /// Whose credential a provider borrows, for its settings row.
@@ -252,6 +252,27 @@ final class NotchController: ObservableObject {
     /// Re-ask for one provider — its "Try again" / "Allow access…" button.
     func refresh(providerID: String) {
         store?.refresh(providerID: providerID)
+    }
+
+    // MARK: - Ring order (the Providers pane's drag handles)
+
+    private static let providerOrderKey = "notchProviderOrder"
+
+    static func storedProviderOrder() -> [String] {
+        (UserDefaults.standard.string(forKey: providerOrderKey) ?? "")
+            .split(separator: ",")
+            .map { String($0).trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// The order the notch draws its rings, as provider ids. Empty until the
+    /// user drags one — the store then falls back to registration order.
+    var providerOrder: [String] { store?.order ?? Self.storedProviderOrder() }
+
+    /// Persist a new ring order and apply it to the live notch without a poll.
+    func setProviderOrder(_ ids: [String]) {
+        store?.order = ids
+        UserDefaults.standard.set(ids.joined(separator: ","), forKey: Self.providerOrderKey)
     }
 
     // MARK: - Completion peek + chime

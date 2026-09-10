@@ -8,15 +8,16 @@ import XCTest
 final class CodexAccountsLayoutTests: XCTestCase {
     private static let renderScale: CGFloat = 2
 
-    func testAccountsAreOutsideSettings() {
-        // Shared, provider-independent categories only.
+    func testSettingsSidebarIsCategoriesOnly() {
+        // The sidebar is a fixed list of subjects — every provider lives inside
+        // the single "Providers" pane (Codenotch's account-list model), not as
+        // its own sidebar row.
         XCTAssertEqual(SettingsCategory.allCases.map(\.title),
-                       ["General", "Usage", "Notch", "Diagnostics", "Information"])
-        // Providers are their own sidebar entries, not a shared category: the
-        // two locally-metered ones first, then the notch's borrowed-credential
-        // providers.
+                       ["General", "Usage", "Providers", "Notch", "Diagnostics", "Information"])
+        // The per-provider panes stay addressable (search deep-links, the
+        // Providers pane's own drill-in) even though they are not sidebar rows.
         XCTAssertEqual(SettingsPane.allCases.map(\.title),
-                       ["General", "Usage", "Notch", "Diagnostics", "Information",
+                       ["General", "Usage", "Providers", "Notch", "Diagnostics", "Information",
                         "Codex", "Claude Code",
                         "GitHub Copilot", "Cursor", "Grok", "OpenCode",
                         "Command Code", "GLM", "Ollama Cloud", "Antigravity"])

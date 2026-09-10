@@ -14,16 +14,17 @@ struct UsageSettingsView: View {
 
     var body: some View {
         // The popover view caps its own width (it is a reading column, not a
-        // full-bleed form). Centre that column in the pane and paint the pane
-        // behind it, so a wide Settings window shows even margins rather than a
-        // bare void with a hard seam where the column's own background stops.
+        // full-bleed form). Pin it to the top-leading corner like every other
+        // pane and paint the whole pane behind it, so the space beside it is
+        // ordinary empty background — not a bare void with a hard seam where the
+        // column's own background stops, and not a column stranded mid-pane.
         MenuPopoverView(accounts: env.codexAccounts, embedded: true)
             .id(provider)
             .environmentObject(env.usageStore(for: provider))
             .environmentObject(env.profileStore)
             .environmentObject(env.limitStore)
             .environmentObject(env.claude)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(.background)
             .task(id: provider) {
                 env.profileStore.synchronizeEnabledPreference()

@@ -355,6 +355,37 @@ final class ClaudeStatusLineInstallerTests: XCTestCase {
         XCTAssertEqual(restored["theme"] as? String, "dark")
     }
 
+    func testInstallStripsQuarantineFromTheDeployedHelper() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let settings = root.appendingPathComponent(".claude/settings.json")
+        let managed = root.appendingPathComponent("managed", isDirectory: true)
+        let helper = root.appendingPathComponent("CodexMeterClaudeBridge")
+        try FileManager.default.createDirectory(at: settings.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("{}".utf8).write(to: settings)
+        FileManager.default.createFile(atPath: helper.path, contents: Data("helper".utf8), attributes: [.posixPermissions: 0o700])
+        // Stand in for the Homebrew-quarantined app bundle: the bundled helper
+        // carries com.apple.quarantine, and copyItem would carry it across.
+        let flag = Data("0081;00000000;Homebrew;".utf8)
+        try flag.withUnsafeBytes { bytes in
+            let rc = helper.path.withCString { setxattr($0, "com.apple.quarantine", bytes.baseAddress, bytes.count, 0, 0) }
+            try XCTSkipIf(rc != 0, "filesystem does not support xattrs")
+        }
+        let installer = ClaudeStatusLineInstaller(
+            settingsURL: settings,
+            managedDirectory: managed,
+            bridgeSource: { helper }
+        )
+
+        try installer.install()
+
+        let installedHelper = managed.appendingPathComponent("CodexMeterClaudeBridge")
+        var buffer = [CChar](repeating: 0, count: 512)
+        let size = installedHelper.path.withCString { getxattr($0, "com.apple.quarantine", &buffer, buffer.count, 0, 0) }
+        XCTAssertEqual(size, -1, "the deployed helper must not be quarantined")
+        XCTAssertEqual(errno, ENOATTR)
+    }
+
     func testReinstallKeepsTheFirstCapturedStatusLineWhenTheUserChangesItWhileManaged() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }

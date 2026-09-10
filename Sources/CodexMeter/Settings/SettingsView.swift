@@ -25,7 +25,7 @@ struct SettingsView: View {
                             .tag(SettingsPane.category(category))
                         }
                     }
-                    if !visibleProviders.isEmpty {
+                    if !visibleProviders.isEmpty || !visibleNotchProviders.isEmpty {
                         Section {
                             ForEach(visibleProviders) { provider in
                                 SettingsChipLabel(
@@ -35,6 +35,16 @@ struct SettingsView: View {
                                     dimmed: !providerIsOn(provider)
                                 )
                                 .tag(SettingsPane.provider(provider))
+                            }
+                            ForEach(visibleNotchProviders, id: \.id) { entry in
+                                SettingsChipLabel(
+                                    title: entry.name,
+                                    systemImage: "circle.dotted",
+                                    tint: .secondary,
+                                    statusDot: notchProviderConnected(entry.id) ? .green : nil,
+                                    dimmed: !notchProviderConnected(entry.id)
+                                )
+                                .tag(SettingsPane.notchProvider(id: entry.id))
                             }
                         } header: {
                             HStack {
@@ -84,6 +94,7 @@ struct SettingsView: View {
         case .category(.advanced): AdvancedSettingsView()
         case .category(.about): AboutSettingsView()
         case .provider(let provider): ProviderSettingsView(provider: provider)
+        case .notchProvider(let id): NotchProviderSettingsView(providerID: id)
         case nil:
             ContentUnavailableView(
                 "Choose a Section",
@@ -97,8 +108,17 @@ struct SettingsView: View {
         provider == .codex ? true : claude.isAvailable
     }
 
+    @ObservedObject private var notch = NotchController.shared
+
+    private func notchProviderConnected(_ id: String) -> Bool {
+        notch.snapshot(for: id)?.hasReading == true
+    }
+
     private var onCount: Int {
         1 + (claude.isAvailable ? 1 : 0)
+            + NotchProviderCatalog.all
+                .filter { $0.id != "codex" && $0.id != "claude" && notchProviderConnected($0.id) }
+                .count
     }
 
     private var visibleCategories: [SettingsCategory] {
@@ -107,5 +127,11 @@ struct SettingsView: View {
 
     private var visibleProviders: [UsageProvider] {
         UsageProvider.allCases.filter { SettingsPane.provider($0).matches(search) }
+    }
+
+    private var visibleNotchProviders: [(id: String, name: String)] {
+        NotchProviderCatalog.all
+            .filter { $0.id != "codex" && $0.id != "claude" }
+            .filter { SettingsPane.notchProvider(id: $0.id).matches(search) }
     }
 }

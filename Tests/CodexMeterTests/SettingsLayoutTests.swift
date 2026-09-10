@@ -160,6 +160,7 @@ private struct SettingsPaneHarness: View {
         case .category(.advanced): AdvancedSettingsView()
         case .category(.about): AboutSettingsView()
         case .provider(let provider): ProviderSettingsView(provider: provider)
+        case .notchProvider(let id): NotchProviderSettingsView(providerID: id)
         }
     }
 }

@@ -42,15 +42,19 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
-/// One selectable entry in the settings sidebar: a shared category or a provider.
+/// One selectable entry in the settings sidebar: a shared category, one of the
+/// two fully-metered providers (Codex, Claude — local token accounting), or one
+/// of the notch's borrowed-credential providers (limits only).
 enum SettingsPane: Hashable, Identifiable {
     case category(SettingsCategory)
     case provider(UsageProvider)
+    case notchProvider(id: String)
 
     var id: String {
         switch self {
         case .category(let category): "category.\(category.rawValue)"
         case .provider(let provider): "provider.\(provider.rawValue)"
+        case .notchProvider(let id): "notchProvider.\(id)"
         }
     }
 
@@ -58,6 +62,8 @@ enum SettingsPane: Hashable, Identifiable {
         switch self {
         case .category(let category): category.title
         case .provider(let provider): provider.title
+        case .notchProvider(let id):
+            NotchProviderCatalog.all.first { $0.id == id }?.name ?? id.capitalized
         }
     }
 
@@ -65,6 +71,7 @@ enum SettingsPane: Hashable, Identifiable {
         switch self {
         case .category(let category): category.systemImage
         case .provider(let provider): provider.symbol
+        case .notchProvider: "circle.dotted"
         }
     }
 
@@ -72,12 +79,21 @@ enum SettingsPane: Hashable, Identifiable {
         switch self {
         case .category(let category): category.chipTint
         case .provider(let provider): provider == .codex ? .green : .orange
+        case .notchProvider: .secondary
         }
+    }
+
+    /// The notch providers that are not already covered by a `.provider` pane.
+    static var notchOnly: [SettingsPane] {
+        NotchProviderCatalog.all
+            .filter { $0.id != "codex" && $0.id != "claude" }
+            .map { SettingsPane.notchProvider(id: $0.id) }
     }
 
     static var allCases: [SettingsPane] {
         SettingsCategory.allCases.map(SettingsPane.category)
             + UsageProvider.allCases.map(SettingsPane.provider)
+            + notchOnly
     }
 
     func matches(_ query: String) -> Bool {

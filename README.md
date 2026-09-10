@@ -8,9 +8,9 @@
 [![Swift 6.2](https://img.shields.io/badge/Swift-6.2-F05138?style=flat-square&logo=swift&logoColor=white)](Package.swift)
 [![License: MIT](https://img.shields.io/badge/license-MIT-6e5aff?style=flat-square)](LICENSE)
 
-<img src="Assets/README/codexmeter-hero.png" alt="CodexMeter hero featuring the actual app popover and local token totals" width="100%" />
+<img src="Assets/README/codexmeter-hero.png" alt="CodexMeter local token totals and account-limit views" width="100%" />
 
-<p align="center"><sub>The app popover shown above is an actual CodexMeter screen.</sub></p>
+<p align="center"><sub>An actual CodexMeter screen. Through 1.x the readings lived in a menu-bar popover; 2.0 moved them to the edge notch and the Settings ▸ Usage pane.</sub></p>
 
 Tiny native macOS app that turns **local Codex and Claude Code session history** into separate token totals. As of 2.0 it shows them in a floating **edge notch** — a usage ring per provider welded to a screen edge — plus a Settings window; a small status-bar item is the way in. Codex also offers a separate, opt-in, memory-only ChatGPT account-total view. Claude is opt-in: after you enable it and add the Claude Code account, CodexMeter can show the documented five-hour and weekly limits without reading or storing Claude credentials.
 
@@ -89,7 +89,8 @@ Local totals require no account connection. On macOS, **Settings → Codex → U
 
 ## Features
 
-- **Codex and opt-in Claude Code** local usage, selected directly in the menu after the Claude account is added. Each service has independent history, refresh, and data controls; token totals are never mixed. See [Claude Code support](Documentation/CLAUDE.md).
+- **Codex and opt-in Claude Code** local usage, selected in **Settings ▸ Usage** after the Claude account is added. Each service has independent history, refresh, and data controls; token totals are never mixed. See [Claude Code support](Documentation/CLAUDE.md).
+- **Edge notch (2.0):** a floating ring per detected provider — Codex, Claude Code, and any of GitHub Copilot, Cursor, Grok, OpenCode, Command Code, GLM, or Ollama Cloud whose CLI or editor is signed in — welded to a screen edge. Off by default; turn it on from the status-bar menu or **Settings ▸ Notch**. Threshold notifications at 80% / 100%.
 - User-selected Codex account switching: save logins in this Mac’s Keychain, add another account through Codex’s browser sign-in, and explicitly quit/switch/reopen Codex. No automatic quota-based rotation. See [account setup and supported configurations](Documentation/ACCOUNTS.md).
 
 - Live Today total from the selected service's local records always stays in the primary summary
@@ -119,7 +120,7 @@ Codex session JSONL
   → bounded incremental reader
   → cumulative snapshot normalization
   → local normalized event cache
-  → menu bar totals
+  → the notch and the Settings ▸ Usage pane
 ```
 
 Codex token-count events are cumulative snapshots. CodexMeter derives component-wise increases and ignores repeated snapshots. The local total uses the inclusive input count plus output:
@@ -185,15 +186,17 @@ The Application Support directory is owner-only (`0700`); the SQLite database, l
 
 ## Settings
 
-Switch Codex accounts directly from the account menu at the top of the menu-bar popover. Choose a saved account, or **Add Account…** / **Manage Accounts…** without opening Settings. Switching still asks before restarting Codex. See [Accounts](Documentation/ACCOUNTS.md).
+Switch Codex accounts from the account row at the top of **Settings ▸ Usage** — choose a saved account, or **Add Account…** / **Manage Accounts…**. Switching still asks before restarting Codex. See [Accounts](Documentation/ACCOUNTS.md).
 
 | Pane | Controls |
 | --- | --- |
-| General | Launch at Login, refresh mode, week start, and macOS automatic updates |
-| Appearance | Period, metric, number style, icon/text visibility, popover details |
-| Usage | Account totals, read-only limits, cost/projects/sessions/agent/attachment visibility, privacy boundary, and accounting semantics |
-| Data | Local/limit/pricing source status, database statistics, rebuild, clear history |
-| Advanced | Privacy-safe diagnostics, log folder, and account-limit provider status |
+| General | Launch at Login, refresh mode, week start, macOS automatic updates, and the number format / cached-input / last-updated display toggles |
+| Usage | The token history, day/week/month charts, and project & session breakdowns, with the provider picker and Codex account row |
+| Notch | Show the edge notch, its behaviour / size / ring colour / edge, reset-time wording, usage pace, the session-end peek and sound, and the 80% / 100% limit alerts |
+| Diagnostics | Privacy-safe diagnostics, log folder, and account-limit provider status |
+| Codex / Claude Code | Per-provider account, read-only limits, analytics options, and local-data actions |
+
+A small status-bar item (**Show Notch**, **Usage…**, **Settings…**, **Check for Updates…**, **Quit**) is the way in once the notch is hidden.
 
 ## Build from source
 

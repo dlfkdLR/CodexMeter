@@ -56,6 +56,8 @@ final class NotchController {
             OpenCodeNotchProvider(),
             // Borrows the Command Code desktop key from `~/.commandcode/auth.json`.
             CommandCodeNotchProvider(),
+            // Borrows a Z.ai GLM Coding Plan key from Claude Code / ZCode / OpenCode.
+            GLMNotchProvider(),
         ]
         let store = NotchUsageStore(providers: providers)
         self.store = store

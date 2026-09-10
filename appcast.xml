@@ -4,32 +4,31 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>CodexMeter</title>
         <item>
-            <title>2.0.4</title>
-            <pubDate>Thu, 10 Sep 2026 16:25:53 +0900</pubDate>
-            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.4</link>
-            <sparkle:version>20004</sparkle:version>
-            <sparkle:shortVersionString>2.0.4</sparkle:shortVersionString>
+            <title>2.0.5</title>
+            <pubDate>Thu, 10 Sep 2026 17:02:11 +0900</pubDate>
+            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.5</link>
+            <sparkle:version>20005</sparkle:version>
+            <sparkle:shortVersionString>2.0.5</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.4
+            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.5
 
-Settings ▸ Providers, rebuilt as one list.
+Two fixes from a Homebrew install of 2.0.4.
 
 ## What changed
 
-- **One Providers pane, not a sidebar row each.** Modelled on Codenotch's
-  account list: a **Connected** group whose rows drag to reorder the notch
-  rings, and a **Not connected** group of sign-in prompts. Each row shows the
-  account the reading is borrowed from, an inline 80% / 100% mute bell, and a
-  single action — **Details** for Codex and Claude Code, **Allow Access…** when
-  macOS refused a saved login, **Open <app>** otherwise. Details drills into the
-  fuller pane in place.
-- The per-provider limit-alert mutes moved off the Notch pane onto their rows.
-- The **Usage** pane no longer leaves a bare void beside its column in a wide
-  window — the reading column is centred with the pane painted behind it.
+- **The Claude limits helper is no longer blocked on a Homebrew install.**
+  Homebrew quarantines the app bundle; the helper CodexMeter deploys for Claude
+  Code's status line inherited that flag and macOS refused to run it ("cannot be
+  opened because Apple cannot check it for malicious software"). CodexMeter now
+  clears the flag from the copy it writes — on this launch, and self-healing on
+  the next one for anyone already affected.
+- **The Usage pane no longer leaves a wide empty gap beside its column.** The
+  reading column sits against the leading edge like every other pane, with the
+  pane painted behind it.
 
 ## Verification
 
-- 592 automated tests, 0 failures (9 environment-integration tests skipped).
+- 593 automated tests, 0 failures (9 environment-integration tests skipped).
 - `swift build` with zero warnings and zero errors.
 - Universal 2 build for Apple silicon and Intel Macs running macOS 14 or later.
 - Ad-hoc signed, not Apple-notarized. SHA-256 protects the first download;
@@ -49,13 +48,13 @@ open /Applications/CodexMeter.app
 
 ## First direct-download launch
 
-Download `CodexMeter-2.0.4.dmg` and `SHA256SUMS.txt` into the same folder and
+Download `CodexMeter-2.0.5.dmg` and `SHA256SUMS.txt` into the same folder and
 verify the checksum before opening:
 
 ```bash
 cd ~/Downloads
-grep ' CodexMeter-2.0.4.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
-open CodexMeter-2.0.4.dmg
+grep ' CodexMeter-2.0.5.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
+open CodexMeter-2.0.5.dmg
 ```
 
 ## Recovery
@@ -63,10 +62,10 @@ open CodexMeter-2.0.4.dmg
 This release does not migrate any database. Published version tags are
 immutable; corrections ship as a new patch release.
 ]]></description>
-            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.4/CodexMeter-2.0.4.zip" length="5089915" type="application/octet-stream" sparkle:edSignature="V4ZDlmCN+gC3mQiP0u+T65+YeRLAjCqTjoEKqJv58owocMduHhod4DgB2KV+/uA7YudUCXeKFgmPK1Fb/G+FBw=="></enclosure>
+            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.5/CodexMeter-2.0.5.zip" length="5090468" type="application/octet-stream" sparkle:edSignature="1KWanO8v6w9CUYKvstq+qs3re7YVqQ8jg/plhg0VCyMMmz8cvgvbVhne8tT5bG8OJxZYYUOKsqqyXFvl9ynpDw=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: uteXLF6V/PcVBhO27iySjESbfpPp62RoWmAnjlv/cu62HjWsinba+UPIpqWAWgq+wtuAQ0pxlVFXDAli7n5pAw==
-length: 3011
+edSignature: 3CM/bkNHEFufR5sZhQ7fgKZjETMve8absrYnD+1TFUotDni+zyG6YtDFMA9JTGl//orKL9dZ9BUNeb8MEZqMAw==
+length: 2908
 -->

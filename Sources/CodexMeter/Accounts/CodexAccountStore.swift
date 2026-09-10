@@ -12,6 +12,10 @@ final class CodexAccountStore: ObservableObject {
     static let shared = CodexAccountStore()
     @Published private(set) var accounts: [SavedCodexAccount] = []
     @Published private(set) var currentID: String?
+    /// The plan the signed-in login is on ("pro", "plus", …), from the live
+    /// `auth.json` rather than the saved vault — most people never save an
+    /// account here, and the plan decides which limits are worth drawing.
+    @Published private(set) var currentPlanType: String?
     @Published private(set) var isBusy = false
     @Published private(set) var isSigningIn = false
     @Published private(set) var message: String?
@@ -24,6 +28,8 @@ final class CodexAccountStore: ObservableObject {
     private let runtime: any CodexAccountRuntime
     private let acquireLock: () throws -> CodexAccountOperationLock?
     private var loginTask: Task<Void, Never>?
+    /// The login's modification date at the last plan read.
+    private var lastPlanStamp: Date?
 
     init(vault: any AccountVault = KeychainAccountVault(),
          login: any CodexLoginStoring = CodexLoginFile(directory: CodexLoginFile.defaultDirectory),
@@ -39,8 +45,24 @@ final class CodexAccountStore: ObservableObject {
         guard !isBusy else { return }
         do {
             accounts = try vault.load()
-            currentID = (try? readCurrentAccount())?.id
+            let current = try? readCurrentAccount()
+            currentID = current?.id
+            currentPlanType = current?.planType
         } catch { fail(error) }
+    }
+
+    /// Re-read just the plan from the live login.
+    ///
+    /// Separate from `load()` so a caller that only needs the plan — the notch,
+    /// on every poll — does not also run a Keychain query, which is the
+    /// expensive half and the half that can prompt. Reads nothing when the
+    /// login file has not changed since the last look.
+    func refreshCurrentPlanType() {
+        guard !isBusy else { return }
+        let stamp = login.lastModified
+        guard stamp != lastPlanStamp || currentPlanType == nil else { return }
+        lastPlanStamp = stamp
+        currentPlanType = (try? readCurrentAccount())?.planType
     }
 
     func saveCurrent() async {

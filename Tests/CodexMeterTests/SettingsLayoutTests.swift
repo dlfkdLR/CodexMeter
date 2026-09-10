@@ -94,18 +94,13 @@ final class SettingsLayoutTests: XCTestCase {
         for dark in [false, true] {
             let winSize = NSSize(width: 260, height: 520)
             let host = NSHostingView(rootView:
-                List {
-                    Section {
-                        ForEach(SettingsCategory.allCases) { category in
-                            SettingsChipLabel(title: category.title, systemImage: category.systemImage, tint: category.chipTint)
-                        }
+                List(SettingsCategory.allCases, id: \.self) { category in
+                    Label {
+                        Text(category.title)
+                    } icon: {
+                        SidebarIcon(systemName: category.systemImage, tint: category.chipTint)
                     }
-                    Section {
-                        SettingsChipLabel(title: "Codex", logoProvider: .codex, statusDot: .green)
-                        SettingsChipLabel(title: "Claude", logoProvider: .claude, statusDot: nil, dimmed: true)
-                    } header: {
-                        HStack { Text("Providers"); Spacer(); Text("1 on").font(.caption).foregroundStyle(.secondary) }
-                    }
+                    .padding(.vertical, 3)
                 }
                 .listStyle(.sidebar)
                 .frame(width: winSize.width, height: winSize.height)

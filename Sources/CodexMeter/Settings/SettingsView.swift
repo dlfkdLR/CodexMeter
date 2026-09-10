@@ -1,69 +1,64 @@
 import SwiftUI
 
+/// The settings window: a sidebar of subjects beside one scrolling pane.
+///
+/// Deliberately a `NavigationSplitView` rather than a hand-built split. An
+/// earlier rewrite used a plain `HStack` with a floating sidebar card — it
+/// renders in a preview and leaves the sidebar blank in a real transparent
+/// window, which is a bad trade for a surface people actually use. The
+/// Codenotch look that survives is the part that is only styling: System
+/// Settings' tinted icon badges in the sidebar, and panes made of grouped
+/// rounded cards.
 struct SettingsView: View {
-    var onPaneTitleChange: (String) -> Void = { _ in }
-
     @EnvironmentObject private var env: SettingsEnvironment
-    @State private var selection: SettingsPane? = .category(.usage)
-    @State private var search = ""
+
+    @State private var selection: SettingsCategory? = .usage
 
     var body: some View {
         NavigationSplitView {
-            VStack(spacing: 0) {
-                SettingsSidebarSearchField(text: $search)
-                    .padding(8)
-                Divider()
-                List(selection: $selection) {
-                    Section {
-                        ForEach(visibleCategories) { category in
-                            SettingsChipLabel(
-                                title: category.title,
-                                systemImage: category.systemImage,
-                                tint: category.chipTint
-                            )
-                            .tag(SettingsPane.category(category))
-                        }
-                    }
+            List(SettingsCategory.allCases, selection: $selection) { category in
+                Label {
+                    Text(category.title)
+                } icon: {
+                    SidebarIcon(systemName: category.systemImage, tint: category.chipTint)
                 }
-                .listStyle(.sidebar)
-                .accessibilityLabel("Settings sections")
-                .accessibilityHint("Use the arrow keys to choose a section, then press Tab to change its settings.")
+                .padding(.vertical, 3)
+                .tag(category)
             }
-            .navigationSplitViewColumnWidth(min: 224, ideal: 250, max: 300)
-            .navigationTitle("CodexMeter")
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 200, ideal: 216, max: 260)
+            .accessibilityLabel("Settings sections")
+            .accessibilityHint("Choose a section to change its settings.")
         } detail: {
-            detailPane
+            pane
                 .navigationTitle(selection?.title ?? "Settings")
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .navigationSplitViewStyle(.balanced)
         .frame(
-            minWidth: 840, idealWidth: 980, maxWidth: .infinity,
-            minHeight: 560, idealHeight: 680, maxHeight: .infinity
+            minWidth: 840, idealWidth: 960, maxWidth: .infinity,
+            minHeight: 560, idealHeight: 640, maxHeight: .infinity
         )
-        .onChange(of: selection) { _, newValue in
-            onPaneTitleChange(newValue?.title ?? "CodexMeter Settings")
-        }
-        .onAppear { onPaneTitleChange(selection?.title ?? "CodexMeter Settings") }
         .onReceive(NotificationCenter.default.publisher(for: SettingsWindowController.selectPaneNotification)) { note in
-            if let pane = note.object as? SettingsPane {
-                selection = pane
-                search = ""
+            guard let pane = note.object as? SettingsPane else { return }
+            switch pane {
+            case .category(let category): selection = category
+            // Deep links to one provider land on the Providers pane, which is
+            // where every provider lives.
+            case .provider, .notchProvider: selection = .providers
             }
         }
     }
 
     @ViewBuilder
-    private var detailPane: some View {
+    private var pane: some View {
         switch selection {
-        case .category(.general): GeneralSettingsView()
-        case .category(.usage): UsageSettingsView()
-        case .category(.providers): ProvidersSettingsView()
-        case .category(.notch): NotchSettingsView()
-        case .category(.advanced): AdvancedSettingsView()
-        case .category(.about): AboutSettingsView()
-        case .provider(let provider): ProviderSettingsView(provider: provider)
-        case .notchProvider(let id): NotchProviderSettingsView(providerID: id)
+        case .usage: UsageSettingsView()
+        case .providers: ProvidersSettingsView()
+        case .notch: NotchSettingsView()
+        case .general: GeneralSettingsView()
+        case .advanced: AdvancedSettingsView()
+        case .about: AboutSettingsView()
         case nil:
             ContentUnavailableView(
                 "Choose a Section",
@@ -71,21 +66,5 @@ struct SettingsView: View {
                 description: Text("Select a section from the sidebar to view its settings.")
             )
         }
-    }
-
-    private var visibleCategories: [SettingsCategory] {
-        SettingsCategory.allCases.filter { category in
-            SettingsPane.category(category).matches(search)
-                // "claude", "cursor", "grok"… land on the Providers pane, which
-                // is where every provider now lives.
-                || (category == .providers && matchesAnyProvider)
-        }
-    }
-
-    private var matchesAnyProvider: Bool {
-        let trimmed = search.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return false }
-        return UsageProvider.allCases.contains { SettingsPane.provider($0).matches(search) }
-            || NotchProviderCatalog.all.contains { $0.name.localizedCaseInsensitiveContains(trimmed) }
     }
 }

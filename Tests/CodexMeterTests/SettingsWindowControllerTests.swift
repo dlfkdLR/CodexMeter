@@ -24,6 +24,11 @@ final class SettingsWindowControllerTests: XCTestCase {
             }
             try await settle(window)
             XCTAssertFalse(window.titlebarAppearsTransparent)
+            let viewport = try XCTUnwrap(host.subviews.first)
+            XCTAssertEqual(viewport.layer?.masksToBounds, true)
+            let viewportFrame = viewport.convert(viewport.bounds, to: nil)
+            XCTAssertTrue(window.contentLayoutRect.insetBy(dx: -1, dy: -1).contains(viewportFrame),
+                          "The hard clipping boundary must exclude the toolbar")
             for scroll in descendants(of: NSScrollView.self, in: host) {
                 let visibleFrame = scroll.convert(scroll.visibleRect, to: nil)
                 XCTAssertLessThanOrEqual(visibleFrame.maxY, window.contentLayoutRect.maxY + 1,

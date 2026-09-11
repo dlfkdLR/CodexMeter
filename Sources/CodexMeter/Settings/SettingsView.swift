@@ -30,16 +30,13 @@ struct SettingsView: View {
             .accessibilityHint("Choose a section to change its settings.")
         } detail: {
             pane
-                .navigationTitle(navigation.category?.title ?? "Settings")
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .clipped()
-                .toolbarBackground(Color(nsColor: .windowBackgroundColor), for: .windowToolbar)
-                .toolbarBackground(.visible, for: .windowToolbar)
         }
         .navigationSplitViewStyle(.balanced)
         .frame(
-            minWidth: 840, idealWidth: 960, maxWidth: .infinity,
-            minHeight: 560, idealHeight: 640, maxHeight: .infinity
+            minWidth: 0, idealWidth: 960, maxWidth: .infinity,
+            minHeight: 0, idealHeight: 640, maxHeight: .infinity
         )
     }
 

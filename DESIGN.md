@@ -270,3 +270,5 @@ The diamond meter mark (`◈`) was the menu-bar and app identity through 1.x and
 - **Don't** show empty or speculative provider tabs.
 - **Don't** use purple/blue AI gradients, neon, decorative glass, giant cards, or custom dashboard chrome.
 - **Don't** communicate low quota, stale data, or estimates through color alone.
+
+The notch Settings and account controls share a slim black capsule instead of separate floating discs. The resting arc is preserved; the account glyph appears 80 ms after Settings. Its transient native popover lists provider logos, current identity and plan, with a clear route to account management and outside-click/Escape dismissal.

@@ -35,7 +35,7 @@ final class NotchViewModel: ObservableObject {
 
     /// Held open, by either route. What the folding logic actually asks.
     var staysOpen: Bool { isPinned || isAlwaysOn || isPresentingAccountMenu }
-    var isPresentingAccountMenu = false
+    @Published var isPresentingAccountMenu = false
     /// Providers with a fetch in flight, driven by the store.
     @Published var refreshing: Set<String> = []
     /// The settings handle is under the cursor.
@@ -208,18 +208,18 @@ final class NotchViewModel: ObservableObject {
     }
 
     /// The account switch is the next control after Settings along every edge.
-    var accountOrbAlong: CGFloat { orbAlong + NotchLayout.orbHotZone + NotchLayout.orbGap }
+    var accountOrbAlong: CGFloat { orbAlong + (NotchLayout.orbHotZone + NotchLayout.controlDiameter) / 2 + 1 }
 
     var accountOrbRect: CGRect {
         let centre = placement.point(along: slack + accountOrbAlong * sizeScale,
                                      across: orbInset * sizeScale)
-        let side = NotchLayout.orbHotZone * sizeScale
+        let side = NotchLayout.controlDiameter * sizeScale
         return CGRect(x: centre.x - side / 2, y: centre.y - side / 2, width: side, height: side)
     }
 
     /// Keep both controls and their full hit areas on screen while dragging.
     var trailingExtent: CGFloat {
-        max(0, accountOrbAlong - shapeLength + NotchLayout.orbHotZone / 2).rounded(.up)
+        max(0, accountOrbAlong - shapeLength + NotchLayout.controlDiameter / 2).rounded(.up)
     }
 
     /// Where the bar's far corner actually turns, along the stack.

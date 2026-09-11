@@ -3,7 +3,7 @@ import SwiftUI
 import Combine
 
 @MainActor
-final class NotchWindowController {
+final class NotchWindowController: NSObject, NSPopoverDelegate {
     let model = NotchViewModel()
     var displayPreference: DisplayPreference = .followActiveWindow
 
@@ -37,6 +37,11 @@ final class NotchWindowController {
     /// Preferences' job, the same division `apply(edge:)` already keeps.
     var onReposition: ((CGFloat) -> Void)?
 
+    var accountOptions: (() -> [NotchAccountOption])?
+    private var accountPopover: NSPopover?
+#if DEBUG
+    var accountPopoverForTesting: NSPopover? { accountPopover }
+#endif
     private var panel: NotchPanel?
     private var hostingView: NotchHostingView<NotchRootView>?
 
@@ -90,35 +95,51 @@ final class NotchWindowController {
     /// rect comparison every 0.3s and needs no new machinery.
     private var lastVisibleFrame: CGRect?
 
-    init() {
+    override init() {
+        super.init()
         model.onOpenAccountMenu = { [weak self] in self?.showAccountMenu() }
     }
 
-    /// Native menu tracking keeps the controls open while the pointer moves
-    /// away from the notch to choose an account provider.
+    /// A transient native popover preserves outside-click and Escape dismissal
+    /// without a blocking menu-tracking loop or an extra account window.
     private func showAccountMenu() {
         guard let panel, let hostingView, !model.isPresentingAccountMenu else { return }
+        let options = accountOptions?() ?? []
+        guard !options.isEmpty else { return }
         foldWork?.cancel()
         foldWork = nil
         model.isPresentingAccountMenu = true
-        defer { model.isPresentingAccountMenu = false; cursorMoved() }
         model.hoveredIndex = nil
-        let menu = NSMenu(title: "Switch account")
-        for (id, title) in [("codex", "Codex Accounts…"), ("claude", "Claude Code Account…")] {
-            let item = NSMenuItem(title: title, action: #selector(switchAccountFromMenu(_:)), keyEquivalent: "")
-            item.target = self
-            item.representedObject = id
-            menu.addItem(item)
-        }
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        popover.appearance = NSAppearance(named: .darkAqua)
+        popover.delegate = self
+        popover.contentViewController = NSHostingController(rootView: NotchAccountPopover(
+            options: options,
+            onSelect: { [weak self] id in
+                self?.accountPopover?.close()
+                DispatchQueue.main.async { [weak self] in self?.onSwitchAccount?(id) }
+            },
+            onClose: { [weak self] in self?.accountPopover?.close() }
+        ))
+        accountPopover = popover
         let rect = model.accountOrbRect
-        let anchor = hostingView.convert(NSPoint(x: rect.minX, y: panel.frame.height - rect.maxY), from: nil)
-        menu.popUp(positioning: nil, at: anchor, in: hostingView)
+        let anchor = hostingView.convert(NSRect(x: rect.minX, y: panel.frame.height - rect.maxY,
+                                                 width: rect.width, height: rect.height), from: nil)
+        let edge: NSRectEdge = switch model.edge {
+        case .right: .minX
+        case .left: .maxX
+        case .top: .minY
+        case .bottom: .maxY
+        }
+        popover.show(relativeTo: anchor, of: hostingView, preferredEdge: edge)
     }
 
-    @objc private func switchAccountFromMenu(_ item: NSMenuItem) {
-        guard let id = item.representedObject as? String else { return }
-        // Open an activating account/settings window after menu tracking ends.
-        DispatchQueue.main.async { [weak self] in self?.onSwitchAccount?(id) }
+    func popoverDidClose(_ notification: Notification) {
+        accountPopover = nil
+        model.isPresentingAccountMenu = false
+        cursorMoved()
     }
 
     func show() {
@@ -155,6 +176,7 @@ final class NotchWindowController {
     }
 
     func stop() {
+        accountPopover?.close()
         setPointing(false)
         peekUntil = nil
         peekWork?.cancel()

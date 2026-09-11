@@ -115,6 +115,7 @@ enum NotchLayout {
     static var orbMergeScale: CGFloat { (curlRadius + orbStroke) / orbArcRadius }
     /// Generous, like the pill's — it is a small target on a screen edge.
     static let orbHotZone  = NotchDesign.px(152)
+    static let controlDiameter = NotchDesign.px(96)
 
     // The hover tooltip
     static let cardWidth     = NotchDesign.px(600)

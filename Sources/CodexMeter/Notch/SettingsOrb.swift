@@ -14,6 +14,7 @@ import SwiftUI
 /// asserting anything.
 struct SettingsOrb: View {
     let isHovered: Bool
+    var drawsDisc: Bool = true
     var edge: NotchEdge = .right
     /// True when the arc traces the bar's own rounded corner from outside
     /// rather than a flare from inside — a flush bar has no flare to tuck into.
@@ -77,11 +78,11 @@ struct SettingsOrb: View {
             Circle()
                 .fill(NotchPalette.notch)
                 .frame(width: NotchLayout.orbDiameter, height: NotchLayout.orbDiameter)
-                .opacity(isHovered ? 1 : 0)
+                .opacity(isHovered && drawsDisc ? 1 : 0)
                 .scaleEffect(isHovered ? 1 : 1.1)
 
             Image(systemName: "gearshape")
-                .font(.system(size: NotchLayout.orbGlyph, weight: .regular))
+                .font(.system(size: NotchLayout.orbGlyph * (drawsDisc ? 1 : 0.8), weight: .regular))
                 .foregroundStyle(NotchPalette.textPrimary)
                 .opacity(isHovered ? 1 : 0)
                 .scaleEffect(isHovered ? 1 : 0.5)

@@ -8,7 +8,7 @@ All notable changes to CodexMeter will be documented in this file.
 
 ### Added
 
-- A dedicated account-switch button directly below the notch's Settings control.
+- A slim hover-revealed control rail with account switching directly below Settings, plus a logo-and-identity account popover.
 - A persisted Used / Remaining selection for the notch percentage and ring fill.
 - A searchable provider catalogue with logos, descriptions, and inline add status, preserving the original application's login.
 - Notch plan labels, including known ChatGPT Pro and Claude Max multipliers.

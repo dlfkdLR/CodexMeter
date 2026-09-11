@@ -56,10 +56,10 @@ final class NotchControlsTests: XCTestCase {
                 model.sizeScale = size.scale
                 let panel = CGRect(origin: .zero, size: model.panelSize)
                 XCTAssertTrue(panel.contains(model.accountOrbRect), "\(edge) \(size): \(model.accountOrbRect) exceeds \(panel)")
-                XCTAssertGreaterThan(model.accountOrbAlong - NotchLayout.orbHotZone / 2,
+                XCTAssertGreaterThan(model.accountOrbAlong - NotchLayout.controlDiameter / 2,
                                      model.orbAlong + NotchLayout.orbHotZone / 2)
                 XCTAssertGreaterThanOrEqual(model.trailingExtent,
-                    model.accountOrbAlong + NotchLayout.orbHotZone / 2 - model.shapeLength)
+                    model.accountOrbAlong + NotchLayout.controlDiameter / 2 - model.shapeLength)
             }
         }
     }

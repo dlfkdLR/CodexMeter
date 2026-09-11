@@ -101,6 +101,12 @@ final class NotchController: ObservableObject {
         window.onRefresh = { [weak store] in store?.refreshNow() }
         window.onRefreshProvider = { [weak store] id in store?.refresh(providerID: id) }
         window.onOpenSettings = { SettingsWindowController.shared.present() }
+        window.accountOptions = { [weak codexAccounts, weak claudeIntegration] in
+            [NotchAccountOption(id: "codex", title: "Codex", glyph: .openai,
+                account: codexAccounts?.currentAccountDisplayName, plan: codexAccounts?.currentPlanName),
+             NotchAccountOption(id: "claude", title: "Claude Code", glyph: .claude,
+                account: claudeIntegration?.account?.email, plan: claudeIntegration?.account?.planName)]
+        }
         window.onSwitchAccount = { id in
             if id == "codex" {
                 CodexAccountsWindowController.shared.show()

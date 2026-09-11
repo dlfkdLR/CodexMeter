@@ -20,8 +20,9 @@ struct NotchRootView: View {
                 // the end of the shape, tucked into the corner the far flare
                 // makes.
                 if !model.snapshots.isEmpty {
+                    controlRail(place)
                     Button { model.onOpenSettings?() } label: {
-                        SettingsOrb(isHovered: model.isHoveringSettings, edge: model.edge,
+                        SettingsOrb(isHovered: model.isHoveringSettings, drawsDisc: false, edge: model.edge,
                                     convex: model.orbHugsCorner,
                                     arcRadius: model.orbArcRadius,
                                     arcOffset: model.orbArcOffset)
@@ -52,11 +53,11 @@ struct NotchRootView: View {
 
                     Button { model.onOpenAccountMenu?() } label: {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: NotchLayout.orbGlyph * 0.85, weight: .regular))
+                            .font(.system(size: NotchLayout.orbGlyph * 0.7, weight: .regular))
                             .foregroundStyle(NotchPalette.textPrimary)
-                            .frame(width: NotchLayout.orbDiameter, height: NotchLayout.orbDiameter)
-                            .background(NotchPalette.notch, in: Circle())
-                            .overlay(Circle().strokeBorder(Color.white.opacity(model.isHoveringAccountSwitch ? 0.35 : 0), lineWidth: 1))
+                            .frame(width: NotchLayout.controlDiameter, height: NotchLayout.controlDiameter)
+                            .background(Color.white.opacity(model.isHoveringAccountSwitch ? 0.1 : 0),
+                                        in: RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
                     .contentShape(Circle())
@@ -109,6 +110,21 @@ struct NotchRootView: View {
         .animation(motion(NotchMotion.unfold), value: model.isExpanded)
         .tint(model.accentColor.color)
         .environment(\.notchAccentColor, model.accentColor.color)
+    }
+
+    private func controlRail(_ place: NotchPlacement) -> some View {
+        let diameter = NotchLayout.controlDiameter
+        let distance = model.showsAccountControl ? model.accountOrbAlong - model.orbAlong : 0
+        return Capsule()
+            .fill(NotchPalette.notch)
+            .frame(width: model.edge.isVertical ? diameter : diameter + distance,
+                   height: model.edge.isVertical ? diameter + distance : diameter)
+            .scaleEffect(model.sizeScale)
+            .position(place.point(along: model.slack + (model.orbAlong + distance / 2) * model.sizeScale,
+                                  across: model.orbInset * model.sizeScale))
+            .opacity(model.isExpanded && model.isHoveringSettings ? 1 : 0)
+            .allowsHitTesting(false)
+            .animation(motion(.spring(response: 0.32, dampingFraction: 0.86)), value: model.showsAccountControl)
     }
 
     /// Opening and closing are not mirror images. Appearing, the arc waits its

@@ -1,266 +1,138 @@
-# CodexMeter ◈ — Know where your coding tokens went.
+<div align="center">
 
-> Local Codex and Claude Code token usage, one click away on macOS.
+<img src="Assets/README/codexmeter-notch.png" alt="CodexMeter running on macOS: the real edge notch shows Codex at 32% remaining and Claude Code at 66% remaining" width="100%" />
 
-[![CI](https://img.shields.io/github/actions/workflow/status/dlfkdLR/CodexMeter/ci.yml?branch=main&style=flat-square&label=CI&color=0a0a0c)](https://github.com/dlfkdLR/CodexMeter/actions/workflows/ci.yml)
-[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-0a0a0c?style=flat-square)](https://support.apple.com/macos)
-[![macOS Release](https://img.shields.io/badge/macOS-v2.0.2-6e5aff?style=flat-square)](Documentation/ReleaseNotes/2.0.2.md)
-[![Swift 6.2](https://img.shields.io/badge/Swift-6.2-F05138?style=flat-square&logo=swift&logoColor=white)](Package.swift)
-[![License: MIT](https://img.shields.io/badge/license-MIT-6e5aff?style=flat-square)](LICENSE)
+[![CI](https://github.com/dlfkdLR/CodexMeter/actions/workflows/ci.yml/badge.svg)](https://github.com/dlfkdLR/CodexMeter/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/dlfkdLR/CodexMeter?color=181a1e)](https://github.com/dlfkdLR/CodexMeter/releases/latest) ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-181a1e) ![Universal](https://img.shields.io/badge/Apple_silicon_%2B_Intel-Universal-181a1e) [![MIT](https://img.shields.io/badge/license-MIT-181a1e)](LICENSE)
 
-<img src="Assets/README/codexmeter-hero.png" alt="CodexMeter local token totals and account-limit views" width="100%" />
+**Coding-assistant limits at the edge of your screen. Local token history one click away.**
 
-<p align="center"><sub>An actual CodexMeter screen. Through 1.x the readings lived in a menu-bar popover; 2.0 moved them to the edge notch and the Settings ▸ Usage pane.</sub></p>
+<sub>Captured from the actual CodexMeter 2.0.9 app. The rings above are set to Remaining.</sub>
 
-Tiny native macOS app that turns **local Codex and Claude Code session history** into separate token totals. As of 2.0 it shows them in a floating **edge notch** — a usage ring per provider welded to a screen edge — plus a Settings window; a small status-bar item is the way in. Codex also offers a separate, opt-in, memory-only ChatGPT account-total view. Claude is opt-in: after you enable it and add the Claude Code account, CodexMeter can show the documented five-hour and weekly limits without reading or storing Claude credentials.
+</div>
 
-## Why
+CodexMeter is a native macOS app that puts your coding assistants' usage limits in a small edge notch. Hover a ring for its limit windows, reset times, account plan, and active sessions. Open **Settings → Usage** for Codex and Claude Code token history, charts, projects, and sessions.
 
-- **Glanceable limits.** The notch shows a ring per provider and spins it while an agent is working. Choose **Used** or **Remaining** in **Settings ▸ Notch ▸ Readings** to change the percentage and ring fill together; warning colours still reflect actual consumption.
-- **Plan around limits.** See the nearest Codex or Claude Code quota windows, reset countdowns, and an explicitly labeled even-use pace estimate before starting a long task.
-- **Honest accounting.** Cumulative snapshots are normalized into increases instead of being added repeatedly.
-- **Local by design.** Prompts, responses, source code, credentials, and raw session paths are not stored in CodexMeter's database.
-- **Native and quiet.** SwiftUI and AppKit, no Dock window, and no telemetry.
+## Download
 
-## Install
+[![Download for macOS](Assets/README/download-macos.svg)](https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.9/CodexMeter-2.0.9.dmg)
 
-### macOS requirements
+**macOS 14 or later · Apple silicon and Intel.** [Release notes and all downloads](https://github.com/dlfkdLR/CodexMeter/releases/latest).
 
-- macOS 14 Sonoma or later
-- Local Codex session history under `~/.codex`
+### Homebrew
 
-### Homebrew Tap
-
-Install the certificate-free stable release from the public personal Tap:
-
-```bash
+```sh
 brew install --cask dlfkdLR/tap/codexmeter
 ```
 
-To update an existing installation, including releases with automatic updates enabled:
+To update an existing installation:
 
-```bash
+```sh
 brew update
 brew upgrade --cask --greedy dlfkdLR/tap/codexmeter
 ```
 
-Homebrew verifies the published ZIP against the Cask's SHA-256 checksum. Because the app is ad-hoc signed and not Apple-notarized, macOS still blocks its first launch. After confirming that Homebrew installed `dlfkdLR/tap/codexmeter`, remove quarantine from this app only and open it:
+### First launch
 
-```bash
-xattr -dr com.apple.quarantine /Applications/CodexMeter.app
-open /Applications/CodexMeter.app
-```
+The app is **ad-hoc signed, not Apple-notarized**. Homebrew verifies the ZIP checksum. For a direct download, save the DMG and [SHA256SUMS.txt](https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.9/SHA256SUMS.txt) in the same folder and verify before opening:
 
-Homebrew 6 no longer provides the old `--no-quarantine` installation option. The explicit command above keeps the trust decision limited to `/Applications/CodexMeter.app`.
-
-### Direct download
-
-CodexMeter v2.0.2 is available from the public [CodexMeter repository](https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.2) as a certificate-free Universal 2 DMG and ZIP. The app uses an ad-hoc signature rather than an Apple Developer ID certificate, so macOS will not trust the first launch automatically. Verify the downloaded DMG and follow the one-time first-run steps below.
-
-This is the stable 2.0.2 application release, but it is not Apple-trusted or notarized. Sparkle update archives and the update feed are separately authenticated with Ed25519 signatures, while first-install trust is established by checking the published SHA-256 manifest.
-
-### macOS에서 인증서 없는 릴리스를 처음 실행할 때
-
-공식 GitHub 릴리스에서 DMG와 `SHA256SUMS.txt`를 같은 폴더에 받은 뒤, 먼저 체크섬을 확인하세요. 다음 명령이 `OK`를 출력하지 않으면 앱을 실행하지 마세요.
-
-```bash
+```sh
 cd ~/Downloads
-grep ' CodexMeter-2.0.2.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
-open CodexMeter-2.0.2.dmg
+grep ' CodexMeter-2.0.9.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
+open CodexMeter-2.0.9.dmg
 ```
 
-열린 DMG에서 `CodexMeter.app`을 `Applications` 폴더로 복사합니다. 체크섬이 일치하고 공식 릴리스임을 확인한 경우에만 아래 명령으로 해당 앱의 격리 속성을 제거하고 실행하세요.
+After the checksum reports `OK`, drag CodexMeter to Applications. If macOS blocks the verified app, remove quarantine from **CodexMeter only**, then launch it:
 
-```bash
+```sh
 xattr -dr com.apple.quarantine /Applications/CodexMeter.app
 open /Applications/CodexMeter.app
 ```
 
-`xattr` 명령은 이 앱에 대한 macOS의 다운로드 격리 검사를 제거합니다. 출처가 다르거나 체크섬이 일치하지 않는 파일에는 사용하지 마세요. Developer ID 서명과 Apple 공증을 마친 정식 릴리스에서는 이 단계가 필요하지 않습니다.
+This also applies after a verified Homebrew install. Later automatic updates are authenticated with Sparkle Ed25519 signatures.
 
-## First run
+## At the edge
 
-1. Launch CodexMeter after Codex has created local session history.
-2. To add Claude Code, open **Settings**, select **Claude Code** in the Providers sidebar, enable it, and explicitly add the account already signed in to the official Claude CLI. If no account is signed in, run `claude` in your terminal and sign in there first, then choose **Add Account**.
-3. The notch is enabled on first launch. Hover over it to expand the rings; if you previously hid it, choose **Show Notch** from the status-bar menu or enable it in **Settings ▸ Notch**. The token history lives in **Settings ▸ Usage**.
-4. Claude limits appear after Claude Code completes a response.
+- **Used or remaining.** Choose what the percentage and ring mean in **Settings → Notch → Readings**. Warning colours continue to track consumption.
+- **Account and plan.** Hover for the account plan, including Codex Pro 5x/20x and Claude Max 5x/20x when the account reports the tier.
+- **Working, waiting, finished.** Session activity animates the rings. Optional completion peeks and sounds let you know when to return to a task.
+- **Quick controls.** Hover the arc below the notch to reveal Settings, followed by account switching. The account popover shows provider logos, current accounts, and plans.
+- **Your layout.** Use any screen edge, choose the size and ring colour, and Option-drag to reposition. The notch starts enabled and remembers your choices.
 
-Local totals require no account connection. On macOS, **Settings → Codex → Use ChatGPT account totals** can optionally use the existing Codex sign-in to match ChatGPT profile totals.
+The small menu-bar item opens Usage, Settings, updates, or the notch when hidden.
 
-## Features
+## Providers
 
-- **Codex and opt-in Claude Code** local usage, selected in **Settings ▸ Usage** after the Claude account is added. Each service has independent history, refresh, and data controls; token totals are never mixed. See [Claude Code support](Documentation/CLAUDE.md).
-- **Edge notch (2.0):** a floating ring per selected provider — Codex, Claude Code, and supported CLIs or editors — welded to a screen edge. Enabled by default; manage visibility from the status-bar menu or **Settings ▸ Notch**, and add or remove providers in **Settings ▸ Providers**. An explicitly saved off setting is preserved. Threshold notifications at 80% / 100%.
-- **Account plans at a glance:** the notch tooltip shows Codex **Pro 5x / Pro 20x** and Claude **Max 5x / Max 20x** when the signed-in account metadata identifies the tier. Claude's local profile must match both the current email and organization; missing or unrecognized tier metadata leaves the plain plan name. Hover the notch's resting settings arc to reveal Settings, followed by **Switch account** directly below it. The account menu opens saved Codex accounts or the Claude Code account pane.
-- User-selected Codex account switching: save logins in this Mac’s Keychain, add another account through Codex’s browser sign-in, and explicitly quit/switch/reopen Codex. No automatic quota-based rotation. See [account setup and supported configurations](Documentation/ACCOUNTS.md).
+Open **Settings → Providers → Add Provider** to browse the searchable catalogue. Add several tools without closing it; drag their rows to reorder the rings. Removing a provider stops its monitoring and leaves its original app signed in.
 
-- Live Today total from the selected service's local records always stays in the primary summary
-- Current week/month through the server snapshot date and lifetime totals when explicitly enabled
-- Week, month, and **Local History** totals from local Codex records when account totals are off
-- Input, cached input, output, and total-token breakdowns
-- macOS drill-down views for account limits, Today/7D/30D charts, models, projects, sessions, and verified sub-agent relationships
-- Read-only Codex 5-hour/weekly/additional limit windows and reset credits, plus documented Claude Code five-hour and weekly limit percentages
-- First-screen limit previews with low-quota text warnings, reset countdowns, and even-use pace; detailed Limits can also show a current-window run-out estimate
-- Model-aware API-equivalent cost estimates using the current official price catalog; these are estimates, not bills or subscription charges
-- Privacy-minimized project and session analytics with keyed project identifiers and image counts only—never attachment contents
-- Automatic file-event refresh plus manual, 30-second, 1-, 2-, 5-, 15-, and 30-minute modes
-- Bounded incremental JSONL ingestion with durable SQLite checkpoints
-- Duplicate, replay, partial-line, truncation, and same-inode rewrite protection
-- Resumable 32 MiB / roughly five-second import slices for large histories
-- Floating edge-notch usage rings, a status-bar menu, and a native Settings window
-- Optional launch at login through macOS Service Management
-- Daily signed update checks with a manual check-for-updates action
-- Secure local-history clearing with a persistent re-import cutoff
-- No notifications, advertising, or telemetry
-
-## How token counting works
-
-```text
-Codex session JSONL
-  → contained source discovery
-  → bounded incremental reader
-  → cumulative snapshot normalization
-  → local normalized event cache
-  → the notch and the Settings ▸ Usage pane
-```
-
-Codex token-count events are cumulative snapshots. CodexMeter derives component-wise increases and ignores repeated snapshots. The local total uses the inclusive input count plus output:
-
-```text
-Total = Input + Output
-```
-
-`Cached Input` is the portion of `Input` that Codex served from cache rather than processing from scratch. Because it is already included in `Input`, CodexMeter shows it as a separate auditable breakdown but does not add it to Total a second time. The derived local Total therefore matches the raw Codex `total_tokens` meaning: `Input + Output`.
-
-When optional profile sync is enabled, lifetime comes directly from the account-wide profile statistic and the dated day/week/month values are derived from its daily buckets. They are never combined with the local component breakdown.
-
-## Data sources
-
-CodexMeter reads JSONL files only inside:
-
-- `~/.codex/sessions`
-- `~/.codex/archived_sessions`
-
-Optional profile sync also reads only `tokens.access_token` and `tokens.account_id` from `~/.codex/auth.json` for a fixed read-only request to `https://chatgpt.com/backend-api/wham/profiles/me`. Credentials and the response are held only in memory and are not written to CodexMeter's database or logs. This is a non-public ChatGPT endpoint and may change.
-
-The macOS **Limits** view uses the signed Codex app-server's read-only `account/rateLimits/read` RPC. The last successful limit response is held in memory only. This provider never changes accounts, consumes reset credits, or makes purchases. The separate **Accounts** feature changes the local Codex login only after the user confirms a switch.
-
-Claude account discovery uses the read-only `claude auth status` command; signing in stays entirely inside Claude Code. After the user enables Claude and adds that account, CodexMeter installs a small local status-line helper and records only the documented five-hour/weekly percentages and reset timestamps. Claude credentials remain owned by Claude Code. Any prior user status-line command is preserved and restored when the integration is disabled or disconnected.
-
-For local analytics, CodexMeter stores canonical model IDs, a keyed HMAC of each normalized working directory, the final project-folder name, hashed session relationships, and numeric image counts. Image counts describe the whole retained session after the local-history cutoff, rather than only the selected chart range. It does not store full working-directory paths, session text, image bytes, MIME payloads, or attachment contents.
-
-## Accuracy and limitations
-
-- **Local History** means the oldest token record still present in local Codex session history through now.
-- Optional **Lifetime** profile totals are account-wide and can include older, cloud, or other-device activity that is absent from this Mac.
-- Profile statistics can lag behind real time; CodexMeter shows the server's exact `stats_as_of` date instead of presenting delayed data as current.
-- Deleted logs cannot be reconstructed in **This Mac** or **Local History** totals.
-- Activity from another computer is absent from local totals unless its session history exists locally; optional account totals can include it.
-- A future Codex session-schema change may require a CodexMeter update.
-- Ambiguous counter baselines and malformed records are excluded rather than guessed.
-- API-equivalent cost uses the bundled current pricing snapshot and is marked unavailable for unknown models or incomplete pricing metadata. It is not an OpenAI bill.
-- Project names are folder basenames and can be identical; their stored identities remain separate keyed hashes.
-
-## Roadmap
-
-Codex and **Claude Code local session logs** are supported. Claude five-hour and weekly limits are available after explicit account setup. Claude web/mobile token totals, account switching, attachment counts, and cost estimates are not included. Additional service integrations will be added where reliable usage data is available, preserving the local-first privacy model.
-
-CodexBar's current feature families have been reviewed as a product reference, but CodexMeter keeps an independent interface and a narrower trust boundary. See the [CodexBar feature strategy](Documentation/CODEXBAR_STRATEGY.md) for what is adopted, adapted, deferred, or intentionally excluded.
-
-## Privacy
-
-Local accounting and analytics remain on-device. The app can check a signed Sparkle update feed. Optional profile sync sends the existing Codex access token and account ID only to `chatgpt.com` to retrieve aggregate profile statistics. CodexMeter does **not** store or log prompts, responses, reasoning text, source code, tool input or output, terminal output, raw session paths, full project paths, remote profile responses, or attachment contents. Credentials never enter the usage database or logs. Explicitly saved Codex accounts remain in the local Keychain; Claude sign-in remains in Claude Code's credential store and is never copied into CodexMeter.
-
-The Application Support directory is owner-only (`0700`); the SQLite database, lock, and fingerprint-key files are owner-only (`0600`). See [Privacy](Documentation/PRIVACY.md) for the complete boundary.
-
-## Platform permissions
-
-| Capability | Required? | Why |
-| --- | :---: | --- |
-| Full Disk Access | No | Reads supported local sessions under `.codex` and `.claude/projects` (or `CLAUDE_CONFIG_DIR/projects`). |
-| Accessibility | No | Does not control other apps. |
-| Screen Recording | No | Does not inspect the screen. |
-| Profile credential access | Optional | Reads only the access token and account ID after the user enables account totals. |
-| Saved Codex accounts | Optional | Explicit registration stores a login in this Mac’s Keychain; a confirmed switch replaces the local Codex login and restarts Codex. |
-| Claude account | Optional | Reads the official Claude CLI's signed-in status only; sign-in stays in Claude Code. CodexMeter stores only connection consent and documented limit percentages/reset times. |
-| Launch at Login | Optional | Enabled only by the user in Settings. |
-
-## Settings
-
-Switch Codex accounts from the account row at the top of **Settings ▸ Usage** — choose a saved account, or **Add Account…** / **Manage Accounts…**. Switching still asks before restarting Codex. See [Accounts](Documentation/ACCOUNTS.md).
-
-| Pane | Controls |
+| Provider | What CodexMeter reads |
 | --- | --- |
-| General | Launch at Login, refresh mode, week start, macOS automatic updates, and the number format / cached-input / last-updated display toggles |
-| Usage | The token history, day/week/month charts, and project & session breakdowns, with the provider picker and Codex account row |
-| Notch | Show the edge notch, its behaviour / size / ring colour / edge, reset-time wording, usage pace, the session-end peek and sound, and the 80% / 100% limit alerts |
-| Diagnostics | Privacy-safe diagnostics, log folder, and account-limit provider status |
-| Codex / Claude Code | Per-provider account, read-only limits, analytics options, and local-data actions |
+| **Codex** | Local session token history and read-only limits from the signed Codex app-server. Optional ChatGPT account totals stay separate from local history. |
+| **Claude Code** | Local session token history. After account setup, Claude Code's status-line integration supplies five-hour and weekly limits. |
+| **GitHub Copilot** | Copilot quotas using the GitHub CLI's existing sign-in. |
+| **Cursor** | Usage limits from the Cursor editor or Cursor Agent sign-in. |
+| **Grok** | Credits and usage from the Grok CLI sign-in. |
+| **OpenCode** | Go-plan usage from the existing OpenCode sign-in. |
+| **Command Code** | Credits from the Command Code account. |
+| **GLM** | Coding Plan usage with the key already configured in a supported coding tool. |
+| **Ollama Cloud** | Cloud usage with an API key supplied in Settings. |
+| **Antigravity** | Model allowances from its local language server. |
+| **Ollama Local** | Models loaded in the local Ollama runtime and their memory use. |
 
-A small status-bar item (**Show Notch**, **Usage…**, **Settings…**, **Check for Updates…**, **Quit**) is the way in once the notch is hidden.
+Most integrations use the session already owned by the original tool. Adding a provider to the catalogue does not sign you into that tool. Data availability depends on the provider and the account's permissions.
 
-## Build from source
+For Claude Code, sign in through `claude`, then open **Settings → Providers → Claude Code Details**, enable the integration, and add the account. Limits appear after Claude Code completes a response. See [Claude Code setup](Documentation/CLAUDE.md).
 
-```bash
+## Token history
+
+**Settings → Usage** keeps Codex and Claude Code histories separate. See today's input, cached input, and output; explore daily charts, models, projects, sessions, and supported cost estimates.
+
+**General → Number format** applies Compact or Detailed formatting to Usage and the notch's token/count readings. Optional ChatGPT account totals are labelled with their snapshot date; this Mac's live Today total remains separate.
+
+For Codex, cached input is already part of input: **Total = Input + Output**. [How accounting and data sources work](Documentation/USAGE.md).
+
+## Accounts
+
+Use the notch's account control or **Settings → Usage → Switch** to manage saved Codex accounts. Logins are saved in this Mac's Keychain, and switching asks before restarting Codex. There is no automatic quota-based account rotation.
+
+Claude's account entry opens its provider settings; sign-in remains with Claude Code. [Account setup and limitations](Documentation/ACCOUNTS.md).
+
+## Alerts and updates
+
+A provider can notify you when a limit crosses 80% or 100%. Enable alerts in **Settings → Notch**, or mute one provider from its row in **Providers**. Session-end peeks and sounds have their own controls.
+
+Sparkle checks the signed update feed daily. Change automatic checks in **Settings → General**, or choose **Check for Updates** from the menu-bar item.
+
+## Privacy and accuracy
+
+Local token accounting runs on this Mac. CodexMeter does not put prompts, responses, source code, full project paths, or attachment contents in its usage database. Credentials do not enter that database or diagnostics; explicitly saved Codex accounts use the local Keychain.
+
+Provider limit requests go to their respective services; optional ChatGPT account totals require the existing Codex sign-in. Internal provider endpoints can change. Missing or stale readings are labelled rather than invented, and deleted local logs cannot be reconstructed. API-equivalent cost estimates are not subscription charges or bills.
+
+[Privacy details](Documentation/PRIVACY.md) · [Accounting and limitations](Documentation/USAGE.md) · [Troubleshooting](Documentation/TROUBLESHOOTING.md)
+
+## Building
+
+Use Xcode with Swift 6.2 or later:
+
+```sh
 git clone https://github.com/dlfkdLR/CodexMeter.git
 cd CodexMeter
 swift test
 swift run CodexMeter
 ```
 
-Build and verify a certificate-free Universal 2 release candidate:
+Build a Universal app, ZIP, DMG, and checksums without an Apple signing certificate:
 
-```bash
+```sh
 Scripts/release_unsigned.sh
 ```
 
-For a clean, matching release tag, build the verified artifacts and signed Sparkle feed together:
+Maintainer signing and publication steps are in [Releasing](Documentation/RELEASING.md). See also [Architecture](Documentation/ARCHITECTURE.md), [Contributing](CONTRIBUTING.md), [Security](SECURITY.md), and the [Changelog](CHANGELOG.md).
 
-```bash
-Scripts/release_stable.sh
-```
+## Credits and license
 
-These commands produce an ad-hoc-signed ZIP, DMG, per-file checksums, and `SHA256SUMS.txt` without using an Apple certificate. Maintainers who later add a Developer ID Application certificate and notarization profile can use the optional Apple-trusted workflow:
+The edge-notch interface, provider integrations, and supporting code are adapted from [Codenotch](https://github.com/vinzdg/codenotch) by Vinz. This README follows its product-first presentation; the product photograph is a capture of **CodexMeter itself**. Automatic updates use [Sparkle](https://sparkle-project.org/).
 
-```bash
-export CODE_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
-export CODE_SIGN_TEAM_ID="TEAMID"
-export NOTARY_PROFILE="codexmeter-notary"
-Scripts/release_public.sh
-```
+[MIT](LICENSE) © CodexMeter contributors. Incorporated Codenotch portions remain **MIT © 2026 Vinz**. The full original copyright and license are preserved in [NOTICE](NOTICE), bundled with the app, and available in **Settings → Information**. Preserve both files when redistributing.
 
-## Troubleshooting
-
-- **No usage found:** launch Codex at least once and check that `~/.codex/sessions` contains JSONL files.
-- **Totals are lower than expected:** use **Settings → Data → Rebuild Statistics** after Codex finishes writing its session files.
-- **Launch at Login is blocked:** open macOS **System Settings → General → Login Items**.
-- **Database safety limit reached:** review the local totals, then use **Clear Local History** if they are no longer needed.
-
-See the complete [Troubleshooting guide](Documentation/TROUBLESHOOTING.md).
-
-## Documentation
-
-- [Architecture](Documentation/ARCHITECTURE.md)
-- [CodexBar feature strategy](Documentation/CODEXBAR_STRATEGY.md)
-- [Privacy](Documentation/PRIVACY.md)
-- [Releasing](Documentation/RELEASING.md)
-- [Troubleshooting](Documentation/TROUBLESHOOTING.md)
-- [Changelog](CHANGELOG.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security](SECURITY.md)
-
-## Acknowledgements
-
-The edge-notch interface, provider integrations, and supporting code are adapted from [Codenotch](https://github.com/vinzdg/codenotch) by Vinz, under the MIT License. The original copyright and complete license are preserved in [NOTICE](NOTICE), bundled with the app, and available from **Settings → Information → Codenotch - MIT License**.
-
-README presentation inspired by [CodexBar](https://github.com/steipete/CodexBar). Automatic updates use [Sparkle](https://sparkle-project.org/). CodexMeter focuses on local Codex token accounting and integrates the adapted notch with its own usage and account-management features.
-
-## Disclaimer
-
-CodexMeter is an unofficial utility and is not affiliated with or endorsed by OpenAI. Codex is a trademark of OpenAI.
-
-## License
-
-MIT © CodexMeter contributors. See [LICENSE](LICENSE).
-
-Incorporated Codenotch portions remain MIT © 2026 Vinz. Preserve [NOTICE](NOTICE) alongside [LICENSE](LICENSE) when redistributing the source or app. The release build bundles both files, and packaging verifies that their contents match the repository before producing ZIP and DMG downloads.
+CodexMeter is an unofficial utility, not affiliated with or endorsed by OpenAI or Anthropic.

@@ -30,6 +30,7 @@ private struct ProvidersSettingsContent: View {
 
     @Binding var openDetail: String?
     @State private var dragging: String?
+    @State private var showsProviderPicker = false
 
     var body: some View {
         Group {
@@ -49,6 +50,15 @@ private struct ProvidersSettingsContent: View {
             codexAccounts.refreshCurrentPlanType()
             notch.refreshProvidersForSettings()
             if claude.isEnabled { await claude.refresh() }
+        }
+        .sheet(isPresented: $showsProviderPicker) {
+            ProviderPickerView(rows: providerRows, selectedIDs: Set(notch.selectedProviderIDs),
+                onAdd: { notch.addProvider($0) },
+                onConfigure: { id in
+                    showsProviderPicker = false
+                    openDetail = id
+                },
+                onClose: { showsProviderPicker = false })
         }
     }
 
@@ -118,14 +128,7 @@ private struct ProvidersSettingsContent: View {
                 }
 
                 HStack {
-                    Menu {
-                        ForEach(available) { row in
-                            Button(row.name) {
-                                notch.addProvider(row.id)
-                                openDetail = row.id
-                            }
-                        }
-                    } label: {
+                    Button { showsProviderPicker = true } label: {
                         Label("Add Provider", systemImage: "plus")
                     }
                     .fixedSize()
@@ -170,9 +173,10 @@ private struct ProvidersSettingsContent: View {
         let accountLine = [codexAccounts.currentAccountDisplayName, codexAccounts.currentPlanName]
             .compactMap { $0 }.joined(separator: " · ")
         return ProviderRowModel(
-            id: "codex", name: name, glyph: .openai, connected: true,
-            statusLine: headline(from: limits.snapshot) ?? "Signed in",
-            accountLine: accountLine.isEmpty ? "Signed in to the Codex app" : accountLine,
+            id: "codex", name: name, glyph: .openai,
+            connected: codexAccounts.currentAccountDisplayName != nil || limits.snapshot != nil,
+            statusLine: headline(from: limits.snapshot) ?? (accountLine.isEmpty ? "Not connected" : "Signed in"),
+            accountLine: accountLine.isEmpty ? nil : accountLine,
             wasRefused: false, primary: .details
         )
     }

@@ -323,7 +323,8 @@ final class NotchWindowController {
     private var liveRect: CGRect {
         guard model.isExpanded else { return pillRect }
         // The orb hangs below the shape, so the live region is both together.
-        return notchRect.union(handleRect).union(model.accountOrbRect)
+        let chrome = notchRect.union(handleRect)
+        return model.showsAccountControl ? chrome.union(model.accountOrbRect) : chrome
     }
 
     /// The card, its tail, and the gap between the tail and the notch — so
@@ -430,15 +431,12 @@ final class NotchWindowController {
         }
 
         let overHandle = model.isExpanded && isOverHandle(local)
-        let overAccountSwitch = model.isExpanded && model.accountOrbRect.contains(local)
-        if model.isHoveringAccountSwitch != overAccountSwitch {
-            model.isHoveringAccountSwitch = overAccountSwitch
-        }
-        if model.isHoveringSettings != overHandle {
-            model.isHoveringSettings = overHandle
-        }
+        model.updateControlHover(overSettings: overHandle,
+                                 overAccount: model.accountOrbRect.contains(local),
+                                 insideControls: handleRect.union(model.accountOrbRect).contains(local))
         setPointing(
-            Self.wantsPointingHand(isExpanded: model.isExpanded, cellIndex: target) || overHandle || overAccountSwitch
+            Self.wantsPointingHand(isExpanded: model.isExpanded, cellIndex: target)
+                || overHandle || model.isHoveringAccountSwitch
         )
 
         if let target {
@@ -523,7 +521,7 @@ final class NotchWindowController {
         }
         let local = localCursor(in: panel.frame)
 
-        if model.isExpanded, model.accountOrbRect.contains(local) {
+        if model.showsAccountControl, model.accountOrbRect.contains(local) {
             showAccountMenu()
             return
         }

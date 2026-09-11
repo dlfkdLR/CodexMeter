@@ -16,7 +16,7 @@ Tiny native macOS app that turns **local Codex and Claude Code session history**
 
 ## Why
 
-- **Glanceable limits.** The notch fills a ring per provider with how much of the tightest quota window is left, and spins it while an agent is working.
+- **Glanceable limits.** The notch shows a ring per provider and spins it while an agent is working. Choose **Used** or **Remaining** in **Settings ▸ Notch ▸ Readings** to change the percentage and ring fill together; warning colours still reflect actual consumption.
 - **Plan around limits.** See the nearest Codex or Claude Code quota windows, reset countdowns, and an explicitly labeled even-use pace estimate before starting a long task.
 - **Honest accounting.** Cumulative snapshots are normalized into increases instead of being added repeatedly.
 - **Local by design.** Prompts, responses, source code, credentials, and raw session paths are not stored in CodexMeter's database.
@@ -91,7 +91,7 @@ Local totals require no account connection. On macOS, **Settings → Codex → U
 
 - **Codex and opt-in Claude Code** local usage, selected in **Settings ▸ Usage** after the Claude account is added. Each service has independent history, refresh, and data controls; token totals are never mixed. See [Claude Code support](Documentation/CLAUDE.md).
 - **Edge notch (2.0):** a floating ring per selected provider — Codex, Claude Code, and supported CLIs or editors — welded to a screen edge. Enabled by default; manage visibility from the status-bar menu or **Settings ▸ Notch**, and add or remove providers in **Settings ▸ Providers**. An explicitly saved off setting is preserved. Threshold notifications at 80% / 100%.
-- **Account plans at a glance:** the notch tooltip shows Codex **Pro 5x / Pro 20x** and Claude **Max 5x / Max 20x** when the signed-in account metadata identifies the tier. Claude's local profile must match both the current email and organization; missing or unrecognized tier metadata leaves the plain plan name. The **Switch account** button opens the provider's account controls.
+- **Account plans at a glance:** the notch tooltip shows Codex **Pro 5x / Pro 20x** and Claude **Max 5x / Max 20x** when the signed-in account metadata identifies the tier. Claude's local profile must match both the current email and organization; missing or unrecognized tier metadata leaves the plain plan name. Hover the notch's resting settings arc to reveal Settings, followed by **Switch account** directly below it. The account menu opens saved Codex accounts or the Claude Code account pane.
 - User-selected Codex account switching: save logins in this Mac’s Keychain, add another account through Codex’s browser sign-in, and explicitly quit/switch/reopen Codex. No automatic quota-based rotation. See [account setup and supported configurations](Documentation/ACCOUNTS.md).
 
 - Live Today total from the selected service's local records always stays in the primary summary

@@ -42,6 +42,17 @@ final class NotchViewModel: ObservableObject {
     @Published var isHoveringSettings = false
     @Published var isHoveringAccountSwitch = false
     var onOpenAccountMenu: (() -> Void)?
+    var showsAccountControl: Bool { isExpanded && (isHoveringSettings || isPresentingAccountMenu) }
+
+    /// Enter through the resting settings arc; then keep both controls visible
+    /// while crossing the gap or using the account menu.
+    func updateControlHover(overSettings: Bool, overAccount: Bool, insideControls: Bool) {
+        let revealed = isExpanded && (overSettings || isPresentingAccountMenu
+            || (isHoveringSettings && insideControls))
+        if isHoveringSettings != revealed { isHoveringSettings = revealed }
+        let accountHovered = revealed && overAccount
+        if isHoveringAccountSwitch != accountHovered { isHoveringAccountSwitch = accountHovered }
+    }
     /// A direct SwiftUI tap on the settings orb, independent of the panel's
     /// own AppKit-level click routing (`NotchPanel.mouseDown` →
     /// `NotchWindowController.handleClick`). That path relies on the panel's

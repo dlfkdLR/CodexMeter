@@ -5,6 +5,46 @@ import XCTest
 
 @MainActor
 final class NotchControlsTests: XCTestCase {
+    func testAccountControlRevealsAfterSettingsAndSurvivesTheGapAndMenu() throws {
+        let model = NotchViewModel()
+        model.isExpanded = true
+        model.updateControlHover(overSettings: false, overAccount: true, insideControls: true)
+        XCTAssertFalse(model.showsAccountControl, "An invisible account button must not activate on its own")
+        model.updateControlHover(overSettings: true, overAccount: false, insideControls: true)
+        XCTAssertTrue(model.showsAccountControl)
+        model.updateControlHover(overSettings: false, overAccount: false, insideControls: true)
+        XCTAssertTrue(model.showsAccountControl, "Crossing the gap must not hide the next button")
+        model.updateControlHover(overSettings: false, overAccount: true, insideControls: true)
+        XCTAssertTrue(model.isHoveringSettings)
+        XCTAssertTrue(model.isHoveringAccountSwitch)
+        model.isPresentingAccountMenu = true
+        model.updateControlHover(overSettings: false, overAccount: false, insideControls: false)
+        XCTAssertTrue(model.showsAccountControl)
+        model.isPresentingAccountMenu = false
+        model.updateControlHover(overSettings: false, overAccount: false, insideControls: false)
+        XCTAssertFalse(model.showsAccountControl)
+        XCTAssertFalse(model.isHoveringSettings)
+
+        if let directory = ProcessInfo.processInfo.environment["CODEXMETER_NOTCH_CAPTURE_DIR"] {
+            model.snapshots = [ProviderSnapshot(id: "codex", displayName: "Codex", glyph: .openai,
+                fidelity: .official, status: .ok, windows: [LimitWindow(id: "weekly", label: "Weekly", usedFraction: 0.6)])]
+            let folder = URL(fileURLWithPath: directory, isDirectory: true)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            for revealed in [false, true] {
+                model.updateControlHover(overSettings: revealed, overAccount: false, insideControls: revealed)
+                let size = model.panelSize
+                let renderer = ImageRenderer(content: NotchRootView(model: model)
+                    .frame(width: size.width, height: size.height)
+                    .frame(width: 120, alignment: .trailing).clipped()
+                    .background(Color(red: 0.14, green: 0.16, blue: 0.19)))
+                renderer.scale = 2
+                let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(renderer.cgImage))
+                let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                try png.write(to: folder.appendingPathComponent("controls-\(revealed ? "revealed" : "resting").png"))
+            }
+        }
+    }
+
     func testAccountButtonFollowsSettingsAndFitsEveryEdgeAndSize() {
         let model = NotchViewModel()
         model.screenSize = CGSize(width: 1440, height: 900)

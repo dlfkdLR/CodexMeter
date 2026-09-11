@@ -62,15 +62,21 @@ struct NotchRootView: View {
                     .contentShape(Circle())
                     .accessibilityLabel("Switch account")
                     .accessibilityIdentifier("notch.switchAccount")
+                    .accessibilityHidden(!model.showsAccountControl)
                     .help("Switch account")
-                    .scaleEffect(model.sizeScale)
+                    .scaleEffect(model.sizeScale * (model.showsAccountControl ? 1 : 0.65))
+                    .offset(
+                        x: !model.edge.isVertical && !model.showsAccountControl ? -NotchDesign.px(24) : 0,
+                        y: model.edge.isVertical && !model.showsAccountControl ? -NotchDesign.px(24) : 0
+                    )
                     .position(place.point(
                         along: model.slack + model.accountOrbAlong * model.sizeScale,
                         across: model.orbInset * model.sizeScale
                     ))
-                    .opacity(model.isExpanded ? 1 : 0)
-                    .allowsHitTesting(model.isExpanded)
-                    .animation(motion(orbMotion), value: model.isExpanded)
+                    .opacity(model.showsAccountControl ? 1 : 0)
+                    .allowsHitTesting(model.showsAccountControl)
+                    .animation(motion(.spring(response: 0.3, dampingFraction: 0.82)
+                        .delay(model.showsAccountControl ? 0.08 : 0)), value: model.showsAccountControl)
                 }
 
                 if let snapshot = model.hoveredSnapshot, let index = model.hoveredIndex,

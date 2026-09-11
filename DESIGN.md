@@ -6,6 +6,10 @@ typography:
     fontFamily: "SF Pro Rounded, system-ui, sans-serif"
     fontSize: "32px"
     fontWeight: 600
+  settings-primary-metric:
+    fontFamily: "SF Pro Rounded, system-ui, sans-serif"
+    fontSize: "42px"
+    fontWeight: 600
 rounded:
   detail-selection: "8px"
   detail-card: "10px"
@@ -15,14 +19,16 @@ spacing:
   section: "12px"
   content: "16px"
   popover-edge: "18px"
+  settings-section: "24px"
 components:
   overview-popover:
     width: "372px"
   limit-card:
     rounded: "{rounded.detail-card}"
     padding: "{spacing.section}"
-  shortcut:
-    height: "42px"
+  settings-detail-link:
+    rounded: "{rounded.detail-selection}"
+    padding: "{spacing.section}"
   footer-action:
     height: "28px"
     width: "28px"
@@ -62,9 +68,11 @@ purpose:
   (make it the same as Codenotch) was the brief, and it won.
 - **The Settings window** — General, Usage, Notch, Diagnostics, Information, and
   a pane per provider. This is where the Quiet Instrument rules below still
-  apply. The **Usage** pane hosts the former popover (`MenuPopoverView`) in
-  `embedded` mode; everything in *Components* below describes it, now reached
-  from Settings rather than the menu bar.
+  apply. The **Usage** pane shares account actions and navigation with
+  `MenuPopoverView` in `embedded` mode, while `UsageSettingsOverview` supplies
+  an overview that fills the available Settings column. The component rules
+  below distinguish this window presentation from the retained compact menu
+  presentation.
 
 A minimal `NSStatusItem` (`StatusItemController`) is the way back in when the
 notch is hidden: Show Notch, Usage…, Settings…, Check for Updates…, Quit.
@@ -102,7 +110,8 @@ The palette follows macOS semantic colors so it remains correct in light, dark, 
 
 ### Hierarchy
 
-- **Primary Metric** (semibold, 32px): Today's total and the strongest number on the overview.
+- **Primary Metric** (rounded semibold): Today's total is the strongest number on the overview. The compact menu uses `primary-metric`; Settings uses the larger `settings-primary-metric` role. Both retain stable digits and scale down to fit long totals.
+- **Settings Period Metric** (rounded semibold, 20pt): Week, month, and history totals form a quieter supporting row beneath today's total.
 - **Headline** (semantic headline): Product title and primary empty-state messages.
 - **Section Label** (semibold subheadline): Limits and analytic section headings.
 - **Heading Tone:** Use the category's natural capitalization, not forced uppercase. The interface stays calm without weakening hierarchy.
@@ -113,9 +122,13 @@ The palette follows macOS semantic colors so it remains correct in light, dark, 
 
 ## Layout
 
-The Usage pane hosts the embedded popover, a fixed compact column (372px) with content-driven height. It opens directly with enabled provider selection rather than repeating the app name and mark, and the footer keeps primary actions visible. Token Usage contains token totals, period history, and analytic destinations; the selected provider's Limits mode contains quota windows and reset timing. The selected mode expands to its full intrinsic height without an embedded scroll region, so every item remains visible at once. Major sections use dividers; details use the same width so navigation never causes a horizontal jump.
+The Settings Usage pane fills the available detail-column width. Its compact header places a native provider menu opposite the native Token Usage / provider Limits segmented picker, followed by the existing account switcher or provider account row. Token Usage contains today's total and breakdown, a horizontal period-summary strip, and direct analytic destinations. The selected provider's Limits mode contains quota windows and reset timing. Dividers separate these groups without enclosing the overview in a large card.
 
-The spacing rhythm is 4px for tightly related icon-label pairs, 8px for rows, 12px between components inside a section, 16px for detailed-screen content, and 18px at popover edges. Token Usage prioritizes today's local usage, nearby periods, and analytic shortcuts; Codex Limits prioritizes quota remaining and reset timing.
+Today's total and token breakdown sit beside one another when they fit and stack at narrower widths. The week, month, and lifetime or local-history summaries follow the same horizontal-to-vertical fitting behavior. Settings uses `settings-section` for overview padding and major section spacing; shared detailed screens retain `content` padding. The compact menu keeps its fixed `overview-popover` width, content-driven overview height, and `popover-edge` spacing.
+
+**The Usage Viewport Rule.** Settings owns one outer ScrollView for both the overview and its available-width detail destinations; content starts at the top and scrolls when the window is shorter than the content. Do not add a second popover-sized scroll region inside Settings. The compact menu retains its separate content-fitting, height-limited detail viewports.
+
+The shared spacing rhythm remains 4px for tightly related icon-label pairs, 8px for rows, 12px between components inside a section, and 16px for detailed-screen content. Token Usage prioritizes today's local usage, nearby periods, and analytic shortcuts; provider Limits prioritizes quota remaining and reset timing.
 
 **The One-Question Rule.** Each destination answers one question: limits, usage, projects, or sessions.
 
@@ -135,25 +148,36 @@ The diamond meter mark (`◈`) was the menu-bar and app identity through 1.x and
 
 ## Components
 
-### Overview Popover
+### Usage Overview Hosts
 
-- **Character:** A compact status instrument, not a miniature dashboard.
-- **Shape:** Fixed 372px width with a stable header and footer.
-- **Behavior:** The selected mode uses its intrinsic height; the overview contains no nested scrolling surface.
+- **Character:** A quiet status instrument with density appropriate to its host.
+- **Settings Shape:** The header, overview, and destinations fill the available column. Overview groups use generous section spacing while preserving native controls and semantic styling.
+- **Compact Shape:** The retained menu presentation uses the fixed `overview-popover` width with its compact header and utility footer.
+- **Behavior:** Both hosts measure content at its intrinsic height. Settings contains that content in its single outer viewport; the compact overview has no inner scroll region.
 
 ### Top-Level Modes
 
 - **Token Usage:** Local and optional account-wide token totals, period history, and analytic destinations.
 - **Provider Limits:** Read-only Codex or Claude quota windows, reset timing, and pace. Reset-credit availability remains Codex-only.
-- **Behavior:** Two equal-width native buttons switch content in place. The selected mode uses the system accent and both modes remain keyboard and VoiceOver accessible.
+- **Settings Provider Selection:** A compact native Menu shows the current provider and offers the available providers. The existing Codex account switcher or Claude account row remains directly beneath the controls.
+- **Settings Mode Selection:** A native segmented Picker switches Token Usage and the selected provider's Limits in place. It keeps its intrinsic control height and a compact 246pt width instead of stretching across the content column.
+- **Compact Mode Selection:** Two equal-width native buttons switch content in place. Native selection styling and keyboard and VoiceOver access remain part of both presentations.
 - **Feedback:** Clickable rows and utility buttons use a subtle neutral hover/pressed fill and an accent keyboard-focus outline. Feedback never changes geometry, honors Increase Contrast, and skips its short fade under Reduce Motion.
-- **Separation:** The header contains no provider status card, connection badge, or generated explanatory subtitle.
+- **Separation:** Provider and mode selection stay compact. The existing account row supplies account context without a repeated app title or generated explanatory subtitle.
 
 ### Primary Token Summary
 
 - **Character:** Immediate and auditable.
 - **Content:** Total first, then Input, Cached input, and Output; help text explains that cached input is included in Input and Total equals Input plus Output.
+- **Settings Composition:** The Today heading carries “This Mac.” A large total with a secondary “tokens” label sits beside the breakdown when space allows; narrower layouts stack the two. The cached-input row follows the existing visibility preference.
 - **Motion:** Numeric transitions use a short 0.2–0.24 second ease-out and are removed when Reduce Motion is enabled.
+
+### Settings Period Summary
+
+- **Character:** A horizontal supporting summary beneath today's local total.
+- **Content:** This Week, This Month, and Lifetime when an optional ChatGPT snapshot is available; otherwise the last destination is Local History. Each total opens its period detail.
+- **Source:** History displays “This Mac” for local totals or “ChatGPT · Through [date]” for account totals. The account snapshot never changes today's local source or gets added to local counts.
+- **Shape:** Equal-width period links separated by short vertical dividers; they stack when the available width cannot fit the strip.
 
 ### Account Limit Preview
 
@@ -166,24 +190,27 @@ The diamond meter mark (`◈`) was the menu-bar and app identity through 1.x and
 ### Analytic Shortcuts
 
 - **Character:** Three equal one-click destinations for Usage, Projects, and Sessions.
-- **Shape:** Each target is at least 42px high with an SF Symbol and visible label.
+- **Settings Shape:** Equal-width links form one row, each with an SF Symbol, visible label, trailing disclosure, and restrained tonal fill using `settings-detail-link` padding and corners.
+- **Compact Shape:** The same destinations use vertically stacked rows with 38pt minimum height.
 - **Behavior:** Hidden preferences remove their destination instead of leaving disabled placeholders.
 
 ### Analytics Details
 
-- **Shape:** All destinations keep the 372pt popover width. Short content determines its own height; longer analytics scroll within a 440pt viewport, while other long details cap their viewport at 520pt.
+- **Settings Shape:** All destinations expand to the available Settings column width. Short content determines its own height; long details participate in the Settings pane's single outer ScrollView.
+- **Compact Shape:** Destinations retain the 372pt menu width. Longer analytics scroll within a 440pt viewport, while other long details cap their viewport at 520pt; short content shrinks those viewports to fit.
 - **Structure:** A 44pt header owns the back button and title in the same vertical layout as the content. Do not embed `NavigationStack` or an automatic window toolbar; a second navigation/safe-area owner can leave a large gap above the filters.
-- **Position:** Native range and metric controls keep intrinsic height directly below the title, with 12pt vertical padding. Only the chart or list scrolls, anchored at the top; filters never absorb surplus height.
+- **Position:** Native range and metric controls keep intrinsic height directly below the title, with 12pt vertical padding, and never absorb surplus height. Settings scrolls the whole detail through its outer viewport; in the compact menu only the chart or list uses the inner content-fitting viewport.
 - **Navigation:** Back returns to the previous destination and preserves its range, metric, and selected chart day. Command-[ also goes back.
 - **Reading Order:** Align the name and token total on the first row; dates, session counts, and estimated costs are secondary below. Full truncated names remain available as help text. Detail totals use the same rounded, tabular type as the overview at a smaller 28pt size.
 - **Concise Copy:** State today's period and source once above its total. Omit generic headings above self-explanatory navigation rows. Unknown cost messages appear in the summary or item detail, not on every project, model, and session row; unavailable estimates must never become zero. Keep API estimates visibly labeled. Long limit explanations are collapsed under “About these limits”; reset timestamps and image-count methodology use contextual help. Source dates, stale/error messages, and low-limit warnings stay visible.
 - **Charts:** Rounded bar ends and the system accent match the rest of the app; do not hard-code a blue gradient.
-- **Verification:** Render the production `MenuPopoverView`, including its actual header and destination, with loading, empty, and populated content. Assert title-to-filter spacing and viewport bounds, and verify the viewport shrinks and grows with content instead of testing a substitute navigation host.
+- **Verification:** Render the production Settings Usage pane and compact `MenuPopoverView`, including their actual headers and destinations, with loading, empty, and populated content. Verify narrow and wide Settings widths, title-to-filter spacing, and single-scroll ownership; for the compact menu, verify the detail viewport shrinks and grows within its height cap.
 
 ### Footer Actions
 
 - **Character:** Stable utility actions with 28px targets.
-- **Behavior:** Refresh rotates once while starting and respects Reduce Motion; Settings and More remain fixed. More groups status, repository, update, and quit actions.
+- **Compact Behavior:** Refresh rotates once while starting and respects Reduce Motion; Settings and More remain fixed. More groups status, repository, update, and quit actions.
+- **Settings Behavior:** The footer contains only applicable freshness, source, and operation status. It appears when status is needed and omits the compact menu's utility-action row.
 - **Keyboard:** Refresh uses Command-R, Settings uses Command-comma, and Quit uses Command-Q.
 
 ### Detail Cards

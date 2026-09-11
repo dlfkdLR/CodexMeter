@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// Token history, project and session analytics — the numbers the menu-bar
-/// popover used to show. Hosted here so they survive the notch taking the
-/// popover's place. The popover view itself is reused in `embedded` mode
-/// rather than reimplemented.
+/// A window-sized overview with the shared account actions and analytics
+/// navigation. The viewport also contains tall content at small window sizes.
 struct UsageSettingsView: View {
     @EnvironmentObject private var env: SettingsEnvironment
     @AppStorage("usageProvider") private var usageProvider = UsageProvider.codex.rawValue

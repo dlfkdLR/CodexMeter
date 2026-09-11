@@ -121,11 +121,11 @@ struct MenuPopoverView: View {
                 destinationView(destination)
                     .id(destination)
             } else {
-                header
+                if embedded { settingsHeader } else { header }
                 Group {
                     switch selectedSection {
                     case .overview:
-                        overviewContent
+                        if embedded { UsageSettingsOverview() } else { overviewContent }
                     case .codex:
                         codexContent
                     }
@@ -141,14 +141,65 @@ struct MenuPopoverView: View {
         }
         .frame(width: embedded ? nil : MenuPopoverMetrics.width,
                alignment: .topLeading)
-        .frame(maxWidth: embedded ? 480 : nil, alignment: .topLeading)
+        .frame(maxWidth: embedded ? .infinity : nil, alignment: .topLeading)
         .fixedSize(horizontal: false, vertical: true)
         .background(.background)
         .environmentObject(navigation)
+        .environment(\.usageDetailUsesWindowWidth, embedded)
         .onChange(of: isRefreshing) { _, isRefreshing in
             guard isRefreshing, !reduceMotion else { return }
             refreshTurns += 1
         }
+    }
+
+    /// Settings has room for a compact toolbar and a full-width overview.
+    /// Keep the account actions and navigation owned by the existing host.
+    private var settingsHeader: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 16) {
+                Menu {
+                    ForEach(availableProviders) { provider in
+                        Button {
+                            MenuProviderSelection.apply(provider, selection: &usageProvider, section: &selectedSection)
+                        } label: {
+                            Label(provider.tabTitle, systemImage: usageProvider == provider.rawValue ? "checkmark" : provider.symbol)
+                        }
+                        .keyboardShortcut(provider == .codex ? "1" : "2", modifiers: [.command, .shift])
+                        .accessibilityIdentifier("menu.provider.\(provider.rawValue)")
+                    }
+                } label: {
+                    Text(store.provider.tabTitle).fontWeight(.semibold)
+                }
+                .fixedSize()
+                .accessibilityLabel("Usage provider")
+                .accessibilityValue(store.provider.tabTitle)
+                .accessibilityIdentifier("settings.usage.provider")
+
+                Spacer(minLength: 0)
+
+                Picker("Usage section", selection: $selectedSection) {
+                    ForEach(MenuPopoverSection.allCases) { section in
+                        Text(section.title(for: store.provider)).tag(section)
+                            .keyboardShortcut(section == .overview ? "1" : "2", modifiers: .command)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 246)
+                .accessibilityIdentifier("settings.usage.section")
+            }
+            .controlSize(.regular)
+            .padding(.horizontal, 24)
+
+            if store.provider == .codex {
+                CodexAccountSwitcher(accounts: accounts)
+                    .padding(.horizontal, 6)
+            } else {
+                claudeAccountBadge.padding(.horizontal, 6)
+            }
+            Divider()
+        }
+        .padding(.top, 20)
     }
 
     private func detailHeader(_ destination: MenuDestination) -> some View {
@@ -236,7 +287,7 @@ struct MenuPopoverView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Button("Open Settings") {
-                    SettingsWindowController.shared.present()
+                    SettingsWindowController.shared.present(selecting: .provider(store.provider))
                 }
                 .buttonStyle(.link)
             }

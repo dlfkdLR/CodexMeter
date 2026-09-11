@@ -33,11 +33,14 @@ final class NotchViewModel: ObservableObject {
     @Published var isAlwaysOn = false
 
     /// Held open, by either route. What the folding logic actually asks.
-    var staysOpen: Bool { isPinned || isAlwaysOn }
+    var staysOpen: Bool { isPinned || isAlwaysOn || isPresentingAccountMenu }
+    var isPresentingAccountMenu = false
     /// Providers with a fetch in flight, driven by the store.
     @Published var refreshing: Set<String> = []
     /// The settings handle is under the cursor.
     @Published var isHoveringSettings = false
+    @Published var isHoveringAccountSwitch = false
+    var onOpenAccountMenu: (() -> Void)?
     /// A direct SwiftUI tap on the settings orb, independent of the panel's
     /// own AppKit-level click routing (`NotchPanel.mouseDown` →
     /// `NotchWindowController.handleClick`). That path relies on the panel's
@@ -192,10 +195,19 @@ final class NotchViewModel: ObservableObject {
         return cornerCentreAlong + NotchLayout.orbCornerOffset(corner: drawnCornerRadius)
     }
 
-    /// Reserve the full hit area even while only the resting arc is visible,
-    /// so revealing the settings button cannot put it beyond the screen.
+    /// The account switch is the next control after Settings along every edge.
+    var accountOrbAlong: CGFloat { orbAlong + NotchLayout.orbHotZone + NotchLayout.orbGap }
+
+    var accountOrbRect: CGRect {
+        let centre = placement.point(along: slack + accountOrbAlong * sizeScale,
+                                     across: orbInset * sizeScale)
+        let side = NotchLayout.orbHotZone * sizeScale
+        return CGRect(x: centre.x - side / 2, y: centre.y - side / 2, width: side, height: side)
+    }
+
+    /// Keep both controls and their full hit areas on screen while dragging.
     var trailingExtent: CGFloat {
-        max(0, orbAlong - shapeLength + NotchLayout.orbHotZone / 2).rounded(.up)
+        max(0, accountOrbAlong - shapeLength + NotchLayout.orbHotZone / 2).rounded(.up)
     }
 
     /// Where the bar's far corner actually turns, along the stack.

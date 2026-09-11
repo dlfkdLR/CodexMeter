@@ -5,6 +5,34 @@ import XCTest
 
 @MainActor
 final class NotchControlsTests: XCTestCase {
+    func testAccountButtonFollowsSettingsAndFitsEveryEdgeAndSize() {
+        let model = NotchViewModel()
+        model.screenSize = CGSize(width: 1440, height: 900)
+        model.snapshots = [ProviderSnapshot(id: "codex", displayName: "Codex", glyph: .openai,
+            fidelity: .official, status: .ok, windows: [LimitWindow(id: "weekly", label: "Weekly", usedFraction: 0.59)])]
+        for edge in NotchEdge.allCases {
+            for size in NotchSize.allCases {
+                model.edge = edge
+                model.sizeScale = size.scale
+                let panel = CGRect(origin: .zero, size: model.panelSize)
+                XCTAssertTrue(panel.contains(model.accountOrbRect), "\(edge) \(size): \(model.accountOrbRect) exceeds \(panel)")
+                XCTAssertGreaterThan(model.accountOrbAlong - NotchLayout.orbHotZone / 2,
+                                     model.orbAlong + NotchLayout.orbHotZone / 2)
+                XCTAssertGreaterThanOrEqual(model.trailingExtent,
+                    model.accountOrbAlong + NotchLayout.orbHotZone / 2 - model.shapeLength)
+            }
+        }
+    }
+
+    func testAccountMenuHoldsHoverNotchOpenWithoutChangingThePin() {
+        let model = NotchViewModel()
+        model.isPresentingAccountMenu = true
+        XCTAssertTrue(model.staysOpen)
+        XCTAssertFalse(model.isPinned)
+        model.isPresentingAccountMenu = false
+        XCTAssertFalse(model.staysOpen)
+    }
+
     func testSettingsAndAccountActionsReachTheSwiftUIControls() {
         let controller = NotchWindowController()
         var settingsOpens = 0

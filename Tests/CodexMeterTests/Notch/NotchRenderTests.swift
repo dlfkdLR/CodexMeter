@@ -107,7 +107,7 @@ final class NotchNotchRenderTests: XCTestCase {
             // than guessed, plus a point for the stroke's own width.
             let reach = m.orbArcRadius * scale + NotchLayout.orbStroke
             let deepest = max(m.notchDepth * scale, m.orbInset * scale + reach)
-            let furthest = m.slack + max(m.shapeLength, m.orbAlong) * scale + reach
+            let furthest = m.slack + max(m.shapeLength, m.accountOrbAlong) * scale + reach
             let nearest = m.slack - reach
 
             var maxAcross = 0.0, maxAlong = -Double.infinity, minAlong = Double.infinity

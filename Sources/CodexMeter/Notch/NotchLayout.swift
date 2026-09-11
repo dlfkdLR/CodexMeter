@@ -395,7 +395,7 @@ enum NotchLayout {
             : max(endSlack * notchScale, cardWidth / 2 + cardCorner)
     }
 
-    private static let endSlack = NotchDesign.px(190)
+    private static let endSlack = NotchDesign.px(300)
 
     /// The busiest provider that occurs — Claude, with four limit windows.
     /// The tallest card is sized for it, since the panel is sized once for the

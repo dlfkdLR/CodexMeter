@@ -49,6 +49,28 @@ struct NotchRootView: View {
                         // sees the arc leave by.
                         .opacity(model.isExpanded ? 1 : 0)
                         .animation(motion(orbMotion), value: model.isExpanded)
+
+                    Button { model.onOpenAccountMenu?() } label: {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: NotchLayout.orbGlyph * 0.85, weight: .regular))
+                            .foregroundStyle(NotchPalette.textPrimary)
+                            .frame(width: NotchLayout.orbDiameter, height: NotchLayout.orbDiameter)
+                            .background(NotchPalette.notch, in: Circle())
+                            .overlay(Circle().strokeBorder(Color.white.opacity(model.isHoveringAccountSwitch ? 0.35 : 0), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Circle())
+                    .accessibilityLabel("Switch account")
+                    .accessibilityIdentifier("notch.switchAccount")
+                    .help("Switch account")
+                    .scaleEffect(model.sizeScale)
+                    .position(place.point(
+                        along: model.slack + model.accountOrbAlong * model.sizeScale,
+                        across: model.orbInset * model.sizeScale
+                    ))
+                    .opacity(model.isExpanded ? 1 : 0)
+                    .allowsHitTesting(model.isExpanded)
+                    .animation(motion(orbMotion), value: model.isExpanded)
                 }
 
                 if let snapshot = model.hoveredSnapshot, let index = model.hoveredIndex,

@@ -90,6 +90,37 @@ final class NotchWindowController {
     /// rect comparison every 0.3s and needs no new machinery.
     private var lastVisibleFrame: CGRect?
 
+    init() {
+        model.onOpenAccountMenu = { [weak self] in self?.showAccountMenu() }
+    }
+
+    /// Native menu tracking keeps the controls open while the pointer moves
+    /// away from the notch to choose an account provider.
+    private func showAccountMenu() {
+        guard let panel, let hostingView, !model.isPresentingAccountMenu else { return }
+        foldWork?.cancel()
+        foldWork = nil
+        model.isPresentingAccountMenu = true
+        defer { model.isPresentingAccountMenu = false; cursorMoved() }
+        model.hoveredIndex = nil
+        let menu = NSMenu(title: "Switch account")
+        for (id, title) in [("codex", "Codex Accounts…"), ("claude", "Claude Code Account…")] {
+            let item = NSMenuItem(title: title, action: #selector(switchAccountFromMenu(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = id
+            menu.addItem(item)
+        }
+        let rect = model.accountOrbRect
+        let anchor = hostingView.convert(NSPoint(x: rect.minX, y: panel.frame.height - rect.maxY), from: nil)
+        menu.popUp(positioning: nil, at: anchor, in: hostingView)
+    }
+
+    @objc private func switchAccountFromMenu(_ item: NSMenuItem) {
+        guard let id = item.representedObject as? String else { return }
+        // Open an activating account/settings window after menu tracking ends.
+        DispatchQueue.main.async { [weak self] in self?.onSwitchAccount?(id) }
+    }
+
     func show() {
         relocate()
         startWatchingCursor()
@@ -264,7 +295,7 @@ final class NotchWindowController {
     /// at all. Whether a point is actually *on* the handle is a finer question
     /// than a box can answer — see `isOverHandle`.
     private var handleRect: CGRect {
-        let side = NotchLayout.orbHotZone
+        let side = NotchLayout.orbHotZone * model.sizeScale
         let boxes = model.orbHandlePoints.map { point -> CGRect in
             let centre = placement.point(along: model.slack + point.x * model.sizeScale,
                                          across: point.y * model.sizeScale)
@@ -292,7 +323,7 @@ final class NotchWindowController {
     private var liveRect: CGRect {
         guard model.isExpanded else { return pillRect }
         // The orb hangs below the shape, so the live region is both together.
-        return notchRect.union(handleRect)
+        return notchRect.union(handleRect).union(model.accountOrbRect)
     }
 
     /// The card, its tail, and the gap between the tail and the notch — so
@@ -399,11 +430,15 @@ final class NotchWindowController {
         }
 
         let overHandle = model.isExpanded && isOverHandle(local)
+        let overAccountSwitch = model.isExpanded && model.accountOrbRect.contains(local)
+        if model.isHoveringAccountSwitch != overAccountSwitch {
+            model.isHoveringAccountSwitch = overAccountSwitch
+        }
         if model.isHoveringSettings != overHandle {
             model.isHoveringSettings = overHandle
         }
         setPointing(
-            Self.wantsPointingHand(isExpanded: model.isExpanded, cellIndex: target) || overHandle
+            Self.wantsPointingHand(isExpanded: model.isExpanded, cellIndex: target) || overHandle || overAccountSwitch
         )
 
         if let target {
@@ -488,6 +523,10 @@ final class NotchWindowController {
         }
         let local = localCursor(in: panel.frame)
 
+        if model.isExpanded, model.accountOrbRect.contains(local) {
+            showAccountMenu()
+            return
+        }
         // The handle sits inside the notch, so it has to be tested before the
         // cells — otherwise the cell band nearest the foot of the stack swallows
         // it and clicking the gear refetches a provider instead.

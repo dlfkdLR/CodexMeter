@@ -46,6 +46,7 @@ final class NotchViewModel: ObservableObject {
     /// the one action people actually get stuck without a second, ordinary
     /// route that only needs SwiftUI's own gesture recognition to work.
     var onOpenSettings: (() -> Void)?
+    var onSwitchAccount: ((String) -> Void)?
     /// Which screen edge the notch is welded to. Everything geometric reads
     /// this through `placement` rather than assuming an axis.
     @Published var edge: NotchEdge = .right
@@ -324,7 +325,7 @@ final class NotchViewModel: ObservableObject {
     /// the rest — as many as this screen has room for.
     var sessionCap: Int { sessionCap(cellCount: snapshots.count) }
 
-    private var hasTokenUsage: Bool {
+    private var hasTodaysTokens: Bool {
         snapshots.contains { $0.todaysTokens != nil }
     }
 
@@ -332,12 +333,14 @@ final class NotchViewModel: ObservableObject {
         guard screenSize != .zero else { return NotchLayout.defaultSessionCap }
         return NotchLayout.sessionsFitting(cardBudget: cardBudget(cellCount: cellCount),
                                            windowCount: NotchLayout.maxWindowCount,
-                                           hasTokenUsage: hasTokenUsage)
+                                           hasTodaysTokens: hasTodaysTokens,
+                                           hasAccountRow: onSwitchAccount != nil || snapshots.contains { $0.accountPlanLabel != nil })
     }
 
     func maxCardHeight(cellCount: Int) -> CGFloat {
         NotchLayout.maxCardHeight(sessionCap: sessionCap(cellCount: cellCount),
-                                  hasTokenUsage: hasTokenUsage)
+                                  hasTodaysTokens: hasTodaysTokens,
+                                  hasAccountRow: onSwitchAccount != nil || snapshots.contains { $0.accountPlanLabel != nil })
     }
 
     /// How tall the tallest card may be before the panel runs off the screen.

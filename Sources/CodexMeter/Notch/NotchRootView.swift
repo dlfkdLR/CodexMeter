@@ -20,20 +20,16 @@ struct NotchRootView: View {
                 // the end of the shape, tucked into the corner the far flare
                 // makes.
                 if !model.snapshots.isEmpty {
-                    SettingsOrb(isHovered: model.isHoveringSettings, edge: model.edge,
+                    Button { model.onOpenSettings?() } label: {
+                        SettingsOrb(isHovered: model.isHoveringSettings, edge: model.edge,
                                     convex: model.orbHugsCorner,
                                     arcRadius: model.orbArcRadius,
                                     arcOffset: model.orbArcOffset)
-                        // A second route to the same action the panel's own
-                        // `mouseDown` override reaches for — see
-                        // `NotchViewModel.onOpenSettings`. Both still depend
-                        // on the panel's `ignoresMouseEvents`/`hitTest` gate
-                        // to receive the click at all, so this alone would
-                        // not rescue a click that never reaches the content
-                        // view — but once it does, this fires reliably where
-                        // the AppKit-level path did not.
+                    }
+                        .buttonStyle(.plain)
                         .contentShape(Circle())
-                        .onTapGesture { model.onOpenSettings?() }
+                        .accessibilityLabel("Open Settings")
+                        .accessibilityIdentifier("notch.settings")
                         // Before `position`, not after. `position` hands back a
                         // view the size of the whole panel with the orb placed
                         // inside it, so a scale applied after this one scales
@@ -63,7 +59,8 @@ struct NotchRootView: View {
                         now: model.now,
                         direction: model.edge.tooltipDirection,
                         sessionCap: model.sessionCap,
-                        resetTimeFormat: model.resetTimeFormat
+                        resetTimeFormat: model.resetTimeFormat,
+                        onSwitchAccount: model.onSwitchAccount.map { action in { action(snapshot.id) } }
                     )
                         // Deliberately *no* `.id` here: the card is one object
                         // that travels and resizes between cells, which reads
@@ -221,13 +218,10 @@ struct NotchRootView: View {
     ) -> CGPoint {
         let card = model.edge.isVertical
             ? NotchLayout.cardWidth
-            : NotchLayout.cardHeight(
-                windowCount: snapshot.windows.count,
+            : NotchLayout.cardHeight(for: snapshot,
                 sessionCount: model.activity(for: snapshot.id)?.sessions.count ?? 0,
                 sessionCap: model.sessionCap,
-                statusMessage: snapshot.statusMessage,
-                blockMessage: snapshot.block?.summary(now: model.now),
-                compactRowCount: snapshot.compactRowCount
+                now: model.now, showsAccountAction: model.onSwitchAccount != nil
             )
         // The ring it points at has moved with the notch, so the tail follows
         // it — but the card beyond the tail is drawn at its own size, and

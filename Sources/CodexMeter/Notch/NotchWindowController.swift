@@ -23,7 +23,12 @@ final class NotchWindowController {
     /// Refetch a single provider, asked for by clicking its ring.
     var onRefreshProvider: ((String) -> Void)?
     /// Open the settings window, asked for by clicking the handle.
-    var onOpenSettings: (() -> Void)?
+    var onOpenSettings: (() -> Void)? {
+        didSet { model.onOpenSettings = onOpenSettings }
+    }
+    var onSwitchAccount: ((String) -> Void)? {
+        didSet { model.onSwitchAccount = onSwitchAccount }
+    }
     /// Open the token-usage view — CodexMeter's reason for being. From the
     /// context menu.
     var onOpenUsage: (() -> Void)?
@@ -295,14 +300,10 @@ final class NotchWindowController {
     private func tooltipRect(index: Int) -> CGRect? {
         guard model.snapshots.indices.contains(index) else { return nil }
         let snapshot = model.snapshots[index]
-        let cardHeight = NotchLayout.cardHeight(
-            windowCount: snapshot.windows.count,
+        let cardHeight = NotchLayout.cardHeight(for: snapshot,
             sessionCount: model.activity(for: snapshot.id)?.sessions.count ?? 0,
             sessionCap: model.sessionCap,
-            statusMessage: snapshot.statusMessage,
-            blockMessage: snapshot.block?.summary(now: model.now),
-            hasTokenUsage: false,
-            compactRowCount: snapshot.compactRowCount
+            now: model.now, showsAccountAction: model.onSwitchAccount != nil
         )
         // Across the stack the region is the card, its tail, and the gap the
         // pointer has to cross. Along it, the card's own extent.

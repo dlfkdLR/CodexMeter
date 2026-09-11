@@ -1,11 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// Every provider in one list, modelled on Codenotch's account pane: a
-/// **Connected** group whose rows can be dragged to reorder the notch rings,
-/// and a **Not connected** group of sign-in prompts. Codex and Claude Code —
-/// the two CodexMeter meters locally — open their fuller pane from a row; the
-/// borrowed-credential providers open the usage pane added for them.
+/// The user's persistent monitoring list. Removing a row stops its notch
+/// readings without signing out of the tool; available providers can be added
+/// again from the catalogue. Rows retain their existing detail and setup paths.
 struct ProvidersSettingsView: View {
     @EnvironmentObject private var env: SettingsEnvironment
 
@@ -80,23 +78,23 @@ private struct ProvidersSettingsContent: View {
 
     private var list: some View {
         SettingsForm {
-            let rows = providerRows
-            let connected = rows.filter(\.connected)
-            let offline = rows.filter { !$0.connected }
+            let added = providerRows.filter { notch.selectedProviderIDs.contains($0.id) }
+            let available = providerRows.filter { !notch.selectedProviderIDs.contains($0.id) }
 
-            SettingsSection(title: "Connected") {
-                if connected.isEmpty {
-                    SettingsInfoRow(text: "Nothing is connected yet — sign in to a tool below and its ring joins the notch.",
+            SettingsSection(title: "Added Providers") {
+                if added.isEmpty {
+                    SettingsInfoRow(text: "No providers added. Choose Add Provider to start monitoring.",
                                     systemImage: "circle.dashed", tint: .secondary)
                 } else {
-                    ForEach(connected) { row in
+                    ForEach(added) { row in
                         ProviderAccountRow(
                             row: row,
-                            orderable: connected.count > 1,
+                            orderable: added.count > 1,
                             isMuted: isMuted(row.id),
                             alertsOn: thresholdAlerts,
                             toggleMute: { toggleMute(row.id) },
-                            primaryAction: { perform(row.primary, for: row) }
+                            primaryAction: { perform(row.primary, for: row) },
+                            removeAction: { notch.removeProvider(row.id) }
                         )
                         .opacity(dragging == row.id ? 0.4 : 1)
                         .onDrag {
@@ -111,27 +109,31 @@ private struct ProvidersSettingsContent: View {
                         ))
                     }
                 }
+
+                HStack {
+                    Menu {
+                        ForEach(available) { row in
+                            Button(row.name) {
+                                notch.addProvider(row.id)
+                                openDetail = row.id
+                            }
+                        }
+                    } label: {
+                        Label("Add Provider", systemImage: "plus")
+                    }
+                    .fixedSize()
+                    .disabled(available.isEmpty)
+                    .accessibilityIdentifier("settings.providers.add")
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
             }
-            if connected.count > 1 {
+
+            SettingsNote("Remove a provider to stop its notch monitoring. You stay signed in to the original tool and can add it again at any time.")
+            if added.count > 1 {
                 SettingsNote("Drag a row by its handle to change the order the notch draws its rings.")
             }
-
-            if !offline.isEmpty {
-                SettingsSection(title: "Not connected") {
-                    ForEach(offline) { row in
-                        ProviderAccountRow(
-                            row: row,
-                            orderable: false,
-                            isMuted: false,
-                            alertsOn: thresholdAlerts,
-                            toggleMute: {},
-                            primaryAction: { perform(row.primary, for: row) }
-                        )
-                    }
-                }
-            }
-
-            SettingsNote("CodexMeter never signs in to these tools. Each reading is borrowed from a tool already signed in on this Mac — switching accounts or signing out is done there, and the notch follows. macOS asks once per keychain-backed tool; choose Always Allow.")
         }
     }
 
@@ -312,6 +314,7 @@ private struct ProviderAccountRow: View {
     let alertsOn: Bool
     let toggleMute: () -> Void
     let primaryAction: () -> Void
+    let removeAction: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -337,8 +340,8 @@ private struct ProviderAccountRow: View {
                 Text(secondaryLine)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 8)
@@ -355,6 +358,14 @@ private struct ProviderAccountRow: View {
             }
 
             primaryButton
+            Button(action: removeAction) {
+                Image(systemName: "minus.circle")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+            .help("Remove \(row.name) from CodexMeter")
+            .accessibilityLabel("Remove \(row.name)")
+            .accessibilityIdentifier("settings.providers.remove.\(row.id)")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 9)

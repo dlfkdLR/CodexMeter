@@ -134,6 +134,8 @@ The shared spacing rhythm remains 4px for tightly related icon-label pairs, 8px 
 
 **The Real-Provider Rule.** Token Usage is the cross-source token summary. A named provider limits tab appears only when that provider has working data and status handling; empty provider tabs are not navigation.
 
+**The Notch Content Bounds Rule.** The tooltip shell, placement, pointer region, and session budget use the same content-height calculation, including Today, the account row, named limit groups, and their spacing. Natural text must fit inside the card before its mask is applied; grouped rows receive their spacing once. Preserve the existing notch silhouette, ring geometry, palette, and motion while adapting the tooltip height to its content.
+
 ## Elevation & Depth
 
 CodexMeter is flat by default. Depth comes from the native Settings window, semantic tonal fills in detail cards, dividers, and selection state—not decorative shadows, gradients, or glass effects added by the app.
@@ -218,6 +220,22 @@ The diamond meter mark (`◈`) was the menu-bar and app identity through 1.x and
 - **Character:** Quiet tonal containers for limit, selection, and breakdown details.
 - **Shape:** 10px corners with 12px padding; selected chart details use 8px corners.
 - **Background:** Quaternary semantic fill at low opacity.
+
+### Provider Monitoring List
+
+- **Character:** A native Settings list of providers the user chose to monitor.
+- **Controls:** “Added Providers” contains the selected rows and their existing detail, setup, alert, and ordering controls. A compact native “Add Provider” menu lists providers outside the selection, including distinct Ollama Cloud and Ollama Local entries. Adding a provider opens its existing setup or detail page; a borderless minus-circle button removes a row.
+- **State:** The selected list persists across relaunch, including an explicitly empty list. With no providers selected, an inline message points to Add Provider. The menu is disabled when the whole catalog is already selected.
+- **Selection Boundary:** Removing a provider stops its notch monitoring and leaves the original tool signed in. It can be added again. Selection remains separate from saved ring order, and a provider's local-model status does not acquire a quota ring merely by being selected.
+
+### Notch Tooltip and Actions
+
+- **Character:** The existing Codenotch tooltip, with account context and actions integrated into its own type, colors, spacing, and shell.
+- **Account Row:** A compact row below the provider title shows the reported plan and a visible “Switch account” button. An absent or blank plan uses the neutral label “Account”; plan names are never inferred from token totals or quota readings. Full plan text remains available as help text.
+- **Account Destination:** For Codex, Switch account opens the existing Accounts window. For Claude and other providers, it opens their account or setup Settings page, where the existing tool-specific guidance applies. Opening this destination is not an automatic vendor-account change.
+- **Settings Orb:** The existing gear artwork is hosted by a plain native Button labeled “Open Settings.” Its callback reaches the Settings window through the shared view model, preserving the orb's shape, position, and hover appearance.
+- **Fit:** Today, account actions, grouped limits, and capped live sessions remain inside the tooltip's rounded mask and reachable pointer region. Provider titles stay on one line and may scale down slightly; the card keeps its existing width and grows according to the shared content budget.
+- **Verification:** Check the natural content height against the shared card budget with grouped and ungrouped limits, Today present or absent, and varying live-session counts. Verify that both Settings and account callbacks reach the actual view model and that provider selection round-trips through storage, including Ollama Local and an empty list.
 
 ## Do's and Don'ts
 

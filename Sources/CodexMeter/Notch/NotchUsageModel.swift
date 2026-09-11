@@ -181,6 +181,19 @@ struct ProviderSnapshot: Identifiable, Equatable {
     /// I used" the ring's percentage does not give. `nil` for the borrowed-
     /// credential providers, which CodexMeter does not meter locally.
     var todaysTokens: Int?
+    /// Provider-reported plan only; absence is never inferred from usage.
+    var accountPlan: String?
+
+    var accountPlanLabel: String? {
+        guard let plan = accountPlan?.trimmingCharacters(in: .whitespacesAndNewlines), !plan.isEmpty else { return nil }
+        return plan == plan.lowercased() ? plan.replacingOccurrences(of: "_", with: " ").capitalized : plan
+    }
+
+    var namedWindowGroupCount: Int {
+        windows.enumerated().filter { index, window in
+            window.group != nil && (index == 0 || windows[index - 1].group != window.group)
+        }.count
+    }
 
     /// The number on the cell: the provider's declared primary window — for
     /// Claude, the current session.

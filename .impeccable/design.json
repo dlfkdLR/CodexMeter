@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-11T09:58:22+09:00",
+  "generatedAt": "2026-09-11T10:16:45+09:00",
   "title": "Design System: CodexMeter",
   "extensions": {
     "typographyMeta": {
@@ -71,6 +71,11 @@
       {
         "name": "The Real-Provider Rule",
         "body": "Token Usage is the cross-source token summary. A named provider limits tab appears only when that provider has working data and status handling; empty provider tabs are not navigation.",
+        "section": "layout"
+      },
+      {
+        "name": "The Notch Content Bounds Rule",
+        "body": "The tooltip shell, placement, pointer region, and session budget use the same content-height calculation, including Today, the account row, named limit groups, and their spacing. Natural text must fit inside the card before its mask is applied; grouped rows receive their spacing once. Preserve the existing notch silhouette, ring geometry, palette, and motion while adapting the tooltip height to its content.",
         "section": "layout"
       },
       {

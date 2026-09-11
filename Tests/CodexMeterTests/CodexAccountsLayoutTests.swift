@@ -20,7 +20,7 @@ final class CodexAccountsLayoutTests: XCTestCase {
                        ["General", "Usage", "Providers", "Notch", "Diagnostics", "Information",
                         "Codex", "Claude Code",
                         "GitHub Copilot", "Cursor", "Grok", "OpenCode",
-                        "Command Code", "GLM", "Ollama Cloud", "Antigravity"])
+                        "Command Code", "GLM", "Ollama Cloud", "Antigravity", "Ollama Local"])
     }
 
     func testMenuTitlesDisambiguateWorkspacesAndDoNotContainCredentials() throws {

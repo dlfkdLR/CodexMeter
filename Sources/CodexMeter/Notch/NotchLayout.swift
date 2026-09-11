@@ -130,6 +130,7 @@ enum NotchLayout {
     static let barToUsed     = NotchDesign.px(17.8)
     static let blockSpacing  = NotchDesign.px(20)
     static let sessionRowGap = NotchDesign.px(10)   // the two lines of one session
+    static let accountRowHeight: CGFloat = 22
     /// The spinner beside a session's status. Sized against the body text's cap
     /// (18px) rather than picked by eye, so it reads as part of the word rather
     /// than a bullet pinned near it.
@@ -287,9 +288,13 @@ enum NotchLayout {
                            statusMessage: String? = nil,
                            blockMessage: String? = nil,
                            hasTokenUsage: Bool = false,
+                           hasTodaysTokens: Bool = false,
+                           hasAccountRow: Bool = false,
                            compactRowCount: Int = 0) -> CGFloat {
         let header = max(glyphSize, cardTitleLineHeight)
         var height = 2 * cardPadding + header
+        if hasAccountRow { height += headerToBlock + accountRowHeight }
+        if hasTodaysTokens { height += headerToBlock + cardBodyLineHeight }
 
         // The blocked line sits under the header, above everything else — it
         // is the reading that stops you working, so it leads.
@@ -348,6 +353,18 @@ enum NotchLayout {
         return height
     }
 
+    /// Drawing, tooltip placement and mouse hit testing share every row flag.
+    static func cardHeight(for snapshot: ProviderSnapshot, sessionCount: Int = 0,
+                           sessionCap: Int = defaultSessionCap, now: Date,
+                           showsAccountAction: Bool = false) -> CGFloat {
+        cardHeight(windowCount: snapshot.windows.count, groupCount: snapshot.namedWindowGroupCount,
+            sessionCount: sessionCount, sessionCap: sessionCap,
+            statusMessage: snapshot.statusMessage, blockMessage: snapshot.block?.summary(now: now),
+            hasTodaysTokens: snapshot.todaysTokens != nil,
+            hasAccountRow: snapshot.accountPlanLabel != nil || showsAccountAction,
+            compactRowCount: snapshot.compactRowCount)
+    }
+
 
     /// Room at each end of the stack: enough for the settings orb to hang past
     /// the foot of the shape, and enough for a tooltip anchored to the first or
@@ -404,7 +421,9 @@ enum NotchLayout {
     /// costs nothing.
     static func sessionsFitting(cardBudget: CGFloat, windowCount: Int,
                                 groupCount: Int = 2,
-                                hasTokenUsage: Bool = false) -> Int {
+                                hasTokenUsage: Bool = false,
+                                hasTodaysTokens: Bool = false,
+                                hasAccountRow: Bool = false) -> Int {
         var fits = 0
         for n in 1...sessionCeiling {
             // Costed as though something were still hidden, so that admitting
@@ -412,7 +431,8 @@ enum NotchLayout {
             // bottom of the card.
             let height = cardHeight(windowCount: windowCount, groupCount: groupCount,
                                     sessionCount: n + 1, sessionCap: n,
-                                    hasTokenUsage: hasTokenUsage)
+                                    hasTokenUsage: hasTokenUsage,
+                                    hasTodaysTokens: hasTodaysTokens, hasAccountRow: hasAccountRow)
             guard height <= cardBudget else { break }
             fits = n
         }
@@ -433,10 +453,12 @@ enum NotchLayout {
     /// clicks through everywhere the chrome is not — but it cannot be so
     /// generous that the panel runs off the screen, which is what the cap is
     /// solved for.
-    static func maxCardHeight(sessionCap: Int, hasTokenUsage: Bool = false) -> CGFloat {
+    static func maxCardHeight(sessionCap: Int, hasTokenUsage: Bool = false,
+                              hasTodaysTokens: Bool = false, hasAccountRow: Bool = false) -> CGFloat {
         cardHeight(windowCount: maxWindowCount, groupCount: 2,
                    sessionCount: sessionCap + 1, sessionCap: sessionCap,
-                   hasTokenUsage: hasTokenUsage)
+                   hasTokenUsage: hasTokenUsage,
+                   hasTodaysTokens: hasTodaysTokens, hasAccountRow: hasAccountRow)
     }
 
     static let defaultMaxCardHeight = maxCardHeight(sessionCap: defaultSessionCap)

@@ -98,7 +98,8 @@ final class CodexNotchProvider: NotchProvider {
             fidelity: .official, status: status,
             windows: windows,
             headlineID: NotchLimitMapping.headlineID(source),
-            todaysTokens: NotchLimitMapping.todaysTokens(usage)
+            todaysTokens: NotchLimitMapping.todaysTokens(usage),
+            accountPlan: accounts.currentPlanType
         )
     }
 }

@@ -32,6 +32,9 @@ struct SettingsView: View {
             pane
                 .navigationTitle(navigation.category?.title ?? "Settings")
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .clipped()
+                .toolbarBackground(Color(nsColor: .windowBackgroundColor), for: .windowToolbar)
+                .toolbarBackground(.visible, for: .windowToolbar)
         }
         .navigationSplitViewStyle(.balanced)
         .frame(

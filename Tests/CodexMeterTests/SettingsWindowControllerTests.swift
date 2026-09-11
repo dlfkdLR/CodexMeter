@@ -1,9 +1,45 @@
 import AppKit
+import SwiftUI
 import XCTest
 @testable import CodexMeter
 
 @MainActor
 final class SettingsWindowControllerTests: XCTestCase {
+    func testScrolledSettingsStayBelowToolbarWithSidebarVisibleAndHidden() async throws {
+        _ = NSApplication.shared
+        let fixture = try SettingsWindowFixture()
+        defer { fixture.remove() }
+        let controller = SettingsWindowController()
+        controller.configure(environment: fixture.environment)
+        defer { controller.closeSettingsForTesting() }
+        controller.present(selecting: .category(.notch))
+        let host = try XCTUnwrap(controller.settingsContentViewControllerForTesting?.view)
+        let window = try XCTUnwrap(host.window)
+        for sidebar in [NavigationSplitViewVisibility.all, .detailOnly] {
+            controller.settingsSidebarVisibilityForTesting = sidebar
+            try await settle(window)
+            for scroll in descendants(of: NSScrollView.self, in: host) where !(scroll.documentView is NSOutlineView) {
+                scroll.contentView.scroll(to: NSPoint(x: 0, y: 200))
+                scroll.reflectScrolledClipView(scroll.contentView)
+            }
+            try await settle(window)
+            XCTAssertFalse(window.titlebarAppearsTransparent)
+            for scroll in descendants(of: NSScrollView.self, in: host) {
+                let visibleFrame = scroll.convert(scroll.visibleRect, to: nil)
+                XCTAssertLessThanOrEqual(visibleFrame.maxY, window.contentLayoutRect.maxY + 1,
+                    "The scrolling viewport reaches the toolbar: \(visibleFrame), content \(window.contentLayoutRect)")
+            }
+            if let directory = ProcessInfo.processInfo.environment["CODEXMETER_LAYOUT_CAPTURE_DIR"] {
+                let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                host.cacheDisplay(in: host.bounds, to: bitmap)
+                let folder = URL(fileURLWithPath: directory, isDirectory: true)
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                try bitmap.representation(using: .png, properties: [:])?.write(to:
+                    folder.appendingPathComponent("notch-scrolled-\(sidebar == .all ? "sidebar" : "detail").png"))
+            }
+        }
+    }
+
     func testProviderDestinationsSurviveRequestsBeforeAndWithinProviders() {
         let navigation = SettingsNavigation()
         navigation.select(.provider(.claude))

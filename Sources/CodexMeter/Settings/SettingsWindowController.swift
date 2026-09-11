@@ -58,6 +58,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             defer: false
         )
         window.title = "CodexMeter Settings"
+        window.titlebarAppearsTransparent = false
         window.contentMinSize = Self.minimumContentSize
         window.isReleasedWhenClosed = false
         window.contentViewController = NSHostingController(
@@ -75,6 +76,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
 #if DEBUG
+    var settingsSidebarVisibilityForTesting: NavigationSplitViewVisibility {
+        get { navigation.columnVisibility }
+        set { navigation.columnVisibility = newValue }
+    }
+
     var settingsWindowContentSizeForTesting: NSSize? {
         settingsWindow?.contentView?.bounds.size
     }

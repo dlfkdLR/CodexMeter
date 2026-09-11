@@ -47,4 +47,3 @@ For local analytics, CodexMeter stores canonical model IDs, a keyed HMAC of each
 - Ambiguous counter baselines and malformed records are excluded rather than guessed.
 - API-equivalent cost uses the bundled current pricing snapshot and is marked unavailable for unknown models or incomplete pricing metadata. It is not an OpenAI bill.
 - Project names are folder basenames and can be identical; their stored identities remain separate keyed hashes.
-

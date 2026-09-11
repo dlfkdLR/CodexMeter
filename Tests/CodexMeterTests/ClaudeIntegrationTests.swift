@@ -3,6 +3,84 @@ import Foundation
 import XCTest
 @testable import CodexMeter
 
+final class ClaudeAccountPlanTests: XCTestCase {
+    private func status(subscription: String = "max", tier: String? = nil) throws -> Data {
+        var object = ["loggedIn": true, "orgId": "org-a", "email": "person@example.test",
+                      "subscriptionType": subscription] as [String: Any]
+        object["rateLimitTier"] = tier
+        return try JSONSerialization.data(withJSONObject: object)
+    }
+
+    private func configuration(
+        email: String = "person@example.test", organization: String = "org-a",
+        tier: String = "default_claude_max_20x", userTier: String? = nil
+    ) throws -> Data {
+        var account = ["emailAddress": email, "organizationUuid": organization,
+                       "organizationRateLimitTier": tier]
+        account["userRateLimitTier"] = userTier
+        return try JSONSerialization.data(withJSONObject: ["oauthAccount": account])
+    }
+
+    func testMaxTierComesFromTheMatchingLocalAccountProfile() throws {
+        for (tier, label) in [("default_claude_max_5x", "Max 5x"), ("default_claude_max_20x", "Max 20x")] {
+            let account = try XCTUnwrap(ClaudeCLIService.account(
+                from: status(), configurationData: configuration(tier: tier)
+            ))
+            XCTAssertEqual(account.planName, label)
+        }
+    }
+
+    func testPreviousAccountOrWorkspaceCannotSupplyMaxTier() throws {
+        for data in [try configuration(email: "previous@example.test"), try configuration(organization: "org-b"),
+                     Data(#"{"oauthAccount":{"organizationRateLimitTier":"default_claude_max_20x"}}"#.utf8),
+                     Data("malformed".utf8)] {
+            let account = try XCTUnwrap(ClaudeCLIService.account(from: status(), configurationData: data))
+            XCTAssertEqual(account.planName, "Max")
+            XCTAssertNil(account.rateLimitTier)
+        }
+        let noOrganization = Data(#"{"loggedIn":true,"email":"person@example.test","subscriptionType":"max"}"#.utf8)
+        XCTAssertEqual(try ClaudeCLIService.account(from: noOrganization, configurationData: configuration())?.planName, "Max")
+    }
+
+    func testLiveTierWinsOverCachedTierAndUserTierWinsOverOrganization() throws {
+        let live = try ClaudeCLIService.account(from: status(tier: "default_claude_max_5x"),
+                                               configurationData: configuration())
+        XCTAssertEqual(live?.planName, "Max 5x")
+        let individual = try ClaudeCLIService.account(from: status(),
+            configurationData: configuration(userTier: "default_claude_max_5x"))
+        XCTAssertEqual(individual?.planName, "Max 5x")
+        let unknownLive = try ClaudeCLIService.account(from: status(tier: "future_tier"),
+                                                      configurationData: configuration())
+        XCTAssertEqual(unknownLive?.planName, "Max", "Unknown current tiers must not reuse an old multiplier")
+    }
+
+    func testMissingOrUnknownTierDoesNotInventMultiplierOrUpgradePlan() throws {
+        XCTAssertEqual(try ClaudeCLIService.account(from: status())?.planName, "Max")
+        XCTAssertEqual(try ClaudeCLIService.account(from: status(tier: "default_claude_ai"))?.planName, "Max")
+        XCTAssertEqual(try ClaudeCLIService.account(from: status(subscription: "pro"),
+                                                   configurationData: configuration())?.planName, "Pro")
+        XCTAssertNil(try ClaudeCLIService.account(from: Data(#"{"loggedIn":false}"#.utf8),
+                                                  configurationData: configuration()))
+    }
+
+    func testPlanUpgradeKeepsTheAccountLinkIdentity() throws {
+        let five = try ClaudeCLIService.account(from: status(tier: "default_claude_max_5x"))
+        let twenty = try ClaudeCLIService.account(from: status(tier: "default_claude_max_20x"))
+        XCTAssertNotNil(five)
+        XCTAssertEqual(five?.linkIdentifier, twenty?.linkIdentifier)
+        XCTAssertNotEqual(five?.planName, twenty?.planName)
+    }
+
+    func testCustomClaudeConfigurationUsesTheSameDirectoryAsTheCLI() {
+        let home = URL(fileURLWithPath: "/Users/test")
+        XCTAssertEqual(ClaudeCLIService.configurationURL(home: home, environment: [:]).path, "/Users/test/.claude.json")
+        XCTAssertEqual(ClaudeCLIService.configurationURL(home: home, environment: ["CLAUDE_CONFIG_DIR": "/tmp/claude"]).path,
+                       "/tmp/claude/.claude.json")
+        XCTAssertEqual(ClaudeCLIService.configurationURL(home: home, environment: ["CLAUDE_CONFIG_DIR": "relative"]).path,
+                       "/Users/test/.claude.json")
+    }
+}
+
 final class ClaudeRateLimitCodecTests: XCTestCase {
     func testAccountIdentityDistinguishesEmailsWithinTheSameOrganization() throws {
         let first = try XCTUnwrap(try ClaudeCLIService.account(from: Data(#"{"loggedIn":true,"orgId":"shared-org","email":"first@example.com"}"#.utf8)))
@@ -118,7 +196,8 @@ final class ClaudeIntegrationStoreTests: XCTestCase {
         )
         try ClaudeRateLimitCodec.encode(limits).write(to: fixture.limitsURL)
         let installer = RecordingClaudeInstaller()
-        let account = ClaudeAccount(email: "person@example.com", subscriptionType: "max", authenticationMethod: "claude.ai")
+        let account = ClaudeAccount(email: "person@example.com", subscriptionType: "max", authenticationMethod: "claude.ai",
+                                    rateLimitTier: "default_claude_max_20x")
         fixture.defaults.set(true, forKey: "claudeAccountLinked")
         fixture.defaults.set(account.linkIdentifier, forKey: "claudeLinkedAccountID")
         let store = ClaudeIntegrationStore(
@@ -134,7 +213,11 @@ final class ClaudeIntegrationStoreTests: XCTestCase {
         XCTAssertEqual(store.status, .ready)
         // The menu header renders these two fields next to the Codex account row.
         XCTAssertEqual(store.account?.displayName, "person@example.com")
-        XCTAssertEqual(store.account?.planName, "Max")
+        XCTAssertEqual(store.account?.planName, "Max 20x")
+        let notch = ClaudeNotchProvider(claude: store)
+        let notchSnapshot = try await notch.fetchSnapshot()
+        XCTAssertEqual(notchSnapshot.accountPlanLabel, "Max 20x")
+        XCTAssertEqual(notch.account()?.plan, "Max 20x")
         XCTAssertEqual(store.snapshot?.windows.map(\.windowDurationMinutes), [10_080, 300])
         XCTAssertEqual(store.snapshot?.windows.map(\.remainingPercent), [70, 80])
         await store.setEnabled(false)

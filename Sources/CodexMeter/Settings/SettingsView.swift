@@ -1,22 +1,21 @@
 import SwiftUI
 
 /// The settings window: a sidebar of subjects beside one scrolling pane.
-///
-/// Deliberately a `NavigationSplitView` rather than a hand-built split. An
-/// earlier rewrite used a plain `HStack` with a floating sidebar card — it
-/// renders in a preview and leaves the sidebar blank in a real transparent
-/// window, which is a bad trade for a surface people actually use. The
-/// Codenotch look that survives is the part that is only styling: System
-/// Settings' tinted icon badges in the sidebar, and panes made of grouped
-/// rounded cards.
+/// Every detail must provide a scrollable viewport so its content's minimum
+/// height cannot push the split view outside the window.
 struct SettingsView: View {
-    @EnvironmentObject private var env: SettingsEnvironment
+    @StateObject private var navigation: SettingsNavigation
 
-    @State private var selection: SettingsCategory? = .usage
+    init(navigation: SettingsNavigation = SettingsNavigation()) {
+        _navigation = StateObject(wrappedValue: navigation)
+    }
 
     var body: some View {
-        NavigationSplitView {
-            List(SettingsCategory.allCases, selection: $selection) { category in
+        NavigationSplitView(columnVisibility: $navigation.columnVisibility) {
+            List(SettingsCategory.allCases, selection: Binding(
+                get: { navigation.category },
+                set: { if let category = $0 { navigation.select(.category(category)) } }
+            )) { category in
                 Label {
                     Text(category.title)
                 } icon: {
@@ -31,30 +30,21 @@ struct SettingsView: View {
             .accessibilityHint("Choose a section to change its settings.")
         } detail: {
             pane
-                .navigationTitle(selection?.title ?? "Settings")
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .clipped()
         }
         .navigationSplitViewStyle(.balanced)
         .frame(
-            minWidth: 840, idealWidth: 960, maxWidth: .infinity,
-            minHeight: 560, idealHeight: 640, maxHeight: .infinity
+            minWidth: 0, idealWidth: 960, maxWidth: .infinity,
+            minHeight: 0, idealHeight: 640, maxHeight: .infinity
         )
-        .onReceive(NotificationCenter.default.publisher(for: SettingsWindowController.selectPaneNotification)) { note in
-            guard let pane = note.object as? SettingsPane else { return }
-            switch pane {
-            case .category(let category): selection = category
-            // Deep links to one provider land on the Providers pane, which is
-            // where every provider lives.
-            case .provider, .notchProvider: selection = .providers
-            }
-        }
     }
 
     @ViewBuilder
     private var pane: some View {
-        switch selection {
+        switch navigation.category {
         case .usage: UsageSettingsView()
-        case .providers: ProvidersSettingsView()
+        case .providers: ProvidersSettingsView(detailSelection: $navigation.providerDetailID)
         case .notch: NotchSettingsView()
         case .general: GeneralSettingsView()
         case .advanced: AdvancedSettingsView()

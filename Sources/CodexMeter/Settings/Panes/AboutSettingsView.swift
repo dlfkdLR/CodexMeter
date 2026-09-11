@@ -36,11 +36,20 @@ struct AboutSettingsView: View {
                 SettingsLinkRow(title: "View Releases", systemImage: "shippingbox",
                                 destination: URL(string: "https://github.com/dlfkdLR/CodexMeter/releases")!)
                 SettingsLinkRow(title: "Read MIT License", systemImage: "doc.text",
-                                destination: URL(string: "https://github.com/dlfkdLR/CodexMeter/blob/main/LICENSE")!)
+                                destination: bundledNotice("LICENSE"))
+                SettingsLinkRow(title: "Codenotch - MIT License", systemImage: "doc.text",
+                                destination: bundledNotice("NOTICE"))
             }
+
+            SettingsNote("Includes code and design adapted from Codenotch. Copyright © 2026 Vinz, MIT License.")
 
             SettingsNote("CodexMeter is an independent utility and is not affiliated with or endorsed by OpenAI or Anthropic.")
         }
+    }
+
+    private func bundledNotice(_ name: String) -> URL {
+        Bundle.main.url(forResource: name, withExtension: "txt")
+            ?? URL(string: "https://github.com/dlfkdLR/CodexMeter/blob/main/\(name)")!
     }
 
     private var appHeader: some View {

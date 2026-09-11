@@ -20,20 +20,17 @@ struct NotchRootView: View {
                 // the end of the shape, tucked into the corner the far flare
                 // makes.
                 if !model.snapshots.isEmpty {
-                    SettingsOrb(isHovered: model.isHoveringSettings, edge: model.edge,
+                    controlRail(place)
+                    Button { model.onOpenSettings?() } label: {
+                        SettingsOrb(isHovered: model.isHoveringSettings, drawsDisc: false, edge: model.edge,
                                     convex: model.orbHugsCorner,
                                     arcRadius: model.orbArcRadius,
                                     arcOffset: model.orbArcOffset)
-                        // A second route to the same action the panel's own
-                        // `mouseDown` override reaches for — see
-                        // `NotchViewModel.onOpenSettings`. Both still depend
-                        // on the panel's `ignoresMouseEvents`/`hitTest` gate
-                        // to receive the click at all, so this alone would
-                        // not rescue a click that never reaches the content
-                        // view — but once it does, this fires reliably where
-                        // the AppKit-level path did not.
+                    }
+                        .buttonStyle(.plain)
                         .contentShape(Circle())
-                        .onTapGesture { model.onOpenSettings?() }
+                        .accessibilityLabel("Open Settings")
+                        .accessibilityIdentifier("notch.settings")
                         // Before `position`, not after. `position` hands back a
                         // view the size of the whole panel with the orb placed
                         // inside it, so a scale applied after this one scales
@@ -53,6 +50,34 @@ struct NotchRootView: View {
                         // sees the arc leave by.
                         .opacity(model.isExpanded ? 1 : 0)
                         .animation(motion(orbMotion), value: model.isExpanded)
+
+                    Button { model.onOpenAccountMenu?() } label: {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: NotchLayout.orbGlyph * 0.7, weight: .regular))
+                            .foregroundStyle(NotchPalette.textPrimary)
+                            .frame(width: NotchLayout.controlDiameter, height: NotchLayout.controlDiameter)
+                            .background(Color.white.opacity(model.isHoveringAccountSwitch ? 0.1 : 0),
+                                        in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Circle())
+                    .accessibilityLabel("Switch account")
+                    .accessibilityIdentifier("notch.switchAccount")
+                    .accessibilityHidden(!model.showsAccountControl)
+                    .help("Switch account")
+                    .scaleEffect(model.sizeScale * (model.showsAccountControl ? 1 : 0.65))
+                    .offset(
+                        x: !model.edge.isVertical && !model.showsAccountControl ? -NotchDesign.px(24) : 0,
+                        y: model.edge.isVertical && !model.showsAccountControl ? -NotchDesign.px(24) : 0
+                    )
+                    .position(place.point(
+                        along: model.slack + model.accountOrbAlong * model.sizeScale,
+                        across: model.orbInset * model.sizeScale
+                    ))
+                    .opacity(model.showsAccountControl ? 1 : 0)
+                    .allowsHitTesting(model.showsAccountControl)
+                    .animation(motion(.spring(response: 0.3, dampingFraction: 0.82)
+                        .delay(model.showsAccountControl ? 0.08 : 0)), value: model.showsAccountControl)
                 }
 
                 if let snapshot = model.hoveredSnapshot, let index = model.hoveredIndex,
@@ -63,7 +88,8 @@ struct NotchRootView: View {
                         now: model.now,
                         direction: model.edge.tooltipDirection,
                         sessionCap: model.sessionCap,
-                        resetTimeFormat: model.resetTimeFormat
+                        resetTimeFormat: model.resetTimeFormat,
+                        onSwitchAccount: model.onSwitchAccount.map { action in { action(snapshot.id) } }
                     )
                         // Deliberately *no* `.id` here: the card is one object
                         // that travels and resizes between cells, which reads
@@ -84,6 +110,21 @@ struct NotchRootView: View {
         .animation(motion(NotchMotion.unfold), value: model.isExpanded)
         .tint(model.accentColor.color)
         .environment(\.notchAccentColor, model.accentColor.color)
+    }
+
+    private func controlRail(_ place: NotchPlacement) -> some View {
+        let diameter = NotchLayout.controlDiameter
+        let distance = model.showsAccountControl ? model.accountOrbAlong - model.orbAlong : 0
+        return Capsule()
+            .fill(NotchPalette.notch)
+            .frame(width: model.edge.isVertical ? diameter : diameter + distance,
+                   height: model.edge.isVertical ? diameter + distance : diameter)
+            .scaleEffect(model.sizeScale)
+            .position(place.point(along: model.slack + (model.orbAlong + distance / 2) * model.sizeScale,
+                                  across: model.orbInset * model.sizeScale))
+            .opacity(model.isExpanded && model.isHoveringSettings ? 1 : 0)
+            .allowsHitTesting(false)
+            .animation(motion(.spring(response: 0.32, dampingFraction: 0.86)), value: model.showsAccountControl)
     }
 
     /// Opening and closing are not mirror images. Appearing, the arc waits its
@@ -135,7 +176,8 @@ struct NotchRootView: View {
             ProviderCell(
                 snapshot: snapshot,
                 activity: model.activity(for: snapshot.id),
-                isRefreshing: model.refreshing.contains(snapshot.id)
+                isRefreshing: model.refreshing.contains(snapshot.id),
+                percentageMode: model.percentageMode
             )
                 // Pinned to what the cell claims along the stack, or the drawn
                 // rings stop lining up with the centres `ringCenter` hands to
@@ -221,13 +263,10 @@ struct NotchRootView: View {
     ) -> CGPoint {
         let card = model.edge.isVertical
             ? NotchLayout.cardWidth
-            : NotchLayout.cardHeight(
-                windowCount: snapshot.windows.count,
+            : NotchLayout.cardHeight(for: snapshot,
                 sessionCount: model.activity(for: snapshot.id)?.sessions.count ?? 0,
                 sessionCap: model.sessionCap,
-                statusMessage: snapshot.statusMessage,
-                blockMessage: snapshot.block?.summary(now: model.now),
-                compactRowCount: snapshot.compactRowCount
+                now: model.now, showsAccountAction: model.onSwitchAccount != nil
             )
         // The ring it points at has moved with the notch, so the tail follows
         // it — but the card beyond the tail is drawn at its own size, and

@@ -15,6 +15,7 @@ enum NotchProviderCatalog {
         ("glm", "GLM"),
         ("ollama", "Ollama Cloud"),
         ("gemini", "Antigravity"),
+        ("ollama-local", "Ollama Local"),
     ]
 
     /// The mark for a provider id, known without building the provider — so the

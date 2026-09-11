@@ -15,6 +15,8 @@ if [[ ! -d "${app_path}" ]]; then
   exit 1
 fi
 
+"${script_dir}/verify_license_notices.sh" "${app_path}"
+
 staging_dir=$(mktemp -d)
 trap 'rm -rf "${staging_dir}"' EXIT
 ditto --norsrc --noextattr "${app_path}" "${staging_dir}/${PRODUCT_NAME}.app"

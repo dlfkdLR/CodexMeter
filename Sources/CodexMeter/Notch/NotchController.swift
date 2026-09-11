@@ -25,6 +25,7 @@ final class NotchController: ObservableObject {
     /// provider, and several of those open a file or a SQLite database on the
     /// main thread. Refreshed after each fetch and when a settings pane opens.
     @Published private(set) var providerSummaries: [ProviderSummary] = []
+    @Published private(set) var selectedProviderIDs: Set<String> = ["codex"]
 
     private let window = NotchWindowController()
     private var store: NotchUsageStore?
@@ -89,12 +90,31 @@ final class NotchController: ObservableObject {
             // Local `ollama serve` model listing (no ring — a local server has no quota).
             OllamaLocalProvider(),
         ]
-        let store = NotchUsageStore(providers: providers, order: Self.storedProviderOrder())
+        var existing = Set(UsageArchive().load().values.filter { $0.snapshot.hasReading }.map { $0.snapshot.id })
+        existing.insert("codex")
+        if claudeIntegration.isEnabled { existing.insert("claude") }
+        selectedProviderIDs = NotchProviderSelection.load(existing: existing)
+        let store = NotchUsageStore(providers: providers,
+            disconnected: Set(providers.map(\.id)).subtracting(selectedProviderIDs), order: Self.storedProviderOrder())
         self.store = store
 
         window.onRefresh = { [weak store] in store?.refreshNow() }
         window.onRefreshProvider = { [weak store] id in store?.refresh(providerID: id) }
         window.onOpenSettings = { SettingsWindowController.shared.present() }
+        window.accountOptions = { [weak codexAccounts, weak claudeIntegration] in
+            [NotchAccountOption(id: "codex", title: "Codex", glyph: .openai,
+                account: codexAccounts?.currentAccountDisplayName, plan: codexAccounts?.currentPlanName),
+             NotchAccountOption(id: "claude", title: "Claude Code", glyph: .claude,
+                account: claudeIntegration?.account?.email, plan: claudeIntegration?.account?.planName)]
+        }
+        window.onSwitchAccount = { id in
+            if id == "codex" {
+                CodexAccountsWindowController.shared.show()
+            } else {
+                let pane: SettingsPane = id == "claude" ? .provider(.claude) : .notchProvider(id: id)
+                SettingsWindowController.shared.present(selecting: pane)
+            }
+        }
         window.onOpenUsage = {
             SettingsWindowController.shared.present(selecting: .category(.usage))
         }
@@ -130,7 +150,7 @@ final class NotchController: ObservableObject {
             monitor.sessionsPublisher
                 .receive(on: RunLoop.main)
                 .sink { [weak self] live in
-                    guard let self else { return }
+                    guard let self, self.selectedProviderIDs.contains(id) else { return }
                     self.window.model.sessions[id] = live
                     self.window.model.now = Date()
                     self.announceCompletions()
@@ -148,6 +168,9 @@ final class NotchController: ObservableObject {
         // set now, before the panel exists.
         window.model.accentColor = storedAccent()
         window.model.resetTimeFormat = storedResetTimeFormat()
+        window.model.percentageMode = NotchPercentageMode(
+            rawValue: UserDefaults.standard.string(forKey: "notchPercentageMode") ?? ""
+        ) ?? .used
     }
 
     /// Bound to `@AppStorage("showEdgeNotch")`.
@@ -160,7 +183,7 @@ final class NotchController: ObservableObject {
             window.apply(size: storedSize())
             window.apply(storedVisibility())
             store?.start()
-            monitors.values.forEach { $0.start() }
+            for (id, monitor) in monitors where selectedProviderIDs.contains(id) { monitor.start() }
             wireLimitBridge()
         } else {
             whileVisible.removeAll()
@@ -217,6 +240,11 @@ final class NotchController: ObservableObject {
         window.model.resetTimeFormat = resetTimeFormat
     }
 
+    func apply(percentageMode: NotchPercentageMode) {
+        guard configured else { return }
+        window.model.percentageMode = percentageMode
+    }
+
     /// Drop the ⌥-drag offset and sit the notch back at the centre of its edge.
     func recentre() {
         guard configured else { return }
@@ -254,6 +282,28 @@ final class NotchController: ObservableObject {
     /// Re-ask for one provider — its "Try again" / "Allow access…" button.
     func refresh(providerID: String) {
         store?.refresh(providerID: providerID)
+    }
+
+    func addProvider(_ id: String) {
+        guard NotchProviderCatalog.all.contains(where: { $0.id == id }),
+              selectedProviderIDs.insert(id).inserted else { return }
+        applyProviderSelection()
+        if visible { monitors[id]?.start() }
+        store?.refresh(providerID: id)
+    }
+
+    func removeProvider(_ id: String) {
+        guard selectedProviderIDs.remove(id) != nil else { return }
+        monitors[id]?.stop()
+        window.model.sessions.removeValue(forKey: id)
+        window.model.hoveredIndex = nil
+        applyProviderSelection()
+    }
+
+    private func applyProviderSelection() {
+        NotchProviderSelection.save(selectedProviderIDs)
+        store?.disconnected = Set(providers.map(\.id)).subtracting(selectedProviderIDs)
+        providerSummaries = store?.providerSummaries ?? []
     }
 
     // MARK: - Ring order (the Providers pane's drag handles)

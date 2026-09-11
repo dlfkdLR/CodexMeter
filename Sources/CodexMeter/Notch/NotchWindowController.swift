@@ -3,7 +3,7 @@ import SwiftUI
 import Combine
 
 @MainActor
-final class NotchWindowController {
+final class NotchWindowController: NSObject, NSPopoverDelegate {
     let model = NotchViewModel()
     var displayPreference: DisplayPreference = .followActiveWindow
 
@@ -23,7 +23,12 @@ final class NotchWindowController {
     /// Refetch a single provider, asked for by clicking its ring.
     var onRefreshProvider: ((String) -> Void)?
     /// Open the settings window, asked for by clicking the handle.
-    var onOpenSettings: (() -> Void)?
+    var onOpenSettings: (() -> Void)? {
+        didSet { model.onOpenSettings = onOpenSettings }
+    }
+    var onSwitchAccount: ((String) -> Void)? {
+        didSet { model.onSwitchAccount = onSwitchAccount }
+    }
     /// Open the token-usage view — CodexMeter's reason for being. From the
     /// context menu.
     var onOpenUsage: (() -> Void)?
@@ -32,6 +37,11 @@ final class NotchWindowController {
     /// Preferences' job, the same division `apply(edge:)` already keeps.
     var onReposition: ((CGFloat) -> Void)?
 
+    var accountOptions: (() -> [NotchAccountOption])?
+    private var accountPopover: NSPopover?
+#if DEBUG
+    var accountPopoverForTesting: NSPopover? { accountPopover }
+#endif
     private var panel: NotchPanel?
     private var hostingView: NotchHostingView<NotchRootView>?
 
@@ -85,6 +95,53 @@ final class NotchWindowController {
     /// rect comparison every 0.3s and needs no new machinery.
     private var lastVisibleFrame: CGRect?
 
+    override init() {
+        super.init()
+        model.onOpenAccountMenu = { [weak self] in self?.showAccountMenu() }
+    }
+
+    /// A transient native popover preserves outside-click and Escape dismissal
+    /// without a blocking menu-tracking loop or an extra account window.
+    private func showAccountMenu() {
+        guard let panel, let hostingView, !model.isPresentingAccountMenu else { return }
+        let options = accountOptions?() ?? []
+        guard !options.isEmpty else { return }
+        foldWork?.cancel()
+        foldWork = nil
+        model.isPresentingAccountMenu = true
+        model.hoveredIndex = nil
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        popover.appearance = NSAppearance(named: .darkAqua)
+        popover.delegate = self
+        popover.contentViewController = NSHostingController(rootView: NotchAccountPopover(
+            options: options,
+            onSelect: { [weak self] id in
+                self?.accountPopover?.close()
+                DispatchQueue.main.async { [weak self] in self?.onSwitchAccount?(id) }
+            },
+            onClose: { [weak self] in self?.accountPopover?.close() }
+        ))
+        accountPopover = popover
+        let rect = model.accountOrbRect
+        let anchor = hostingView.convert(NSRect(x: rect.minX, y: panel.frame.height - rect.maxY,
+                                                 width: rect.width, height: rect.height), from: nil)
+        let edge: NSRectEdge = switch model.edge {
+        case .right: .minX
+        case .left: .maxX
+        case .top: .minY
+        case .bottom: .maxY
+        }
+        popover.show(relativeTo: anchor, of: hostingView, preferredEdge: edge)
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        accountPopover = nil
+        model.isPresentingAccountMenu = false
+        cursorMoved()
+    }
+
     func show() {
         relocate()
         startWatchingCursor()
@@ -119,6 +176,7 @@ final class NotchWindowController {
     }
 
     func stop() {
+        accountPopover?.close()
         setPointing(false)
         peekUntil = nil
         peekWork?.cancel()
@@ -259,7 +317,7 @@ final class NotchWindowController {
     /// at all. Whether a point is actually *on* the handle is a finer question
     /// than a box can answer — see `isOverHandle`.
     private var handleRect: CGRect {
-        let side = NotchLayout.orbHotZone
+        let side = NotchLayout.orbHotZone * model.sizeScale
         let boxes = model.orbHandlePoints.map { point -> CGRect in
             let centre = placement.point(along: model.slack + point.x * model.sizeScale,
                                          across: point.y * model.sizeScale)
@@ -287,7 +345,8 @@ final class NotchWindowController {
     private var liveRect: CGRect {
         guard model.isExpanded else { return pillRect }
         // The orb hangs below the shape, so the live region is both together.
-        return notchRect.union(handleRect)
+        let chrome = notchRect.union(handleRect)
+        return model.showsAccountControl ? chrome.union(model.accountOrbRect) : chrome
     }
 
     /// The card, its tail, and the gap between the tail and the notch — so
@@ -295,14 +354,10 @@ final class NotchWindowController {
     private func tooltipRect(index: Int) -> CGRect? {
         guard model.snapshots.indices.contains(index) else { return nil }
         let snapshot = model.snapshots[index]
-        let cardHeight = NotchLayout.cardHeight(
-            windowCount: snapshot.windows.count,
+        let cardHeight = NotchLayout.cardHeight(for: snapshot,
             sessionCount: model.activity(for: snapshot.id)?.sessions.count ?? 0,
             sessionCap: model.sessionCap,
-            statusMessage: snapshot.statusMessage,
-            blockMessage: snapshot.block?.summary(now: model.now),
-            hasTokenUsage: false,
-            compactRowCount: snapshot.compactRowCount
+            now: model.now, showsAccountAction: model.onSwitchAccount != nil
         )
         // Across the stack the region is the card, its tail, and the gap the
         // pointer has to cross. Along it, the card's own extent.
@@ -398,11 +453,12 @@ final class NotchWindowController {
         }
 
         let overHandle = model.isExpanded && isOverHandle(local)
-        if model.isHoveringSettings != overHandle {
-            model.isHoveringSettings = overHandle
-        }
+        model.updateControlHover(overSettings: overHandle,
+                                 overAccount: model.accountOrbRect.contains(local),
+                                 insideControls: handleRect.union(model.accountOrbRect).contains(local))
         setPointing(
-            Self.wantsPointingHand(isExpanded: model.isExpanded, cellIndex: target) || overHandle
+            Self.wantsPointingHand(isExpanded: model.isExpanded, cellIndex: target)
+                || overHandle || model.isHoveringAccountSwitch
         )
 
         if let target {
@@ -487,6 +543,10 @@ final class NotchWindowController {
         }
         let local = localCursor(in: panel.frame)
 
+        if model.showsAccountControl, model.accountOrbRect.contains(local) {
+            showAccountMenu()
+            return
+        }
         // The handle sits inside the notch, so it has to be tested before the
         // cells — otherwise the cell band nearest the foot of the stack swallows
         // it and clicking the gear refetches a provider instead.

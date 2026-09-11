@@ -4,6 +4,27 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.9] - 2026-09-11
+
+### Added
+
+- A slim hover-revealed control rail with account switching directly below Settings, plus a logo-and-identity account popover.
+- A persisted Used / Remaining selection for the notch percentage and ring fill.
+- A searchable provider catalogue with logos, descriptions, and inline add status, preserving the original application's login.
+- Notch plan labels, including known ChatGPT Pro and Claude Max multipliers.
+- Codenotch's full MIT notice in app distributions and offline Information links.
+
+### Fixed
+
+- Settings sidebar and content clipping across window sizes, with a full-width Usage layout.
+- Scrolled settings overlapping the window toolbar with either sidebar state.
+- Redundant Privacy and This Mac Breakdown explanation blocks in provider settings.
+- General's Number Format preference not reaching notch token totals and count readings.
+- Notch Settings activation and direct navigation to the selected provider's account details.
+- Tooltip content clipping, including plan, token totals, and session rows.
+- Unnecessary saved-account vault access when opening Settings.
+- First-launch notch visibility while preserving existing preferences.
+
 ## [2.0.8] - 2026-09-11
 
 ### Fixed

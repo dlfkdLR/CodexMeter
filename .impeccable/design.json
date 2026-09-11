@@ -1,12 +1,16 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-29T14:19:25+09:00",
+  "generatedAt": "2026-09-11T10:16:45+09:00",
   "title": "Design System: CodexMeter",
   "extensions": {
     "typographyMeta": {
       "primary-metric": {
         "displayName": "Primary Token Metric",
-        "purpose": "The strongest number on the overview, using rounded system typography and stable digits."
+        "purpose": "The strongest number on the compact menu overview, using rounded system typography and stable digits."
+      },
+      "settings-primary-metric": {
+        "displayName": "Settings Token Metric",
+        "purpose": "Today’s local total in the available-width Settings overview; paired with its token breakdown and scaled down when needed."
       }
     },
     "motion": [
@@ -46,7 +50,7 @@
       },
       {
         "name": "The Text-With-Color Rule",
-        "body": "Warning and critical colors always appear with an explicit label such as Low or Critical.",
+        "body": "Warning and critical colors always appear with an explicit label such as “Low” or “Critical.”",
         "section": "colors"
       },
       {
@@ -55,13 +59,23 @@
         "section": "typography"
       },
       {
+        "name": "The Usage Viewport Rule",
+        "body": "Settings owns one outer ScrollView for both the overview and its available-width detail destinations; content starts at the top and scrolls when the window is shorter than the content. Do not add a second popover-sized scroll region inside Settings. The compact menu retains its separate content-fitting, height-limited detail viewports.",
+        "section": "layout"
+      },
+      {
         "name": "The One-Question Rule",
         "body": "Each destination answers one question: limits, usage, projects, or sessions.",
         "section": "layout"
       },
       {
         "name": "The Real-Provider Rule",
-        "body": "A provider switcher appears only after a second provider has working data and status handling; empty provider tabs are not navigation.",
+        "body": "Token Usage is the cross-source token summary. A named provider limits tab appears only when that provider has working data and status handling; empty provider tabs are not navigation.",
+        "section": "layout"
+      },
+      {
+        "name": "The Notch Content Bounds Rule",
+        "body": "The tooltip shell, placement, pointer region, and session budget use the same content-height calculation, including Today, the account row, named limit groups, and their spacing. Natural text must fit inside the card before its mask is applied; grouped rows receive their spacing once. Preserve the existing notch silhouette, ring geometry, palette, and motion while adapting the tooltip height to its content.",
         "section": "layout"
       },
       {
@@ -71,19 +85,19 @@
       },
       {
         "name": "The Native Control Rule",
-        "body": "Do not redraw a platform control solely to mimic another menu-bar app.",
+        "body": "In the Settings window, do not redraw a platform control solely to mimic another app. (The notch is the deliberate exception — it is Codenotch's language, not this one.)",
         "section": "shapes"
       }
     ],
     "dos": [
-      "Do keep the first screen focused on current local usage, actionable account limits, nearby periods, and direct navigation.",
+      "Do keep Token Usage focused on token totals and history, and Codex Limits focused on account limits and reset timing.",
       "Do use semantic system colors, SwiftUI text styles, SF Symbols, VoiceOver labels, keyboard shortcuts, and Reduce Motion.",
       "Do show unknown or incomplete cost data as unavailable in detailed analytics instead of zero.",
       "Do keep local token totals, account-wide profile totals, quota percentages, and API-equivalent estimates visibly distinct.",
       "Do add Claude, Gemini, or another provider behind a shared provider boundary before exposing it in navigation."
     ],
     "donts": [
-      "Don't copy CodexBar branding, assets, provider tab layout, or long single-page composition.",
+      "Don't copy CodexBar branding or assets; reuse only mode separation and information-architecture ideas that improve scanning for CodexMeter's real features.",
       "Don't place charts, projects, sessions, credits, every provider, and every limit on the overview.",
       "Don't show empty or speculative provider tabs.",
       "Don't use purple/blue AI gradients, neon, decorative glass, giant cards, or custom dashboard chrome.",

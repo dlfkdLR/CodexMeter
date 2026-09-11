@@ -58,7 +58,7 @@ struct AccountLimitsView: View {
             }
             .padding(16)
         }
-        .frame(width: MenuPopoverMetrics.width)
+        .modifier(UsageDetailWidth())
         .task {
             if snapshot == nil { await refresh() }
         }
@@ -193,7 +193,7 @@ private struct AnalyticsDetailLayout<Controls: View, Content: View>: View {
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frame(width: MenuPopoverMetrics.width, alignment: .topLeading)
+        .modifier(UsageDetailWidth())
     }
 }
 
@@ -483,7 +483,7 @@ struct ProjectDetailView: View {
                 .padding(16)
             }
         }
-        .frame(width: MenuPopoverMetrics.width)
+        .modifier(UsageDetailWidth())
     }
 }
 
@@ -526,7 +526,7 @@ struct SessionDetailView: View {
                 .padding(16)
             }
         }
-        .frame(width: MenuPopoverMetrics.width)
+        .modifier(UsageDetailWidth())
     }
 
     @ViewBuilder
@@ -585,7 +585,7 @@ struct ModelDetailView: View {
                 .padding(16)
             }
         }
-        .frame(width: MenuPopoverMetrics.width)
+        .modifier(UsageDetailWidth())
     }
 }
 

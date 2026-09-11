@@ -7,17 +7,20 @@ struct ClaudeAccount: Equatable, Sendable {
     let email: String?
     let subscriptionType: String?
     let authenticationMethod: String?
+    let rateLimitTier: String?
     let linkIdentifier: String
 
     init(
         email: String?,
         subscriptionType: String?,
         authenticationMethod: String?,
+        rateLimitTier: String? = nil,
         stableIdentity: String? = nil
     ) {
         self.email = email
         self.subscriptionType = subscriptionType
         self.authenticationMethod = authenticationMethod
+        self.rateLimitTier = rateLimitTier
         let identity = stableIdentity ?? email ?? [authenticationMethod, subscriptionType]
             .compactMap { $0 }
             .joined(separator: ":")
@@ -28,7 +31,15 @@ struct ClaudeAccount: Equatable, Sendable {
 
     var displayName: String { email ?? "Claude account" }
     var planName: String? {
-        subscriptionType.map { $0.replacingOccurrences(of: "_", with: " ").capitalized }
+        guard let subscriptionType else { return nil }
+        if subscriptionType.lowercased() == "max" {
+            switch rateLimitTier?.lowercased() {
+            case "default_claude_max_5x": return "Max 5x"
+            case "default_claude_max_20x": return "Max 20x"
+            default: break
+            }
+        }
+        return subscriptionType.replacingOccurrences(of: "_", with: " ").capitalized
     }
 }
 
@@ -76,6 +87,7 @@ protocol ClaudeStatusLineInstalling: Sendable {
 
 struct ClaudeCLIService: ClaudeAuthenticating {
     private static let maximumStatusBytes = 131_072
+    private static let maximumConfigurationBytes = 8_388_608
 
     func accountStatus() async throws -> ClaudeAccount? {
         let data = try await ClaudeCommandRunner.run(
@@ -85,10 +97,13 @@ struct ClaudeCLIService: ClaudeAuthenticating {
             maximumOutputBytes: Self.maximumStatusBytes,
             acceptsNonzeroExit: true
         )
-        return try Self.account(from: data)
+        let account = try Self.account(from: data)
+        guard account?.subscriptionType?.lowercased() == "max",
+              account?.rateLimitTier == nil else { return account }
+        return try Self.account(from: data, configurationData: Self.readConfiguration())
     }
 
-    static func account(from data: Data) throws -> ClaudeAccount? {
+    static func account(from data: Data, configurationData: Data? = nil) throws -> ClaudeAccount? {
         guard !data.isEmpty else { return nil }
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let loggedIn = object["loggedIn"] as? Bool
@@ -104,8 +119,45 @@ struct ClaudeCLIService: ClaudeAuthenticating {
             email: email,
             subscriptionType: Self.safeText(object["subscriptionType"]),
             authenticationMethod: Self.safeText(object["authMethod"]),
+            rateLimitTier: Self.safeText(object["rateLimitTier"])
+                ?? Self.cachedRateLimitTier(from: configurationData, email: email, organizationID: organizationID),
             stableIdentity: stableIdentity
         )
+    }
+
+    /// The CLI's local profile carries Max's tier even when auth status only
+    /// says "max". It is display metadata, never a credential or account identity.
+    /// Match both identity fields so a previous account/workspace cannot supply it.
+    private static func cachedRateLimitTier(from data: Data?, email: String?, organizationID: String?) -> String? {
+        guard let email, let organizationID, let data, data.count <= maximumConfigurationBytes,
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let account = root["oauthAccount"] as? [String: Any],
+              safeText(account["emailAddress"]) == email,
+              safeText(account["organizationUuid"]) == organizationID else { return nil }
+        return safeText(account["userRateLimitTier"]) ?? safeText(account["organizationRateLimitTier"])
+    }
+
+    static func configurationURL(
+        home: URL = FileManager.default.homeDirectoryForCurrentUser,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> URL {
+        if let configured = environment["CLAUDE_CONFIG_DIR"], configured.hasPrefix("/"),
+           !configured.contains("\0") {
+            return URL(fileURLWithPath: configured, isDirectory: true).appendingPathComponent(".claude.json")
+        }
+        return home.appendingPathComponent(".claude.json")
+    }
+
+    private static func readConfiguration() -> Data? {
+        let url = configurationURL()
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+              attributes[.type] as? FileAttributeType == .typeRegular,
+              let size = attributes[.size] as? NSNumber, size.intValue <= maximumConfigurationBytes,
+              let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? handle.close() }
+        guard let data = try? handle.read(upToCount: maximumConfigurationBytes + 1),
+              data.count <= maximumConfigurationBytes else { return nil }
+        return data
     }
 
     private static func safeText(_ value: Any?) -> String? {

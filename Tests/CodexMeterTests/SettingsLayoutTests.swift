@@ -5,7 +5,8 @@ import XCTest
 
 @MainActor
 final class SettingsLayoutTests: XCTestCase {
-    private let size = NSSize(width: 900, height: 600)
+    // The minimum window width minus the widest sidebar and its divider.
+    private let size = NSSize(width: 579, height: 560)
 
     func testEverySettingsPaneFitsWithoutHorizontalClippingInBothAppearances() throws {
         _ = NSApplication.shared

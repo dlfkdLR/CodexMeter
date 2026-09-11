@@ -16,7 +16,7 @@ Tiny native macOS app that turns **local Codex and Claude Code session history**
 
 ## Why
 
-- **Glanceable limits.** The notch fills a ring per provider with how much of the tightest quota window is left, and spins it while an agent is working.
+- **Glanceable limits.** The notch shows a ring per provider and spins it while an agent is working. Choose **Used** or **Remaining** in **Settings ▸ Notch ▸ Readings** to change the percentage and ring fill together; warning colours still reflect actual consumption.
 - **Plan around limits.** See the nearest Codex or Claude Code quota windows, reset countdowns, and an explicitly labeled even-use pace estimate before starting a long task.
 - **Honest accounting.** Cumulative snapshots are normalized into increases instead of being added repeatedly.
 - **Local by design.** Prompts, responses, source code, credentials, and raw session paths are not stored in CodexMeter's database.
@@ -82,7 +82,7 @@ open /Applications/CodexMeter.app
 
 1. Launch CodexMeter after Codex has created local session history.
 2. To add Claude Code, open **Settings**, select **Claude Code** in the Providers sidebar, enable it, and explicitly add the account already signed in to the official Claude CLI. If no account is signed in, run `claude` in your terminal and sign in there first, then choose **Add Account**.
-3. Open the status-bar item and choose **Show Notch**, or turn it on in **Settings ▸ Notch**. The token history lives in **Settings ▸ Usage**.
+3. The notch is enabled on first launch. Hover over it to expand the rings; if you previously hid it, choose **Show Notch** from the status-bar menu or enable it in **Settings ▸ Notch**. The token history lives in **Settings ▸ Usage**.
 4. Claude limits appear after Claude Code completes a response.
 
 Local totals require no account connection. On macOS, **Settings → Codex → Use ChatGPT account totals** can optionally use the existing Codex sign-in to match ChatGPT profile totals.
@@ -90,7 +90,8 @@ Local totals require no account connection. On macOS, **Settings → Codex → U
 ## Features
 
 - **Codex and opt-in Claude Code** local usage, selected in **Settings ▸ Usage** after the Claude account is added. Each service has independent history, refresh, and data controls; token totals are never mixed. See [Claude Code support](Documentation/CLAUDE.md).
-- **Edge notch (2.0):** a floating ring per detected provider — Codex, Claude Code, and any of GitHub Copilot, Cursor, Grok, OpenCode, Command Code, GLM, or Ollama Cloud whose CLI or editor is signed in — welded to a screen edge. Off by default; turn it on from the status-bar menu or **Settings ▸ Notch**. Threshold notifications at 80% / 100%.
+- **Edge notch (2.0):** a floating ring per selected provider — Codex, Claude Code, and supported CLIs or editors — welded to a screen edge. Enabled by default; manage visibility from the status-bar menu or **Settings ▸ Notch**, and add or remove providers in **Settings ▸ Providers**. An explicitly saved off setting is preserved. Threshold notifications at 80% / 100%.
+- **Account plans at a glance:** the notch tooltip shows Codex **Pro 5x / Pro 20x** and Claude **Max 5x / Max 20x** when the signed-in account metadata identifies the tier. Claude's local profile must match both the current email and organization; missing or unrecognized tier metadata leaves the plain plan name. Hover the notch's resting settings arc to reveal Settings, followed by **Switch account** directly below it. The account menu opens saved Codex accounts or the Claude Code account pane.
 - User-selected Codex account switching: save logins in this Mac’s Keychain, add another account through Codex’s browser sign-in, and explicitly quit/switch/reopen Codex. No automatic quota-based rotation. See [account setup and supported configurations](Documentation/ACCOUNTS.md).
 
 - Live Today total from the selected service's local records always stays in the primary summary
@@ -250,7 +251,9 @@ See the complete [Troubleshooting guide](Documentation/TROUBLESHOOTING.md).
 
 ## Acknowledgements
 
-README presentation inspired by [CodexBar](https://github.com/steipete/CodexBar). Automatic updates use [Sparkle](https://sparkle-project.org/). CodexMeter is an independent implementation focused on local Codex token accounting.
+The edge-notch interface, provider integrations, and supporting code are adapted from [Codenotch](https://github.com/vinzdg/codenotch) by Vinz, under the MIT License. The original copyright and complete license are preserved in [NOTICE](NOTICE), bundled with the app, and available from **Settings → Information → Codenotch - MIT License**.
+
+README presentation inspired by [CodexBar](https://github.com/steipete/CodexBar). Automatic updates use [Sparkle](https://sparkle-project.org/). CodexMeter focuses on local Codex token accounting and integrates the adapted notch with its own usage and account-management features.
 
 ## Disclaimer
 
@@ -259,3 +262,5 @@ CodexMeter is an unofficial utility and is not affiliated with or endorsed by Op
 ## License
 
 MIT © CodexMeter contributors. See [LICENSE](LICENSE).
+
+Incorporated Codenotch portions remain MIT © 2026 Vinz. Preserve [NOTICE](NOTICE) alongside [LICENSE](LICENSE) when redistributing the source or app. The release build bundles both files, and packaging verifies that their contents match the repository before producing ZIP and DMG downloads.

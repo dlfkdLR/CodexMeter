@@ -391,8 +391,9 @@ final class NotchUsageStore: ObservableObject {
         // provider in the serial refresh. Do not read its credential at all.
         guard isCurrent(provider.id, version: version) else { return nil }
         do {
-            let fresh = try await provider.fetchSnapshot()
+            var fresh = try await provider.fetchSnapshot()
             guard isCurrent(provider.id, version: version) else { return nil }
+            fresh.accountPlan = fresh.accountPlan ?? provider.account()?.plan
             lastGood[provider.id] = (fresh, Date())
             archive.save(lastGood)
             refusedAccess.remove(provider.id)

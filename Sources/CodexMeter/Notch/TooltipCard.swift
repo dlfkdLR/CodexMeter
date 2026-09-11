@@ -97,6 +97,7 @@ private struct TooltipShell<Content: View>: View {
                 .frame(width: NotchLayout.cardWidth, height: height)
 
             content
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(NotchLayout.cardPadding)
                 .frame(width: NotchLayout.cardWidth, alignment: .topLeading)
         }
@@ -150,6 +151,8 @@ private struct TooltipHeader<Mark: View>: View {
             Text(title)
                 .font(NotchType.cardTitle)
                 .foregroundStyle(NotchPalette.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             if let note {
                 Spacer(minLength: NotchDesign.px(20))
                 Text(note)
@@ -260,6 +263,7 @@ private struct StatusRing: View {
 /// One metered window: label and reset copy on a line, a track bar, then the
 /// percentage burned.
 private struct LimitWindowRow: View {
+    @AppStorage("numberStyle") private var numberStyle = TokenNumberStyle.compact.rawValue
     let window: LimitWindow
     var inset: CGFloat = 0
     let fidelity: Fidelity
@@ -294,9 +298,11 @@ private struct LimitWindowRow: View {
         window.usedFraction == nil && window.used != nil
     }
 
+    private var countStyle: TokenNumberStyle { TokenNumberStyle(rawValue: numberStyle) ?? .compact }
+
     var body: some View {
         if isCountRow {
-            SplitRow(leading: window.label, trailing: "\(window.used ?? 0)",
+            SplitRow(leading: window.label, trailing: NotchNumberFormatting.count(window.used ?? 0, style: countStyle),
                      trailingColor: NotchPalette.textSecondary)
         } else {
             VStack(alignment: .leading, spacing: 0) {
@@ -313,7 +319,7 @@ private struct LimitWindowRow: View {
                     .padding(.top, NotchLayout.labelToBar)
                 }
 
-                Text("\(window.usedFraction == nil ? "" : fidelity.qualifier)\(window.summary)\(paceText)")
+                Text("\(window.usedFraction == nil ? "" : fidelity.qualifier)\(NotchNumberFormatting.summary(window, style: countStyle))\(paceText)")
                     .font(NotchType.cardBody)
                     .foregroundStyle(NotchPalette.textPrimary)
                     .lineLimit(1)
@@ -325,10 +331,12 @@ private struct LimitWindowRow: View {
 }
 
 private struct ProviderTooltip: View {
+    @AppStorage("numberStyle") private var numberStyle = TokenNumberStyle.compact.rawValue
     let snapshot: ProviderSnapshot
     let now: Date
     let resetTimeFormat: ResetTimeFormat
     let showUsagePace: Bool
+    var onSwitchAccount: (() -> Void)?
 
     /// Only worth saying when the numbers are not current. A remembered reading
     /// has to be dated, or it quietly passes itself off as live.
@@ -364,10 +372,34 @@ private struct ProviderTooltip: View {
                     .foregroundStyle(NotchPalette.textPrimary)
             }
 
+            if snapshot.accountPlanLabel != nil || onSwitchAccount != nil {
+                HStack(spacing: 8) {
+                    Text(snapshot.accountPlanLabel ?? "Account")
+                        .foregroundStyle(NotchPalette.textSecondary)
+                        .lineLimit(1)
+                        .help(snapshot.accountPlanLabel ?? "Account")
+                    Spacer(minLength: 0)
+                    if let onSwitchAccount {
+                        Button(action: onSwitchAccount) {
+                            Label("Switch account", systemImage: "person.crop.circle")
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(NotchPalette.textPrimary)
+                        .fixedSize()
+                        .accessibilityIdentifier("notch.switchAccount.\(snapshot.id)")
+                    }
+                }
+                .font(NotchType.cardBody)
+                .frame(height: NotchLayout.accountRowHeight)
+                .padding(.top, NotchLayout.headerToBlock)
+            }
+
             if let today = snapshot.todaysTokens {
                 (Text("Today  ").foregroundColor(NotchPalette.textSecondary)
-                 + Text("\(today.formatted()) tokens").foregroundColor(NotchPalette.textPrimary))
+                 + Text("\(NotchNumberFormatting.count(today, style: TokenNumberStyle(rawValue: numberStyle) ?? .compact)) tokens").foregroundColor(NotchPalette.textPrimary))
                     .font(NotchType.cardBody)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                     .padding(.top, NotchLayout.headerToBlock)
             }
 
@@ -394,9 +426,8 @@ private struct ProviderTooltip: View {
                                     .padding(.leading, NotchDesign.px(4))
                                 
                                 VStack(alignment: .leading, spacing: NotchLayout.blockSpacing) {
-                                    ForEach(Array(group.windows.enumerated()), id: \.element.id) { windowIndex, window in
+                                    ForEach(group.windows) { window in
                                         LimitWindowRow(window: window, inset: 2 * NotchDesign.px(16), fidelity: snapshot.fidelity, now: now, resetTimeFormat: resetTimeFormat, showsUsagePace: showUsagePace)
-                                            .padding(.top, windowIndex == 0 ? 0 : NotchLayout.blockSpacing)
                                     }
                                 }
                                 .padding(NotchDesign.px(16))
@@ -547,57 +578,49 @@ struct TooltipCard: View {
     /// rather than fixed, so a big screen hides nothing.
     var sessionCap: Int = NotchLayout.defaultSessionCap
     var resetTimeFormat: ResetTimeFormat = .automatic
+    var onSwitchAccount: (() -> Void)?
     @AppStorage("notchShowUsagePace") private var showUsagePace = false
-
-    private var groupCount: Int {
-        var groups = Set<String>()
-        var count = 0
-        for window in snapshot.windows {
-            if let group = window.group, !groups.contains(group) {
-                groups.insert(group)
-                count += 1
-            }
-        }
-        return count
-    }
 
     /// The same figure the hover region uses, so what is drawn and what is
     /// reachable can never drift apart.
     private var height: CGFloat {
-        NotchLayout.cardHeight(
-            windowCount: snapshot.windows.count,
-            groupCount: groupCount,
+        NotchLayout.cardHeight(for: snapshot,
             sessionCount: activity?.sessions.count ?? 0,
             sessionCap: sessionCap,
-            statusMessage: snapshot.statusMessage,
-            blockMessage: snapshot.block?.summary(now: now),
-            compactRowCount: snapshot.compactRowCount
+            now: now,
+            showsAccountAction: onSwitchAccount != nil
         )
     }
 
     var body: some View {
         TooltipShell(height: height, direction: direction) {
-            // Stacked, not replaced in place: during a swap both sets of rows
-            // exist for a moment, and in a ZStack they overlap and dissolve
-            // instead of shoving each other around. Top-aligned so neither
-            // drifts while the card resizes around them.
-            ZStack(alignment: .topLeading) {
-                VStack(alignment: .leading, spacing: 0) {
-                    ProviderTooltip(snapshot: snapshot, now: now, resetTimeFormat: resetTimeFormat,
-                                    showUsagePace: showUsagePace)
-                    if let activity {
-                        SessionList(summary: activity, now: now, cap: sessionCap)
-                    }
-                }
-                // An identity, so one provider's rows are never interpolated
-                // into another's — that is what slid text through positions
-                // belonging to neither layout. A crossfade rather than an
-                // instant swap, so the change is part of the movement instead
-                // of a cut in the middle of it.
-                .id(snapshot.id)
-                .transition(.opacity.animation(NotchMotion.crossfade))
-            }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            cardContent
         }
+    }
+
+    // Also measured without the shell in regression tests: the natural text
+    // must fit the budget before the rounded mask is applied.
+    var cardContent: some View {
+        // Stacked, not replaced in place: during a swap both sets of rows
+        // exist for a moment, and in a ZStack they overlap and dissolve
+        // instead of shoving each other around. Top-aligned so neither
+        // drifts while the card resizes around them.
+        ZStack(alignment: .topLeading) {
+            VStack(alignment: .leading, spacing: 0) {
+                ProviderTooltip(snapshot: snapshot, now: now, resetTimeFormat: resetTimeFormat,
+                                showUsagePace: showUsagePace, onSwitchAccount: onSwitchAccount)
+                if let activity {
+                    SessionList(summary: activity, now: now, cap: sessionCap)
+                }
+            }
+            // An identity, so one provider's rows are never interpolated
+            // into another's — that is what slid text through positions
+            // belonging to neither layout. A crossfade rather than an
+            // instant swap, so the change is part of the movement instead
+            // of a cut in the middle of it.
+            .id(snapshot.id)
+            .transition(.opacity.animation(NotchMotion.crossfade))
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }

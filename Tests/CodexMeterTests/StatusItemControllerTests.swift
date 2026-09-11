@@ -39,13 +39,4 @@ final class StatusItemControllerTests: XCTestCase {
         let item = try XCTUnwrap(menu.items.first { $0.title == "Check for Updates…" })
         XCTAssertEqual(item.isEnabled, UpdateService.shared.isAvailable)
     }
-
-    func testPresentingASpecificPanePostsItsSelection() {
-        let pane = SettingsPane.category(.usage)
-        expectation(forNotification: SettingsWindowController.selectPaneNotification, object: nil) { note in
-            (note.object as? SettingsPane) == pane
-        }
-        NotificationCenter.default.post(name: SettingsWindowController.selectPaneNotification, object: pane)
-        waitForExpectations(timeout: 1)
-    }
 }

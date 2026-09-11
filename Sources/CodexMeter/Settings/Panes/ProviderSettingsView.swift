@@ -48,15 +48,13 @@ private struct ProviderSettingsContent: View {
             if isCodex { limitsSection }
             analyticsSection
             if isCodex { accountTotalsSection } else { claudeNoteSection }
-            breakdownSection
             localDataSection
             sourcesSection
             manageDataSection
-            privacySection
         }
         .task {
             if isCodex {
-                codexAccounts.load()
+                codexAccounts.refreshCurrentPlanType()
             } else if claude.isEnabled {
                 await claude.refresh()
             }
@@ -120,8 +118,11 @@ private struct ProviderSettingsContent: View {
         if isCodex {
             SettingsSection(title: "Account") {
                 SettingsValueRow(title: "Account", value: codexAccountValue)
+                if let plan = codexAccounts.currentPlanName {
+                    SettingsValueRow(title: "Plan", value: plan)
+                }
             }
-            SettingsNote("Add or switch accounts from the menu bar popover.")
+            SettingsNote("Add or switch accounts from the account menu in Settings ▸ Usage.")
         } else if claude.isEnabled {
             if claude.isConnected, let account = claude.account {
                 SettingsSection(title: "Account") {
@@ -204,22 +205,6 @@ private struct ProviderSettingsContent: View {
         SettingsNote("Comes from Claude Code session logs on this Mac. Five-hour and weekly limits appear after a connected account completes a response; cost estimates aren't available yet.")
     }
 
-    // MARK: Breakdown
-
-    private var breakdownSection: some View {
-        Group {
-            SettingsSection(title: "This Mac Breakdown") {
-                SettingsInfoRow(text: "Input is counted", systemImage: "arrow.up")
-                SettingsInfoRow(text: "Cached input is included in Input", systemImage: "bolt.horizontal")
-                SettingsInfoRow(text: "Output is counted independently", systemImage: "arrow.down")
-                SettingsInfoRow(text: "Total equals Input plus Output", systemImage: "sum")
-            }
-            SettingsNote(isCodex
-                ? "Calendar periods use your Mac's time zone and selected week start."
-                : "Input also includes cache creation tokens.")
-        }
-    }
-
     // MARK: Local data
 
     private var localDataSection: some View {
@@ -272,35 +257,12 @@ private struct ProviderSettingsContent: View {
         }
     }
 
-    // MARK: Privacy
-
-    private var privacySection: some View {
-        Group {
-            SettingsSection(title: "Privacy") {
-                SettingsInfoRow(text: "Project identifiers are stored as keyed hashes", systemImage: "lock.shield")
-                SettingsInfoRow(text: "Only project folder names are shown", systemImage: "folder.badge.questionmark")
-                SettingsInfoRow(text: "Prompts, responses, paths, and attachment contents are not stored", systemImage: "hand.raised")
-                if !isCodex {
-                    SettingsInfoRow(text: "Claude Code owns the sign-in", systemImage: "key")
-                    SettingsInfoRow(text: "CodexMeter never reads or stores Claude credentials", systemImage: "lock.shield")
-                }
-            }
-            SettingsNote(isCodex
-                ? "Limits are requested read-only from the signed Codex app-server; the last successful response stays in memory only."
-                : "Sign-in stays with Claude Code. CodexMeter only changes the status-line command used to receive limit percentages, and restores your previous one on disconnect.")
-        }
-    }
-
     // MARK: Helpers
 
-    /// Mirrors the menu bar's account switcher: the saved login's disambiguated
-    /// name when one is on record, otherwise a generic signed-in status — never
-    /// a guess at an account CodexMeter hasn't been told about.
+    /// Current login metadata is enough for this read-only pane; saved
+    /// credentials are loaded only when the account controls need them.
     private var codexAccountValue: String {
-        guard let current = codexAccounts.accounts.first(where: { $0.id == codexAccounts.currentID }) else {
-            return "Signed in to the Codex app"
-        }
-        return current.menuTitle(in: codexAccounts.accounts)
+        codexAccounts.currentAccountDisplayName ?? "Signed in to the Codex app"
     }
 
     private var accountLimitStatus: String {

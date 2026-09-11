@@ -10,6 +10,7 @@ struct NotchSettingsView: View {
     @AppStorage("notchSize") private var notchSize = AppPreferences.defaultNotchSize
     @AppStorage("notchAccent") private var notchAccent = AppPreferences.defaultNotchAccent
     @AppStorage("notchResetTimeFormat") private var resetTimeFormat = AppPreferences.defaultNotchResetTimeFormat
+    @AppStorage("notchPercentageMode") private var percentageMode = AppPreferences.defaultNotchPercentageMode
     @AppStorage("notchShowUsagePace") private var showUsagePace = AppPreferences.defaultNotchShowUsagePace
 
     @AppStorage("notchAnnounceSessionEnd") private var announceSessionEnd = AppPreferences.defaultNotchAnnounceSessionEnd
@@ -96,6 +97,16 @@ struct NotchSettingsView: View {
             SettingsNote("Only the healthy end of the scale takes this colour — the 80% and 100% warning bands stay fixed, since their job is to interrupt.")
 
             SettingsSection(title: "Readings") {
+                SettingsPickerRow(title: "Percentage", selection: Binding(
+                    get: { percentageMode },
+                    set: { newValue in
+                        percentageMode = newValue
+                        NotchController.shared.apply(percentageMode: NotchPercentageMode(rawValue: newValue) ?? .used)
+                    }
+                )) {
+                    ForEach(NotchPercentageMode.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                .accessibilityIdentifier("notch.percentageMode")
                 SettingsPickerRow(title: "Reset time", selection: Binding(
                     get: { resetTimeFormat },
                     set: { newValue in
@@ -114,6 +125,8 @@ struct NotchSettingsView: View {
                 )
             }
             .disabled(!showEdgeNotch)
+
+            SettingsNote("The percentage and ring show the selected amount. Warning colours always reflect how much of the limit has been used.")
 
             SettingsSection(title: "When a Session Ends") {
                 SettingsToggleRow(

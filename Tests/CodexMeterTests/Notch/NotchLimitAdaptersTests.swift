@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import SwiftUI
 import XCTest
 @testable import CodexMeter
 
@@ -154,6 +156,75 @@ final class NotchLimitAdaptersTests: XCTestCase {
         XCTAssertEqual(ps.windows.map(\.id), ["weekly"],
                        "Pro's five-hour window is still on screen")
         XCTAssertEqual(ps.headlineID, "weekly")
+        XCTAssertEqual(ps.accountPlanLabel, "Pro 20x")
+        XCTAssertEqual(accounts.currentPlanType, "pro", "Display formatting must not change quota metadata")
+    }
+
+    func testProLiteDisplaysFiveTimesAndKeepsItsOwnLimitWindows() async throws {
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "accountLimitsEnabled")
+        let snapshot = AccountLimitsSnapshot(
+            windows: [win(id: "five", minutes: 300, usedPercent: 6),
+                      win(id: "weekly", minutes: 10_080, usedPercent: 48)],
+            resetCredits: nil, fetchedAt: Date(timeIntervalSince1970: 1)
+        )
+        let store = AccountLimitStore(provider: OneShotLimitProvider(snapshot), defaults: defaults, pollingInterval: nil)
+        await store.refresh()
+        let accounts = CodexAccountStore(vault: EmptyVault(), login: StubLogin(plan: "prolite"))
+
+        let ps = try await CodexNotchProvider(limits: store, accounts: accounts).fetchSnapshot()
+
+        XCTAssertEqual(ps.accountPlanLabel, "Pro 5x")
+        XCTAssertEqual(ps.windows.map(\.id), ["five", "weekly"])
+        XCTAssertEqual(accounts.currentPlanType, "prolite")
+    }
+
+    func testUnrecognizedCodexPlanDoesNotAcquireAProMultiplier() {
+        let accounts = CodexAccountStore(vault: EmptyVault(), login: StubLogin(plan: "future_plan"))
+        accounts.refreshCurrentPlanType()
+        XCTAssertEqual(accounts.currentPlanName, "Future Plan")
+        XCTAssertNil(isolatedAccounts().currentPlanName)
+        XCTAssertEqual(ProviderAccount(label: nil, plan: "Pro 20x", source: "Codex", manageURL: nil).summary,
+                       "Pro 20x · via Codex")
+    }
+
+    func testSettingsAccountSurfacesDoNotOpenTheSavedCredentialVault() async throws {
+        _ = NSApplication.shared
+        let defaults = try makeDefaults()
+        defaults.set("codex", forKey: "usageProvider")
+        defaults.set(false, forKey: "profileSyncEnabled")
+        defaults.set(false, forKey: "claudeEnabled")
+        let vault = RecordingReadVault()
+        let accounts = CodexAccountStore(vault: vault, login: StubLogin(plan: "pro"))
+        let env = SettingsEnvironment(
+            codexStore: UsageStore(automaticallyRefresh: false, defaults: defaults),
+            limitStore: AccountLimitStore(defaults: defaults, pollingInterval: nil),
+            claude: ClaudeIntegrationStore(defaults: defaults, automaticallyRefresh: false),
+            profileStore: ProfileUsageStore(defaults: defaults), codexAccounts: accounts
+        )
+        let surfaces: [AnyView] = [AnyView(ProvidersSettingsView()), AnyView(ProviderSettingsView(provider: .codex)),
+            AnyView(MenuPopoverView(accounts: accounts, embedded: true)
+                .environmentObject(env.codexStore).environmentObject(env.profileStore)
+                .environmentObject(env.limitStore).environmentObject(env.claude))]
+        for surface in surfaces {
+            let host = NSHostingView(rootView: surface.environmentObject(env).defaultAppStorage(defaults))
+            host.sizingOptions = []
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+                                  styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            host.layoutSubtreeIfNeeded()
+            // Let SwiftUI's appearance tasks run, as they do when Settings opens.
+            try await Task.sleep(for: .milliseconds(50))
+            XCTAssertEqual(vault.reads, 0, "Opening Settings must not query saved credentials")
+            window.close()
+        }
+        XCTAssertEqual(accounts.currentAccountDisplayName, "person@example.test")
+        XCTAssertEqual(accounts.currentPlanName, "Pro 20x")
+        XCTAssertTrue(accounts.accounts.isEmpty)
+        let notch = CodexNotchProvider(limits: env.limitStore, accounts: accounts)
+        XCTAssertEqual(notch.account()?.plan, "Pro 20x")
+        XCTAssertEqual(notch.account()?.label, "person@example.test")
     }
 
     func testAPlusLoginKeepsItsFiveHourWindow() async throws {
@@ -216,6 +287,12 @@ private struct OneShotLimitProvider: AccountLimitProviding {
 private struct EmptyVault: AccountVault {
     func load() throws -> [SavedCodexAccount] { [] }
     func save(_ accounts: [SavedCodexAccount]) throws {}
+}
+
+private final class RecordingReadVault: AccountVault {
+    var reads = 0
+    func load() throws -> [SavedCodexAccount] { reads += 1; return [] }
+    func save(_ accounts: [SavedCodexAccount]) throws { XCTFail("Settings must not write saved credentials") }
 }
 
 private struct EmptyLogin: CodexLoginStoring {

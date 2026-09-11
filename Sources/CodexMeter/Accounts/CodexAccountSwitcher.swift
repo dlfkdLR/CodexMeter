@@ -7,6 +7,9 @@ import SwiftUI
 struct CodexAccountSwitcher: View {
     @ObservedObject var accounts: CodexAccountStore
     var showManagement: () -> Void = { CodexAccountsWindowController.shared.show() }
+    /// Settings must open without an unsolicited Keychain read. Its button
+    /// opens the existing account window when the user requests saved logins.
+    var opensManagementDirectly = false
     @State private var pendingSwitch: SavedCodexAccount?
 
     private var currentAccount: SavedCodexAccount? {
@@ -24,12 +27,21 @@ struct CodexAccountSwitcher: View {
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                 }
-                Text(currentAccount?.menuTitle(in: accounts.accounts) ?? "Codex account")
+                Text(accounts.currentAccountDisplayName ?? "Codex account")
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .help(currentAccount?.menuTitle(in: accounts.accounts) ?? "No saved login selected")
-                accountMenu
+                    .help(accounts.currentAccountDisplayName ?? "No signed-in account found")
+                if opensManagementDirectly {
+                    Button("Switch", action: showManagement)
+                        .buttonStyle(.borderless)
+                        .frame(minHeight: 28)
+                        .accessibilityIdentifier("menu.accountSwitcher")
+                        .accessibilityLabel("Switch Codex account")
+                        .help("Switch, add, or manage Codex accounts")
+                } else {
+                    accountMenu
+                }
             }
             .font(.subheadline)
             .padding(.horizontal, 6)
@@ -46,11 +58,19 @@ struct CodexAccountSwitcher: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
-        .task { accounts.load() }
+        .task { refreshAccount() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            accounts.load()
+            refreshAccount()
         }
         .modifier(CodexAccountSwitchConfirmation(accounts: accounts, selection: $pendingSwitch))
+    }
+
+    private func refreshAccount() {
+        if opensManagementDirectly {
+            accounts.refreshCurrentPlanType()
+        } else {
+            accounts.load()
+        }
     }
 
     private var accountMenu: some View {

@@ -74,6 +74,10 @@ install -m 755 "${binary_path}" "${app_path}/Contents/MacOS/${PRODUCT_NAME}"
 install -m 755 "${claude_bridge_path}" "${app_path}/Contents/Helpers/CodexMeterClaudeBridge"
 install -m 644 "${project_root}/Assets/AppIcon.icns" "${app_path}/Contents/Resources/AppIcon.icns"
 install -m 644 "${project_root}/Config/Info.plist" "${app_path}/Contents/Info.plist"
+for notice in LICENSE NOTICE; do
+  install -m 644 "${project_root}/${notice}" "${app_path}/Contents/Resources/${notice}.txt"
+done
+"${script_dir}/verify_license_notices.sh" "${app_path}"
 provider_logo_source="${project_root}/Sources/CodexMeter/Resources/ProviderLogos"
 provider_logo_destination="${app_path}/Contents/Resources/ProviderLogos"
 mkdir -p "${provider_logo_destination}"

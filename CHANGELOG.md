@@ -18,6 +18,7 @@ All notable changes to CodexMeter will be documented in this file.
 
 - Settings sidebar and content clipping across window sizes, with a full-width Usage layout.
 - Scrolled settings overlapping the window toolbar with either sidebar state.
+- Redundant Privacy and This Mac Breakdown explanation blocks in provider settings.
 - General's Number Format preference not reaching notch token totals and count readings.
 - Notch Settings activation and direct navigation to the selected provider's account details.
 - Tooltip content clipping, including plan, token totals, and session rows.

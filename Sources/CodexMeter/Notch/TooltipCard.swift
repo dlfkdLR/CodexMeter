@@ -263,6 +263,7 @@ private struct StatusRing: View {
 /// One metered window: label and reset copy on a line, a track bar, then the
 /// percentage burned.
 private struct LimitWindowRow: View {
+    @AppStorage("numberStyle") private var numberStyle = TokenNumberStyle.compact.rawValue
     let window: LimitWindow
     var inset: CGFloat = 0
     let fidelity: Fidelity
@@ -297,9 +298,11 @@ private struct LimitWindowRow: View {
         window.usedFraction == nil && window.used != nil
     }
 
+    private var countStyle: TokenNumberStyle { TokenNumberStyle(rawValue: numberStyle) ?? .compact }
+
     var body: some View {
         if isCountRow {
-            SplitRow(leading: window.label, trailing: "\(window.used ?? 0)",
+            SplitRow(leading: window.label, trailing: NotchNumberFormatting.count(window.used ?? 0, style: countStyle),
                      trailingColor: NotchPalette.textSecondary)
         } else {
             VStack(alignment: .leading, spacing: 0) {
@@ -316,7 +319,7 @@ private struct LimitWindowRow: View {
                     .padding(.top, NotchLayout.labelToBar)
                 }
 
-                Text("\(window.usedFraction == nil ? "" : fidelity.qualifier)\(window.summary)\(paceText)")
+                Text("\(window.usedFraction == nil ? "" : fidelity.qualifier)\(NotchNumberFormatting.summary(window, style: countStyle))\(paceText)")
                     .font(NotchType.cardBody)
                     .foregroundStyle(NotchPalette.textPrimary)
                     .lineLimit(1)
@@ -328,6 +331,7 @@ private struct LimitWindowRow: View {
 }
 
 private struct ProviderTooltip: View {
+    @AppStorage("numberStyle") private var numberStyle = TokenNumberStyle.compact.rawValue
     let snapshot: ProviderSnapshot
     let now: Date
     let resetTimeFormat: ResetTimeFormat
@@ -392,8 +396,10 @@ private struct ProviderTooltip: View {
 
             if let today = snapshot.todaysTokens {
                 (Text("Today  ").foregroundColor(NotchPalette.textSecondary)
-                 + Text("\(today.formatted()) tokens").foregroundColor(NotchPalette.textPrimary))
+                 + Text("\(NotchNumberFormatting.count(today, style: TokenNumberStyle(rawValue: numberStyle) ?? .compact)) tokens").foregroundColor(NotchPalette.textPrimary))
                     .font(NotchType.cardBody)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                     .padding(.top, NotchLayout.headerToBlock)
             }
 

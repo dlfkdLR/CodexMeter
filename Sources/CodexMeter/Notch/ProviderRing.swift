@@ -161,6 +161,7 @@ private struct ActivityArc: View {
 
 /// A ring and the percent burned underneath it.
 struct ProviderCell: View {
+    @AppStorage("numberStyle") private var numberStyle = TokenNumberStyle.compact.rawValue
     let snapshot: ProviderSnapshot
     var activity: ActivitySummary?
     var isRefreshing: Bool = false
@@ -168,7 +169,11 @@ struct ProviderCell: View {
 
     /// A dash, not "0%": nothing read is not the same as nothing used.
     private var percentText: String {
-        percentageMode.text(for: snapshot)
+        if snapshot.hasReading, snapshot.usedFraction == nil,
+           let count = snapshot.headline?.remaining ?? snapshot.headline?.used {
+            return NotchNumberFormatting.count(count, style: TokenNumberStyle(rawValue: numberStyle) ?? .compact)
+        }
+        return percentageMode.text(for: snapshot)
     }
 
     var body: some View {
@@ -189,7 +194,10 @@ struct ProviderCell: View {
                 // wide as the ring, and a label wider than that would be
                 // truncated rather than allowed to overhang into the spacing
                 // that is already there for it.
-                .fixedSize(horizontal: true, vertical: false)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .frame(width: snapshot.usedFraction == nil ? NotchLayout.ringDiameter + 12 : nil)
+                .fixedSize(horizontal: snapshot.usedFraction != nil, vertical: false)
                 .frame(height: NotchLayout.percentLineHeight)
                 .contentTransition(.numericText())
                 .animation(NotchMotion.reading, value: percentText)
@@ -197,7 +205,7 @@ struct ProviderCell: View {
         .frame(height: NotchLayout.cellExtent)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(snapshot.displayName)
-        .accessibilityValue(percentageMode.accessibleReading(for: snapshot))
-        .help("\(snapshot.displayName): \(percentageMode.accessibleReading(for: snapshot))")
+        .accessibilityValue(snapshot.usedFraction == nil ? percentText : percentageMode.accessibleReading(for: snapshot))
+        .help("\(snapshot.displayName): \(snapshot.usedFraction == nil ? percentText : percentageMode.accessibleReading(for: snapshot))")
     }
 }

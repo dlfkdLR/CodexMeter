@@ -250,7 +250,9 @@ See the complete [Troubleshooting guide](Documentation/TROUBLESHOOTING.md).
 
 ## Acknowledgements
 
-README presentation inspired by [CodexBar](https://github.com/steipete/CodexBar). Automatic updates use [Sparkle](https://sparkle-project.org/). CodexMeter is an independent implementation focused on local Codex token accounting.
+The edge-notch interface, provider integrations, and supporting code are adapted from [Codenotch](https://github.com/vinzdg/codenotch) by Vinz, under the MIT License. The original copyright and complete license are preserved in [NOTICE](NOTICE), bundled with the app, and available from **Settings → Information → Codenotch - MIT License**.
+
+README presentation inspired by [CodexBar](https://github.com/steipete/CodexBar). Automatic updates use [Sparkle](https://sparkle-project.org/). CodexMeter focuses on local Codex token accounting and integrates the adapted notch with its own usage and account-management features.
 
 ## Disclaimer
 
@@ -259,3 +261,5 @@ CodexMeter is an unofficial utility and is not affiliated with or endorsed by Op
 ## License
 
 MIT © CodexMeter contributors. See [LICENSE](LICENSE).
+
+Incorporated Codenotch portions remain MIT © 2026 Vinz. Preserve [NOTICE](NOTICE) alongside [LICENSE](LICENSE) when redistributing the source or app. The release build bundles both files, and packaging verifies that their contents match the repository before producing ZIP and DMG downloads.

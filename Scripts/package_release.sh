@@ -18,6 +18,9 @@ if [[ ! -d "${app_path}" ]]; then
   exit 1
 fi
 
+# Check before removing existing artifacts or producing new downloads.
+"${script_dir}/verify_license_notices.sh" "${app_path}"
+
 mkdir -p "${artifact_root}"
 rm -f "${zip_path}" "${zip_path}.sha256" "${dmg_path}" "${dmg_path}.sha256" \
   "${checksums_path}"

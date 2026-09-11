@@ -41,6 +41,7 @@ trap cleanup EXIT
 
 verify_app() {
   local candidate=$1
+  "${script_dir}/verify_license_notices.sh" "${candidate}"
   local binary_path="${candidate}/Contents/MacOS/${PRODUCT_NAME}"
   local info_plist="${candidate}/Contents/Info.plist"
   local sparkle_framework="${candidate}/Contents/Frameworks/Sparkle.framework"

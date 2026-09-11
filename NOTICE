@@ -1,7 +1,7 @@
 CodexMeter
 Copyright (c) 2026 dlfkdLR
 
-This product includes software from the Codenotch project
+This product includes software and adapted design material from the Codenotch project
 (https://github.com/vinzdg/codenotch), licensed under the MIT License:
 
     MIT License
@@ -26,5 +26,13 @@ This product includes software from the Codenotch project
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-The edge-notch UI in Sources/CodexMeter/Notch/ is ported and adapted from
-Codenotch. Ported files retain their original documentation comments.
+The edge-notch interface, provider integrations, and supporting code in
+Sources/CodexMeter/Notch/ are ported and adapted from Codenotch. CodexMeter
+modifications integrate them with its own usage stores, account management,
+settings, and distribution. The original Codenotch copyright and MIT license
+above apply to the incorporated portions.
+
+Keep this notice, including the full copyright, permission, and warranty text,
+with source and binary distributions containing those portions. Release apps
+include this file as Contents/Resources/NOTICE.txt, accessible from
+Settings > Information > Codenotch - MIT License.

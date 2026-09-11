@@ -37,7 +37,9 @@ jobs:
             "$test_script"
           done
       - name: Universal release build
-        run: swift build -c release --arch arm64 --arch x86_64
+        env:
+          CODEXMETER_SWIFT_SCRATCH_PATH: ${{ github.workspace }}/.build
+        run: Scripts/build_release.sh
       - name: Verify architectures
         run: |
           architectures=$(lipo -archs .build/apple/Products/Release/CodexMeter)

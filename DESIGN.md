@@ -87,6 +87,12 @@ Claude Code account pane without changing accounts on a single click.
 Settings ▸ Notch ▸ Readings offers Used / Remaining: the percent and ring sweep
 change together, while warning colours continue to reflect actual consumption.
 
+Provider additions use a native searchable sheet with service marks,
+descriptions, connection status, and inline Add / Added feedback. Available
+providers come first; adding one keeps its card in place for the remainder of
+the visit. Settings content is clipped below an opaque window toolbar in both
+sidebar modes. Number Format is shared by Usage and notch token/count readings.
+
 ## Colors
 
 The palette follows macOS semantic colors so it remains correct in light, dark, increased-contrast, and accent-color configurations.

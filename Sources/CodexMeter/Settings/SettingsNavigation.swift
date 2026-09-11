@@ -1,5 +1,20 @@
 import SwiftUI
 
+/// Selection lives with the window controller so requests made before SwiftUI
+/// subscribes or while the window is closed are retained.
+@MainActor
+final class SettingsNavigation: ObservableObject {
+    @Published var category: SettingsCategory? = .usage
+    @Published var columnVisibility: NavigationSplitViewVisibility = .all
+
+    func select(_ pane: SettingsPane) {
+        switch pane {
+        case .category(let category): self.category = category
+        case .provider, .notchProvider: category = .providers
+        }
+    }
+}
+
 /// Shared settings that are not tied to one service. Per-provider settings
 /// (account, limits, local data, analytics options) live in `SettingsPane.provider`.
 enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {

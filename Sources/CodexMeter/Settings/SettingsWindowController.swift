@@ -11,6 +11,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     private var settingsWindow: NSWindow?
     private var environment: SettingsEnvironment?
+    private let navigation = SettingsNavigation()
 
     var isSettingsWindowVisible: Bool {
         settingsWindow?.isVisible == true
@@ -21,11 +22,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         self.environment = environment
     }
 
-    /// Posted with a `SettingsPane` object when something outside the window
-    /// asks it to open on a particular pane (the status-bar menu's "Usage…").
-    static let selectPaneNotification = Notification.Name("CodexMeterSettingsSelectPane")
-
     func present() {
+        navigation.columnVisibility = .all
         let environment = self.environment ?? SettingsEnvironment()
         let window = settingsWindow ?? makeWindow(environment: environment)
         // An accessory app is restricted from activating and compositing its
@@ -48,8 +46,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     func present(selecting pane: SettingsPane) {
+        navigation.select(pane)
         present()
-        NotificationCenter.default.post(name: Self.selectPaneNotification, object: pane)
     }
 
     private func makeWindow(environment: SettingsEnvironment) -> NSWindow {
@@ -63,7 +61,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.contentMinSize = Self.minimumContentSize
         window.isReleasedWhenClosed = false
         window.contentViewController = NSHostingController(
-            rootView: SettingsView()
+            rootView: SettingsView(navigation: navigation)
                 .environmentObject(environment)
                 .environmentObject(environment.claude)
         )

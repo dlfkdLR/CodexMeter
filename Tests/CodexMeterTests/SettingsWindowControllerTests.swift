@@ -4,6 +4,75 @@ import XCTest
 
 @MainActor
 final class SettingsWindowControllerTests: XCTestCase {
+    func testEveryCategoryStaysVisibleWhenSwitchingResizingAndReopening() async throws {
+        _ = NSApplication.shared
+        let fixture = try SettingsWindowFixture()
+        defer { fixture.remove() }
+        let controller = SettingsWindowController()
+        defer { controller.closeSettingsForTesting() }
+        controller.configure(environment: fixture.environment)
+        controller.present()
+        let host = try XCTUnwrap(controller.settingsContentViewControllerForTesting?.view)
+        let window = try XCTUnwrap(host.window)
+
+        for dark in [false, true] {
+            window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            for size in [NSSize(width: 840, height: 560), NSSize(width: 980, height: 680),
+                         NSSize(width: 1200, height: 800)] {
+                window.setContentSize(size)
+                for category in SettingsCategory.allCases {
+                    controller.present(selecting: .category(category))
+                    try await settle(window)
+                    let context = "\(category.title), \(size), dark=\(dark)"
+                    XCTAssertEqual(window.title, category.title, context)
+                    let split = try XCTUnwrap(descendants(of: NSSplitView.self, in: host).first)
+                    let splitFrame = split.convert(split.bounds, to: host)
+                    XCTAssertTrue(host.bounds.insetBy(dx: -1, dy: -1).contains(splitFrame),
+                                  "\(context): split \(splitFrame) exceeds viewport \(host.bounds)")
+                    let sidebar = try XCTUnwrap(descendants(of: NSOutlineView.self, in: host).first)
+                    XCTAssertEqual(sidebar.numberOfRows, SettingsCategory.allCases.count, context)
+                    for row in 0..<sidebar.numberOfRows {
+                        let frame = sidebar.convert(sidebar.rect(ofRow: row), to: nil)
+                        XCTAssertTrue(window.contentLayoutRect.contains(frame),
+                                      "\(context): sidebar row \(row) is clipped: \(frame)")
+                    }
+                    for scroll in descendants(of: NSScrollView.self, in: host) {
+                        XCTAssertLessThanOrEqual(scroll.documentView?.bounds.width ?? 0,
+                                                 scroll.contentSize.width + 1, context)
+                    }
+                    if let captureDir = ProcessInfo.processInfo.environment["CODEXMETER_LAYOUT_CAPTURE_DIR"] {
+                        let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                        host.cacheDisplay(in: host.bounds, to: bitmap)
+                        let dir = URL(fileURLWithPath: captureDir, isDirectory: true)
+                        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                        try bitmap.representation(using: .png, properties: [:])?.write(to:
+                            dir.appendingPathComponent("window-\(category.rawValue)-\(Int(size.width))-\(dark ? "dark" : "light").png"))
+                    }
+                }
+            }
+        }
+
+        controller.closeSettingsForTesting()
+        controller.present(selecting: .category(.usage))
+        try await settle(window)
+        XCTAssertTrue(controller.isSettingsWindowVisible)
+        XCTAssertTrue(host === controller.settingsContentViewControllerForTesting?.view)
+        XCTAssertEqual(window.title, "Usage")
+    }
+
+    private func settle(_ window: NSWindow) async throws {
+        // Let SwiftUI commit navigation, toolbar and List updates to AppKit.
+        for _ in 0..<4 {
+            try await Task.sleep(for: .milliseconds(25))
+            window.layoutIfNeeded()
+            window.contentView?.layoutSubtreeIfNeeded()
+        }
+    }
+
+    private func descendants<T: NSView>(of type: T.Type, in view: NSView) -> [T] {
+        ((view as? T).map { [$0] } ?? []) + view.subviews.flatMap { descendants(of: type, in: $0) }
+    }
+
     private func makeEnvironment() -> SettingsEnvironment {
         SettingsEnvironment(
             limitStore: AccountLimitStore(provider: SettingsTestLimitProvider(), pollingInterval: nil)
@@ -62,6 +131,43 @@ final class SettingsWindowControllerTests: XCTestCase {
         controller.present()
         XCTAssertTrue(controller.isSettingsWindowVisible)
         XCTAssertTrue(firstContentController === controller.settingsContentViewControllerForTesting)
+    }
+}
+
+/// Real window tests run SwiftUI tasks. Give them empty sources and a temporary
+/// database so opening Usage cannot import the developer's session history.
+@MainActor
+private struct SettingsWindowFixture {
+    let root: URL
+    let suite: String
+    let defaults: UserDefaults
+    let environment: SettingsEnvironment
+
+    init() throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        suite = "CodexMeter.SettingsWindowTests.\(UUID().uuidString)"
+        defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defaults.set("manual", forKey: "refreshMode")
+        defaults.set(false, forKey: "claudeEnabled")
+        defaults.set(false, forKey: "profileSyncEnabled")
+        let codex = CodexUsageCollector(database: try SQLiteDatabase(url: root.appendingPathComponent("codex.sqlite")), roots: [])
+        let claude = CodexUsageCollector(database: try SQLiteDatabase(url: root.appendingPathComponent("claude.sqlite")),
+                                        roots: [], provider: .claude)
+        environment = SettingsEnvironment(
+            codexStore: UsageStore(automaticallyRefresh: false, collector: codex, defaults: defaults),
+            claudeStore: UsageStore(provider: .claude, automaticallyRefresh: false, collector: claude, defaults: defaults),
+            limitStore: AccountLimitStore(provider: SettingsTestLimitProvider(), defaults: defaults, pollingInterval: nil),
+            claude: ClaudeIntegrationStore(defaults: defaults, automaticallyRefresh: false),
+            profileStore: ProfileUsageStore(defaults: defaults)
+        )
+    }
+
+    func remove() {
+        environment.codexStore.stopAutomaticRefresh()
+        environment.claudeStore.stopAutomaticRefresh()
+        defaults.removePersistentDomain(forName: suite)
+        try? FileManager.default.removeItem(at: root)
     }
 }
 

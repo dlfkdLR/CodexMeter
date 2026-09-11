@@ -121,7 +121,7 @@ private struct ProviderSettingsContent: View {
             SettingsSection(title: "Account") {
                 SettingsValueRow(title: "Account", value: codexAccountValue)
             }
-            SettingsNote("Add or switch accounts from the menu bar popover.")
+            SettingsNote("Add or switch accounts from the account menu in Settings ▸ Usage.")
         } else if claude.isEnabled {
             if claude.isConnected, let account = claude.account {
                 SettingsSection(title: "Account") {

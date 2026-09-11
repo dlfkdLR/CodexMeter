@@ -93,6 +93,17 @@ struct CodexMeterApp: App {
                 .environmentObject(settingsEnvironment)
                 .environmentObject(claudeIntegrationStore)
         }
+        .commands {
+            // Use the same resizable window as the status item and notch.
+            // SwiftUI's default command otherwise creates a second Settings
+            // window with independent navigation and sizing behavior.
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") {
+                    SettingsWindowController.shared.present()
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
+        }
     }
 
     private static var selectedWeekStart: WeekStart {

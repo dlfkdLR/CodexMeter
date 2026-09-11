@@ -71,7 +71,7 @@ final class CodexNotchProvider: NotchProvider {
         guard let current = accounts.accounts.first(where: { $0.id == accounts.currentID }) else {
             return nil
         }
-        return ProviderAccount(label: current.email, plan: accounts.currentPlanType,
+        return ProviderAccount(label: current.email, plan: accounts.currentPlanName,
                                source: "Codex", manageURL: nil)
     }
 
@@ -99,7 +99,7 @@ final class CodexNotchProvider: NotchProvider {
             windows: windows,
             headlineID: NotchLimitMapping.headlineID(source),
             todaysTokens: NotchLimitMapping.todaysTokens(usage),
-            accountPlan: accounts.currentPlanType
+            accountPlan: accounts.currentPlanName
         )
     }
 }
@@ -184,7 +184,8 @@ final class ClaudeNotchProvider: NotchProvider {
             fidelity: .official, status: status,
             windows: windows,
             headlineID: NotchLimitMapping.headlineID(claude.snapshot?.windows ?? []),
-            todaysTokens: NotchLimitMapping.todaysTokens(usage)
+            todaysTokens: NotchLimitMapping.todaysTokens(usage),
+            accountPlan: claude.account?.planName
         )
     }
 }

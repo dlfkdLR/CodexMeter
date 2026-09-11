@@ -154,6 +154,36 @@ final class NotchLimitAdaptersTests: XCTestCase {
         XCTAssertEqual(ps.windows.map(\.id), ["weekly"],
                        "Pro's five-hour window is still on screen")
         XCTAssertEqual(ps.headlineID, "weekly")
+        XCTAssertEqual(ps.accountPlanLabel, "Pro 20x")
+        XCTAssertEqual(accounts.currentPlanType, "pro", "Display formatting must not change quota metadata")
+    }
+
+    func testProLiteDisplaysFiveTimesAndKeepsItsOwnLimitWindows() async throws {
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "accountLimitsEnabled")
+        let snapshot = AccountLimitsSnapshot(
+            windows: [win(id: "five", minutes: 300, usedPercent: 6),
+                      win(id: "weekly", minutes: 10_080, usedPercent: 48)],
+            resetCredits: nil, fetchedAt: Date(timeIntervalSince1970: 1)
+        )
+        let store = AccountLimitStore(provider: OneShotLimitProvider(snapshot), defaults: defaults, pollingInterval: nil)
+        await store.refresh()
+        let accounts = CodexAccountStore(vault: EmptyVault(), login: StubLogin(plan: "prolite"))
+
+        let ps = try await CodexNotchProvider(limits: store, accounts: accounts).fetchSnapshot()
+
+        XCTAssertEqual(ps.accountPlanLabel, "Pro 5x")
+        XCTAssertEqual(ps.windows.map(\.id), ["five", "weekly"])
+        XCTAssertEqual(accounts.currentPlanType, "prolite")
+    }
+
+    func testUnrecognizedCodexPlanDoesNotAcquireAProMultiplier() {
+        let accounts = CodexAccountStore(vault: EmptyVault(), login: StubLogin(plan: "future_plan"))
+        accounts.refreshCurrentPlanType()
+        XCTAssertEqual(accounts.currentPlanName, "Future Plan")
+        XCTAssertNil(isolatedAccounts().currentPlanName)
+        XCTAssertEqual(ProviderAccount(label: nil, plan: "Pro 20x", source: "Codex", manageURL: nil).summary,
+                       "Pro 20x · via Codex")
     }
 
     func testAPlusLoginKeepsItsFiveHourWindow() async throws {

@@ -16,6 +16,17 @@ final class CodexAccountStore: ObservableObject {
     /// `auth.json` rather than the saved vault — most people never save an
     /// account here, and the plan decides which limits are worth drawing.
     @Published private(set) var currentPlanType: String?
+    /// Display labels follow ChatGPT's plan identifiers. Keep the raw value
+    /// above for limit filtering and account metadata.
+    var currentPlanName: String? {
+        guard let plan = currentPlanType?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !plan.isEmpty else { return nil }
+        switch plan.lowercased() {
+        case "prolite": return "Pro 5x"
+        case "pro": return "Pro 20x"
+        default: return plan.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+    }
     @Published private(set) var isBusy = false
     @Published private(set) var isSigningIn = false
     @Published private(set) var message: String?

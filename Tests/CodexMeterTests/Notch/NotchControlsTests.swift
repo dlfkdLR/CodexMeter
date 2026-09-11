@@ -45,7 +45,7 @@ final class NotchControlsTests: XCTestCase {
                     }
                     let snapshot = ProviderSnapshot(id: "codex", displayName: "Codex", glyph: .openai,
                         fidelity: .official, status: .ok, windows: windows,
-                        todaysTokens: hasToday ? 12_556_351 : nil, accountPlan: "pro")
+                        todaysTokens: hasToday ? 12_556_351 : nil, accountPlan: "Pro 20x")
                     let sessions = (0..<sessionCount).map { index in
                         AgentSession(id: "session-\(index)", name: "Workspace with a long name \(index)",
                             detail: "Terminal · CodexMeter", state: .busy, waitingFor: nil, since: now)

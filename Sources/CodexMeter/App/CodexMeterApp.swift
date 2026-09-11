@@ -127,6 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Self.log.info("willFinishLaunching")
         NSApplication.shared.setActivationPolicy(.accessory)
         StatusItemController.shared.install()
+        applyNotchVisibility()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -134,6 +135,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.setActivationPolicy(.accessory)
         StatusItemController.shared.install()
         UpdateService.shared.start()
+        applyNotchVisibility()
+    }
+
+    private func applyNotchVisibility() {
+        // A Settings-only app may not deliver didFinishLaunching. The notch
+        // shares the status item's early startup path; setVisible is idempotent.
         NotchController.shared.setVisible(
             UserDefaults.standard.object(forKey: "showEdgeNotch") as? Bool
                 ?? AppPreferences.defaultShowEdgeNotch

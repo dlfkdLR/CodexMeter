@@ -35,6 +35,19 @@ final class AppPreferencesTests: XCTestCase {
         XCTAssertEqual(permissions.intValue & 0o777, 0o700)
     }
 
+    func testNotchDefaultDoesNotOverrideAnExplicitOffChoice() throws {
+        let suiteName = "CodexMeterTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(false, forKey: "showEdgeNotch")
+
+        AppPreferences.registerDefaults(in: defaults)
+
+        XCTAssertFalse(defaults.bool(forKey: "showEdgeNotch"))
+        defaults.removeObject(forKey: "showEdgeNotch")
+        XCTAssertTrue(defaults.bool(forKey: "showEdgeNotch"))
+    }
+
     func testNotchAppearanceDefaultsRegisterAndParseBack() throws {
         let suiteName = "CodexMeterTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

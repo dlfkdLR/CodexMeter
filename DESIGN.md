@@ -77,6 +77,13 @@ purpose:
 A minimal `NSStatusItem` (`StatusItemController`) is the way back in when the
 notch is hidden: Show Notch, Usage…, Settings…, Check for Updates…, Quit.
 
+The notch's account-switch control follows its Settings control along the edge
+(directly below it on a side edge). Its hit area participates in the panel's
+screen bounds and hover region. A native menu opens saved Codex accounts or the
+Claude Code account pane without changing accounts on a single click.
+Settings ▸ Notch ▸ Readings offers Used / Remaining: the percent and ring sweep
+change together, while warning colours continue to reflect actual consumption.
+
 ## Colors
 
 The palette follows macOS semantic colors so it remains correct in light, dark, increased-contrast, and accent-color configurations.

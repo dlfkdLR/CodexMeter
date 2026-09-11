@@ -12,7 +12,10 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $navigation.columnVisibility) {
-            List(SettingsCategory.allCases, selection: $navigation.category) { category in
+            List(SettingsCategory.allCases, selection: Binding(
+                get: { navigation.category },
+                set: { if let category = $0 { navigation.select(.category(category)) } }
+            )) { category in
                 Label {
                     Text(category.title)
                 } icon: {
@@ -41,7 +44,7 @@ struct SettingsView: View {
     private var pane: some View {
         switch navigation.category {
         case .usage: UsageSettingsView()
-        case .providers: ProvidersSettingsView()
+        case .providers: ProvidersSettingsView(detailSelection: $navigation.providerDetailID)
         case .notch: NotchSettingsView()
         case .general: GeneralSettingsView()
         case .advanced: AdvancedSettingsView()

@@ -6,12 +6,15 @@ import SwiftUI
 /// again from the catalogue. Rows retain their existing detail and setup paths.
 struct ProvidersSettingsView: View {
     @EnvironmentObject private var env: SettingsEnvironment
+    @State private var localDetail: String?
+    var detailSelection: Binding<String?>?
 
     var body: some View {
         ProvidersSettingsContent(
             claude: env.claude,
             limits: env.limitStore,
-            codexAccounts: env.codexAccounts
+            codexAccounts: env.codexAccounts,
+            openDetail: detailSelection ?? $localDetail
         )
     }
 }
@@ -25,7 +28,7 @@ private struct ProvidersSettingsContent: View {
     @AppStorage("notchThresholdAlerts") private var thresholdAlerts = AppPreferences.defaultNotchThresholdAlerts
     @AppStorage(AppPreferences.mutedAlertProvidersKey) private var mutedAlerts = ""
 
-    @State private var openDetail: String?
+    @Binding var openDetail: String?
     @State private var dragging: String?
 
     var body: some View {
@@ -66,12 +69,16 @@ private struct ProvidersSettingsContent: View {
             .padding(.top, 12)
             .padding(.bottom, 4)
 
-            switch id {
-            case "codex":  ProviderSettingsView(provider: .codex)
-            case "claude": ProviderSettingsView(provider: .claude)
-            default:       NotchProviderSettingsView(providerID: id)
+            Group {
+                switch id {
+                case "codex":  ProviderSettingsView(provider: .codex)
+                case "claude": ProviderSettingsView(provider: .claude)
+                default:       NotchProviderSettingsView(providerID: id)
+                }
             }
+            .id(id)
         }
+        .accessibilityIdentifier("settings.provider.\(id)")
     }
 
     // MARK: List

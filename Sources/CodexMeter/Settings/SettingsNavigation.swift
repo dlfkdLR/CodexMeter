@@ -5,12 +5,20 @@ import SwiftUI
 @MainActor
 final class SettingsNavigation: ObservableObject {
     @Published var category: SettingsCategory? = .usage
+    @Published var providerDetailID: String?
     @Published var columnVisibility: NavigationSplitViewVisibility = .all
 
     func select(_ pane: SettingsPane) {
         switch pane {
-        case .category(let category): self.category = category
-        case .provider, .notchProvider: category = .providers
+        case .category(let category):
+            providerDetailID = nil
+            self.category = category
+        case .provider(let provider):
+            providerDetailID = provider.rawValue
+            category = .providers
+        case .notchProvider(let id):
+            providerDetailID = id
+            category = .providers
         }
     }
 }

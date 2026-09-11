@@ -4,6 +4,22 @@ import XCTest
 
 @MainActor
 final class SettingsWindowControllerTests: XCTestCase {
+    func testProviderDestinationsSurviveRequestsBeforeAndWithinProviders() {
+        let navigation = SettingsNavigation()
+        navigation.select(.provider(.claude))
+        XCTAssertEqual(navigation.category, .providers)
+        XCTAssertEqual(navigation.providerDetailID, "claude")
+        navigation.select(.provider(.codex))
+        XCTAssertEqual(navigation.providerDetailID, "codex")
+        navigation.select(.notchProvider(id: "gemini"))
+        XCTAssertEqual(navigation.providerDetailID, "gemini")
+        navigation.select(.category(.providers))
+        XCTAssertNil(navigation.providerDetailID)
+        navigation.select(.provider(.claude))
+        navigation.select(.category(.usage))
+        XCTAssertNil(navigation.providerDetailID)
+    }
+
     func testEveryCategoryStaysVisibleWhenSwitchingResizingAndReopening() async throws {
         _ = NSApplication.shared
         let fixture = try SettingsWindowFixture()

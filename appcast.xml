@@ -4,64 +4,57 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>CodexMeter</title>
         <item>
-            <title>2.0.8</title>
-            <pubDate>Fri, 11 Sep 2026 08:46:16 +0900</pubDate>
-            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.8</link>
-            <sparkle:version>20008</sparkle:version>
-            <sparkle:shortVersionString>2.0.8</sparkle:shortVersionString>
+            <title>2.0.9</title>
+            <pubDate>Fri, 11 Sep 2026 17:19:07 +0900</pubDate>
+            <link>https://github.com/dlfkdLR/CodexMeter/releases/tag/v2.0.9</link>
+            <sparkle:version>20009</sparkle:version>
+            <sparkle:shortVersionString>2.0.9</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.8
+            <description sparkle:format="markdown"><![CDATA[# CodexMeter 2.0.9
 
-The Pro fix from 2.0.7, working this time.
+Settings and notch controls now stay usable from the first launch through account management.
 
 ## What changed
 
-- **ChatGPT Pro's phantom five-hour window is actually hidden now.** 2.0.7 read
-  your plan from the account saved inside CodexMeter — which is empty unless you
-  explicitly added one, so for most people the plan came back unknown and the
-  window stayed on screen. It now reads the plan from the Codex login you are
-  actually signed in with.
+- Settings keeps all six sidebar categories visible when switching sections, resizing, and reopening. Usage fills the window with a responsive overview and full-width detail pages.
+- Scrolled settings stay below the native window toolbar, including when the sidebar is hidden. Redundant Privacy and This Mac Breakdown explanation blocks were removed from provider settings.
+- General's Number Format now updates the notch's token totals and count readings immediately, using the same Compact / Detailed formatter as Usage.
+- The notch's Settings control opens the window reliably. Hovering the resting arc reveals Settings, followed by an account-switch button directly below it with a short, smooth animation. The controls share a slim rail, and an account popover shows provider logos, current identities and plans before opening saved Codex accounts or Claude Code account settings. Both stay visible while moving between them or using the popover, then hide when the pointer leaves. Reduce Motion is respected.
+- Settings ▸ Notch ▸ Readings lets you choose **Used** or **Remaining** for both the percentage and ring fill. Warning colours still track actual consumption. The choice takes effect immediately and persists across launches.
+- A searchable provider catalogue shows service logos, descriptions, and connection status. Add several providers without closing the sheet, then open their settings when needed. Removing a provider stops monitoring without signing out of its app. Direct provider links open the requested details.
+- Notch tooltips reserve space for token totals, limit groups, plan names, account actions, and session rows so content is not clipped.
+- Account plans appear in the notch: ChatGPT Pro 5x/20x and Claude Max 5x/20x are shown when the account metadata identifies the tier. Unknown multipliers are not guessed.
+- The notch is enabled by default, while an existing visibility preference is preserved. Opening Settings reads current account metadata without unnecessarily opening the saved-account vault.
+- The distributed app, ZIP, and DMG include Codenotch's full MIT copyright and license notice, also available offline in Information.
 
-## Verification
+## Compatibility and download verification
 
-- 600 automated tests, 0 failures (9 environment-integration tests skipped).
-- `swift build` with zero warnings and zero errors.
-- Universal 2 build for Apple silicon and Intel Macs running macOS 14 or later.
-- Ad-hoc signed, not Apple-notarized. SHA-256 protects the first download;
-  Sparkle authenticates later updates with Ed25519 signatures.
+- 626 automated tests, 0 failures; 9 opt-in environment tests skipped. Release script tests and Universal build passed. The installed app was checked for Settings navigation, both account-menu destinations, and live Used / Remaining changes.
+- Universal 2 app for Apple silicon and Intel, macOS 14 or later.
+- Ad-hoc signed and not Apple-notarized. Verify the first download with `SHA256SUMS.txt`; subsequent Sparkle updates are authenticated with Ed25519 signatures.
+- No usage database migration or credential reset.
 
-## Install or update with Homebrew
+Download the DMG and checksum list into the same folder, then verify before opening:
+
+```bash
+cd ~/Downloads
+grep ' CodexMeter-2.0.9.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
+open CodexMeter-2.0.9.dmg
+```
+
+Homebrew users can update with:
 
 ```bash
 brew update
 brew upgrade --cask --greedy dlfkdLR/tap/codexmeter
 ```
 
-```bash
-xattr -dr com.apple.quarantine /Applications/CodexMeter.app
-open /Applications/CodexMeter.app
-```
-
-## First direct-download launch
-
-Download `CodexMeter-2.0.8.dmg` and `SHA256SUMS.txt` into the same folder and
-verify the checksum before opening:
-
-```bash
-cd ~/Downloads
-grep ' CodexMeter-2.0.8.dmg$' SHA256SUMS.txt | shasum -a 256 -c -
-open CodexMeter-2.0.8.dmg
-```
-
-## Recovery
-
-This release does not migrate any database. Published version tags are
-immutable; corrections ship as a new patch release.
+Published tags are immutable; any further correction will ship as a new patch release.
 ]]></description>
-            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.8/CodexMeter-2.0.8.zip" length="5068544" type="application/octet-stream" sparkle:edSignature="PhLooIDh0SrCl3lgD7Y6EdQfgYuOZRvWFjyHGOqfe1zp1iLYejo7RRlPYe9b8S/SzBTciodwbwdJaZwKCj5QAQ=="></enclosure>
+            <enclosure url="https://github.com/dlfkdLR/CodexMeter/releases/download/v2.0.9/CodexMeter-2.0.9.zip" length="5479649" type="application/octet-stream" sparkle:edSignature="Wk0qRUKpa+IYWiJiuGi4wyfMrr0ti0DRtE4neefLRzQaQPLHuPxVzzFMVzQCOGKfbR178fPvMimd6r+mhY7HBw=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: Lh2Xph9QY8KTorqseYF6ZiZuZ3jUbgqikGXNGFRo6hYeGwSEt4sOUHjojzI41pLjkCYnFdbbkQN3UoY+3jZ1DA==
-length: 2628
+edSignature: BTiv/RI231DracA2RmD/Jwrtg+hucUOLOymCzZLlEhfBw6Ko8H5FRwspdQXAdUzZZd0u/n1fzni3RIAkN+2bDA==
+length: 4487
 -->

@@ -5,11 +5,11 @@ CodexMeter can save your own ChatGPT logins and apply a selected login to Codex.
 ## Use
 
 1. Open **Settings ▸ Usage**. The account row sits at the top of the pane, above **Token Usage** and **Codex Limits**, on either tab.
-2. Open the account menu and choose **Save Current Account** if your login is not saved yet. It stays in this Mac’s Keychain.
+2. Choose **Switch** to open the account window, then **Save Current Account** if your login is not saved yet. It stays in this Mac’s Keychain.
 3. Choose **Add Account…** and complete Codex’s browser sign-in with another account. The account window shows registration progress and Cancel; registration uses a temporary, private Codex home and does not replace your current login.
-4. Open the account menu and select a saved account. Finish your running work, then confirm **Quit Codex & Switch**. CodexMeter requests normal termination, applies the saved login, and reopens Codex. It never force-quits the desktop or other Codex clients.
+4. Select **Switch** beside a saved account. Finish your running work, then confirm **Quit Codex & Switch**. CodexMeter requests normal termination, applies the saved login, and reopens Codex. It never force-quits the desktop or other Codex clients.
 
-The current saved login is shown in the Usage pane's account row and checked in the account menu. **Manage Accounts…** opens the separate account window for saving or removing logins.
+Settings shows the current login's display metadata without opening the saved-login Keychain item. **Switch** in Settings or **Switch account** in the notch opens the separate account window for switching, saving, or removing logins. The compact menu-bar popover also retains its saved-account menu and **Manage Accounts…** action.
 
 Removing an entry removes its saved Keychain copy; it does not sign out of Codex. Up to 12 accounts can be saved. The current account is identified from the local login file, not inferred from its email. Equal emails in different workspaces remain separate entries.
 

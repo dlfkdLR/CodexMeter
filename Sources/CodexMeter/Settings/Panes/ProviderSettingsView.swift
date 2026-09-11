@@ -56,7 +56,7 @@ private struct ProviderSettingsContent: View {
         }
         .task {
             if isCodex {
-                codexAccounts.load()
+                codexAccounts.refreshCurrentPlanType()
             } else if claude.isEnabled {
                 await claude.refresh()
             }
@@ -120,6 +120,9 @@ private struct ProviderSettingsContent: View {
         if isCodex {
             SettingsSection(title: "Account") {
                 SettingsValueRow(title: "Account", value: codexAccountValue)
+                if let plan = codexAccounts.currentPlanName {
+                    SettingsValueRow(title: "Plan", value: plan)
+                }
             }
             SettingsNote("Add or switch accounts from the account menu in Settings ▸ Usage.")
         } else if claude.isEnabled {
@@ -293,14 +296,10 @@ private struct ProviderSettingsContent: View {
 
     // MARK: Helpers
 
-    /// Mirrors the menu bar's account switcher: the saved login's disambiguated
-    /// name when one is on record, otherwise a generic signed-in status — never
-    /// a guess at an account CodexMeter hasn't been told about.
+    /// Current login metadata is enough for this read-only pane; saved
+    /// credentials are loaded only when the account controls need them.
     private var codexAccountValue: String {
-        guard let current = codexAccounts.accounts.first(where: { $0.id == codexAccounts.currentID }) else {
-            return "Signed in to the Codex app"
-        }
-        return current.menuTitle(in: codexAccounts.accounts)
+        codexAccounts.currentAccountDisplayName ?? "Signed in to the Codex app"
     }
 
     private var accountLimitStatus: String {

@@ -12,6 +12,11 @@ final class CodexAccountStore: ObservableObject {
     static let shared = CodexAccountStore()
     @Published private(set) var accounts: [SavedCodexAccount] = []
     @Published private(set) var currentID: String?
+    @Published private(set) var currentAccountEmail: String?
+    var currentAccountDisplayName: String? {
+        guard let currentAccountEmail else { return nil }
+        return accounts.first(where: { $0.id == currentID })?.menuTitle(in: accounts) ?? currentAccountEmail
+    }
     /// The plan the signed-in login is on ("pro", "plus", …), from the live
     /// `auth.json` rather than the saved vault — most people never save an
     /// account here, and the plan decides which limits are worth drawing.
@@ -57,12 +62,11 @@ final class CodexAccountStore: ObservableObject {
         do {
             accounts = try vault.load()
             let current = try? readCurrentAccount()
-            currentID = current?.id
-            currentPlanType = current?.planType
+            updateCurrentMetadata(current)
         } catch { fail(error) }
     }
 
-    /// Re-read just the plan from the live login.
+    /// Re-read display metadata from the live login, without opening the vault.
     ///
     /// Separate from `load()` so a caller that only needs the plan — the notch,
     /// on every poll — does not also run a Keychain query, which is the
@@ -73,7 +77,13 @@ final class CodexAccountStore: ObservableObject {
         let stamp = login.lastModified
         guard stamp != lastPlanStamp || currentPlanType == nil else { return }
         lastPlanStamp = stamp
-        currentPlanType = (try? readCurrentAccount())?.planType
+        updateCurrentMetadata(try? readCurrentAccount())
+    }
+
+    private func updateCurrentMetadata(_ account: SavedCodexAccount?) {
+        currentID = account?.id
+        currentAccountEmail = account?.email
+        currentPlanType = account?.planType
     }
 
     func saveCurrent() async {
@@ -86,7 +96,7 @@ final class CodexAccountStore: ObservableObject {
             guard let account = try readCurrentAccount() else { throw AccountSwitchError.invalidLogin }
             try await runtime.checkPolicy(for: account.workspaceID)
             try upsert(account)
-            currentID = account.id
+            updateCurrentMetadata(account)
             succeed("Current account saved.")
         } catch { fail(error) }
     }
@@ -159,7 +169,7 @@ final class CodexAccountStore: ObservableObject {
             guard selected.id == id else { throw AccountSwitchError.invalidLogin }
             try await runtime.checkPolicy(for: selected.workspaceID)
             let beforeQuit = try readCurrentAccount()
-            if beforeQuit?.id == id { currentID = id; succeed("This account is already active."); return }
+            if beforeQuit?.id == id { updateCurrentMetadata(beforeQuit); succeed("This account is already active."); return }
             // Do not refresh a copied credential in a disposable process. Official
             // Codex owns renewal after restart, in its canonical auth.json; a failed
             // preflight RPC must never discard the only rotated refresh token.
@@ -175,7 +185,7 @@ final class CodexAccountStore: ObservableObject {
             try await runtime.waitForStopped()
             try login.replace(with: selected.loginData, expecting: original)
             committed = true
-            currentID = selected.id
+            updateCurrentMetadata(selected)
             try await runtime.openCodex()
             succeed("Saved login applied and Codex reopened. If the login has expired, sign in again in Codex.")
         } catch {

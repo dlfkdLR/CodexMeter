@@ -192,7 +192,7 @@ struct MenuPopoverView: View {
             .padding(.horizontal, 24)
 
             if store.provider == .codex {
-                CodexAccountSwitcher(accounts: accounts)
+                CodexAccountSwitcher(accounts: accounts, opensManagementDirectly: true)
                     .padding(.horizontal, 6)
             } else {
                 claudeAccountBadge.padding(.horizontal, 6)

@@ -68,10 +68,8 @@ final class CodexNotchProvider: NotchProvider {
     var signInRoute: SignInRoute { .openApp(bundleID: "com.openai.chat", name: "Codex") }
 
     func account() -> ProviderAccount? {
-        guard let current = accounts.accounts.first(where: { $0.id == accounts.currentID }) else {
-            return nil
-        }
-        return ProviderAccount(label: current.email, plan: accounts.currentPlanName,
+        guard let email = accounts.currentAccountEmail else { return nil }
+        return ProviderAccount(label: email, plan: accounts.currentPlanName,
                                source: "Codex", manageURL: nil)
     }
 

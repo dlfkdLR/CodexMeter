@@ -43,7 +43,7 @@ private struct ProvidersSettingsContent: View {
             return false
         }
         .task {
-            codexAccounts.load()
+            codexAccounts.refreshCurrentPlanType()
             notch.refreshProvidersForSettings()
             if claude.isEnabled { await claude.refresh() }
         }
@@ -160,11 +160,12 @@ private struct ProvidersSettingsContent: View {
     }
 
     private func codexRow(name: String) -> ProviderRowModel {
-        let account = codexAccounts.accounts.first { $0.id == codexAccounts.currentID }
+        let accountLine = [codexAccounts.currentAccountDisplayName, codexAccounts.currentPlanName]
+            .compactMap { $0 }.joined(separator: " · ")
         return ProviderRowModel(
             id: "codex", name: name, glyph: .openai, connected: true,
             statusLine: headline(from: limits.snapshot) ?? "Signed in",
-            accountLine: account?.menuTitle(in: codexAccounts.accounts) ?? "Signed in to the Codex app",
+            accountLine: accountLine.isEmpty ? "Signed in to the Codex app" : accountLine,
             wasRefused: false, primary: .details
         )
     }

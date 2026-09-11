@@ -154,7 +154,8 @@ struct NotchRootView: View {
             ProviderCell(
                 snapshot: snapshot,
                 activity: model.activity(for: snapshot.id),
-                isRefreshing: model.refreshing.contains(snapshot.id)
+                isRefreshing: model.refreshing.contains(snapshot.id),
+                percentageMode: model.percentageMode
             )
                 // Pinned to what the cell claims along the stack, or the drawn
                 // rings stop lining up with the centres `ringCenter` hands to

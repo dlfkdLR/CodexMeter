@@ -162,6 +162,9 @@ final class NotchController: ObservableObject {
         // set now, before the panel exists.
         window.model.accentColor = storedAccent()
         window.model.resetTimeFormat = storedResetTimeFormat()
+        window.model.percentageMode = NotchPercentageMode(
+            rawValue: UserDefaults.standard.string(forKey: "notchPercentageMode") ?? ""
+        ) ?? .used
     }
 
     /// Bound to `@AppStorage("showEdgeNotch")`.
@@ -229,6 +232,11 @@ final class NotchController: ObservableObject {
     func apply(resetTimeFormat: ResetTimeFormat) {
         guard configured else { return }
         window.model.resetTimeFormat = resetTimeFormat
+    }
+
+    func apply(percentageMode: NotchPercentageMode) {
+        guard configured else { return }
+        window.model.percentageMode = percentageMode
     }
 
     /// Drop the ⌥-drag offset and sit the notch back at the centre of its edge.

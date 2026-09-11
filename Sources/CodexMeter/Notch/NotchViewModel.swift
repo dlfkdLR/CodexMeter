@@ -18,6 +18,7 @@ final class NotchViewModel: ObservableObject {
     /// Ticked on refresh so the "Resets in N min" copy stays honest.
     @Published var now: Date = Date()
     @Published var resetTimeFormat: ResetTimeFormat = .automatic
+    @Published var percentageMode: NotchPercentageMode = .used
 
     /// Whether the notch is open or folded away to its pill.
     @Published var isExpanded = false

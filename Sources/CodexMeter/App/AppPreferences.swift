@@ -23,6 +23,7 @@ enum AppPreferences {
     static let defaultNotchSize = NotchSize.medium.rawValue
     static let defaultNotchAccent = NotchAccentChoice.system.rawValue
     static let defaultNotchResetTimeFormat = ResetTimeFormat.automatic.rawValue
+    static let defaultNotchPercentageMode = NotchPercentageMode.used.rawValue
     static let defaultNotchShowUsagePace = false
 
     // MARK: Threshold alerts
@@ -75,6 +76,7 @@ enum AppPreferences {
                 "notchSize": defaultNotchSize,
                 "notchAccent": defaultNotchAccent,
                 "notchResetTimeFormat": defaultNotchResetTimeFormat,
+                "notchPercentageMode": defaultNotchPercentageMode,
                 "notchShowUsagePace": defaultNotchShowUsagePace
             ]
         )

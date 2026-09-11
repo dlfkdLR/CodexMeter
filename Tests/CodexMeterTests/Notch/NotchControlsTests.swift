@@ -33,6 +33,28 @@ final class NotchControlsTests: XCTestCase {
         XCTAssertFalse(model.staysOpen)
     }
 
+    func testUsedAndRemainingReadingsHandleLimitsMissingAndCountOnlyData() {
+        func snapshot(_ fraction: Double?) -> ProviderSnapshot {
+            ProviderSnapshot(id: "codex", displayName: "Codex", glyph: .openai,
+                fidelity: .official, status: .ok,
+                windows: fraction.map { [LimitWindow(id: "w", label: "Weekly", usedFraction: $0)] } ?? [])
+        }
+        for (used, usedText, leftText) in [(0.59, "59%", "41%"), (0.0, "0%", "100%"),
+            (1.0, "100%", "0%"), (1.2, "120%", "0%"), (0.003, "0.3%", "99.7%"), (0.999, "100%", "0.1%")] {
+            XCTAssertEqual(NotchPercentageMode.used.text(for: snapshot(used)), usedText)
+            XCTAssertEqual(NotchPercentageMode.remaining.text(for: snapshot(used)), leftText)
+            XCTAssertEqual(NotchPercentageMode.remaining.fraction(for: used)!, max(0, 1 - used), accuracy: 0.0001)
+        }
+        XCTAssertEqual(NotchPercentageMode.remaining.text(for: snapshot(nil)), "—")
+        XCTAssertNil(NotchPercentageMode.remaining.fraction(for: nil))
+        XCTAssertEqual(NotchPercentageMode.remaining.text(for: snapshot(.nan)), "—")
+        let countOnly = ProviderSnapshot(id: "p", displayName: "Provider", glyph: .openai,
+            fidelity: .official, status: .ok, windows: [LimitWindow(id: "count", label: "Requests", remaining: 42)])
+        XCTAssertEqual(NotchPercentageMode.remaining.text(for: countOnly), "42")
+        XCTAssertEqual(NotchPercentageMode.used.text(for: countOnly), "42")
+        XCTAssertEqual(NotchPercentageMode.remaining.accessibleReading(for: snapshot(0.59)), "41% remaining")
+    }
+
     func testSettingsAndAccountActionsReachTheSwiftUIControls() {
         let controller = NotchWindowController()
         var settingsOpens = 0

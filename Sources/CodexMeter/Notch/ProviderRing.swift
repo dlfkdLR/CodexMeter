@@ -20,6 +20,7 @@ struct ProviderRing: View {
     var activity: ActivitySummary?
     /// A fetch this cell asked for, in flight.
     var isRefreshing: Bool = false
+    var percentageMode: NotchPercentageMode = .used
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.notchReduceTransparency) private var reduceTransparency
@@ -29,7 +30,7 @@ struct ProviderRing: View {
     private var band: UsageBand {
         isBlocked ? .exhausted : UsageBand.band(for: usedFraction ?? 0)
     }
-    private var sweep: CGFloat { CGFloat(min(max(usedFraction ?? 0, 0), 1)) }
+    private var sweep: CGFloat { CGFloat(min(percentageMode.fraction(for: usedFraction) ?? 0, 1)) }
 
     var body: some View {
         ZStack {
@@ -163,10 +164,11 @@ struct ProviderCell: View {
     let snapshot: ProviderSnapshot
     var activity: ActivitySummary?
     var isRefreshing: Bool = false
+    var percentageMode: NotchPercentageMode = .used
 
     /// A dash, not "0%": nothing read is not the same as nothing used.
     private var percentText: String {
-        snapshot.hasReading ? snapshot.headlineText : "—"
+        percentageMode.text(for: snapshot)
     }
 
     var body: some View {
@@ -177,7 +179,8 @@ struct ProviderCell: View {
                 isStale: snapshot.status.isStale || !snapshot.hasReading,
                 isBlocked: snapshot.block != nil,
                 activity: activity,
-                isRefreshing: isRefreshing
+                isRefreshing: isRefreshing,
+                percentageMode: percentageMode
             )
             Text(percentText)
                 .font(NotchType.percent)
@@ -192,5 +195,9 @@ struct ProviderCell: View {
                 .animation(NotchMotion.reading, value: percentText)
         }
         .frame(height: NotchLayout.cellExtent)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(snapshot.displayName)
+        .accessibilityValue(percentageMode.accessibleReading(for: snapshot))
+        .help("\(snapshot.displayName): \(percentageMode.accessibleReading(for: snapshot))")
     }
 }

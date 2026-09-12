@@ -510,6 +510,8 @@ final class NotchUsageStore: ObservableObject {
             return .unsupported(why)
         case NotchProviderError.badResponse(let code):
             return .error("HTTP \(code)")
+        case NotchProviderError.responseTooLarge:
+            return .error("Response too large")
         default:
             return .error((error as NSError).localizedDescription)
         }

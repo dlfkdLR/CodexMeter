@@ -67,6 +67,10 @@ enum NotchProviderError: Error {
     case credentialExpired
     /// The endpoint answered, but not with anything we understand.
     case badResponse(status: Int)
+    /// The body was larger than a usage reading has any business being. Its own
+    /// case rather than `badResponse`: the status was usually 200, and "HTTP
+    /// 200" is not a useful thing to show someone.
+    case responseTooLarge
     /// Asked to slow down. Carries the server's own retry hint when it gave one.
     case rateLimited(retryAfter: TimeInterval)
     /// The account is readable, but there is genuinely no quota being counted —

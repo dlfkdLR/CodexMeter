@@ -109,7 +109,7 @@ final class CommandCodeNotchProvider: NotchProvider {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.timeoutInterval = 15
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await BoundedHTTP.data(for: request, on: session)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         if status == 401 || status == 403 { throw NotchProviderError.needsAuth }
         if status == 429 { throw NotchProviderError.rateLimited(retryAfter: 60) }

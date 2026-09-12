@@ -122,7 +122,7 @@ enum AntigravityBridge {
         request.httpBody = Data(#"{"forceRefresh":true}"#.utf8)
         request.timeoutInterval = 10
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await BoundedHTTP.data(for: request, on: session)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             throw NotchProviderError.badResponse(
                 status: (response as? HTTPURLResponse)?.statusCode ?? 0

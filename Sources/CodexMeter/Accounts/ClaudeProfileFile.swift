@@ -29,6 +29,13 @@ struct ClaudeProfileFile: ClaudeProfileStoring {
         let fd = openat(dir, name, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
         guard fd >= 0 else { throw ClaudeAccountError.unsafeFile }
         defer { close(fd); unlinkat(dir, name, 0) }
+        // 0600 is not the last word: an inheritable ACL on the directory is
+        // stamped onto a file at creation, so a staging file can be born
+        // world-writable however carefully its mode was set. Checked after the
+        // fact because inheritance happens in `openat`, not before it.
+        guard !CredentialFileSafety.hasPermissiveACL(fileDescriptor: fd) else {
+            throw ClaudeAccountError.unsafeFile
+        }
         try data.withUnsafeBytes { bytes in
             var offset = 0
             while offset < bytes.count {
@@ -59,7 +66,8 @@ struct ClaudeProfileFile: ClaudeProfileStoring {
         let fd = open(directory.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
         guard fd >= 0 else { throw ClaudeAccountError.unsafeFile }
         var info = stat()
-        guard fstat(fd, &info) == 0, info.st_uid == getuid(), info.st_mode & 0o022 == 0 else {
+        guard fstat(fd, &info) == 0, info.st_uid == getuid(), info.st_mode & 0o022 == 0,
+              !CredentialFileSafety.hasPermissiveACL(fileDescriptor: fd) else {
             close(fd)
             throw ClaudeAccountError.unsafeFile
         }
@@ -74,6 +82,7 @@ struct ClaudeProfileFile: ClaudeProfileStoring {
         var info = stat()
         guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
               info.st_uid == getuid(), info.st_nlink == 1, info.st_mode & 0o022 == 0,
+              !CredentialFileSafety.hasPermissiveACL(fileDescriptor: fd),
               info.st_size > 0, info.st_size <= 8_388_608
         else { throw ClaudeAccountError.unsafeFile }
         var data = Data()

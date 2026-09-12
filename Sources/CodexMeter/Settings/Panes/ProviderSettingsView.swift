@@ -131,6 +131,9 @@ private struct ProviderSettingsContent: View {
                         SettingsValueRow(title: "Plan", value: plan)
                     }
                     SettingsValueRow(title: "Limits", value: claude.statusMessage)
+                    SettingsButtonRow(title: "Manage Accounts…", systemImage: "person.crop.circle") {
+                        ClaudeAccountsWindowController.shared.show()
+                    }
                     SettingsButtonRow(title: "Disconnect", systemImage: "xmark.circle", role: .destructive) {
                         Task { await claude.disconnect() }
                     }

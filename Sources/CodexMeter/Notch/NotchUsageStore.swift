@@ -155,6 +155,19 @@ final class NotchUsageStore: ObservableObject {
         }
     }
 
+    /// An account boundary must discard both current and archived readings.
+    /// Connection versions also reject a result already in flight for the old account.
+    func invalidateAccount(providerID: String) {
+        connectionVersions[providerID] = UUID()
+        lastGood.removeValue(forKey: providerID)
+        archive.save(lastGood)
+        refusedAccess.remove(providerID)
+        if let provider = providers.first(where: { $0.id == providerID }),
+           let index = snapshots.firstIndex(where: { $0.id == providerID }) {
+            snapshots[index] = Self.placeholder(provider)
+        }
+    }
+
     func start() {
         refreshNow()
 

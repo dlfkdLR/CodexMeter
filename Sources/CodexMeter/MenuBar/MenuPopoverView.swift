@@ -401,13 +401,18 @@ struct MenuPopoverView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Plan, \(plan)")
             }
+            Button("Switch") { ClaudeAccountsWindowController.shared.show() }
+                .buttonStyle(.borderless)
+                .frame(minHeight: 28)
+                .accessibilityLabel("Switch Claude account")
+                .accessibilityIdentifier("menu.claudeAccountSwitcher")
         }
         .font(.subheadline)
         .padding(.horizontal, 6)
         .frame(minHeight: 36)
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("menu.claudeAccount")
         .accessibilityLabel("Claude account, \(claude.account?.displayName ?? "not connected")")
     }

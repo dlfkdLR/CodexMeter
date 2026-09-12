@@ -98,6 +98,16 @@ final class NotchController: ObservableObject {
             disconnected: Set(providers.map(\.id)).subtracting(selectedProviderIDs), order: Self.storedProviderOrder())
         self.store = store
 
+        ClaudeAccountStore.shared.onWillSwitch = { [weak claudeIntegration, weak store] in
+            claudeIntegration?.beginAccountSwitch()
+            store?.invalidateAccount(providerID: "claude")
+        }
+        ClaudeAccountStore.shared.onDidSwitch = { [weak claudeIntegration, weak store] in
+            await claudeIntegration?.finishAccountSwitch()
+            store?.invalidateAccount(providerID: "claude")
+            store?.refresh(providerID: "claude")
+        }
+
         window.onRefresh = { [weak store] in store?.refreshNow() }
         window.onRefreshProvider = { [weak store] id in store?.refresh(providerID: id) }
         window.onOpenSettings = { SettingsWindowController.shared.present() }
@@ -110,9 +120,10 @@ final class NotchController: ObservableObject {
         window.onSwitchAccount = { id in
             if id == "codex" {
                 CodexAccountsWindowController.shared.show()
+            } else if id == "claude" {
+                ClaudeAccountsWindowController.shared.show()
             } else {
-                let pane: SettingsPane = id == "claude" ? .provider(.claude) : .notchProvider(id: id)
-                SettingsWindowController.shared.present(selecting: pane)
+                SettingsWindowController.shared.present(selecting: .notchProvider(id: id))
             }
         }
         window.onOpenUsage = {

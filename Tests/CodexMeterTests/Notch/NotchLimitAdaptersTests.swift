@@ -103,7 +103,7 @@ final class NotchLimitAdaptersTests: XCTestCase {
             windows: [win(id: "primary", minutes: 300, usedPercent: 40),
                       win(id: "secondary", minutes: 10_080, usedPercent: 12)],
             resetCredits: nil,
-            fetchedAt: Date(timeIntervalSince1970: 1)
+            fetchedAt: Date()
         )
         let store = AccountLimitStore(provider: OneShotLimitProvider(snapshot),
                                       defaults: defaults, pollingInterval: nil)
@@ -143,7 +143,7 @@ final class NotchLimitAdaptersTests: XCTestCase {
             windows: [win(id: "five", minutes: 300, usedPercent: 6),
                       win(id: "weekly", minutes: 10_080, usedPercent: 48)],
             resetCredits: nil,
-            fetchedAt: Date(timeIntervalSince1970: 1)
+            fetchedAt: Date()
         )
         let store = AccountLimitStore(provider: OneShotLimitProvider(snapshot),
                                       defaults: defaults, pollingInterval: nil)
@@ -166,7 +166,7 @@ final class NotchLimitAdaptersTests: XCTestCase {
         let snapshot = AccountLimitsSnapshot(
             windows: [win(id: "five", minutes: 300, usedPercent: 6),
                       win(id: "weekly", minutes: 10_080, usedPercent: 48)],
-            resetCredits: nil, fetchedAt: Date(timeIntervalSince1970: 1)
+            resetCredits: nil, fetchedAt: Date()
         )
         let store = AccountLimitStore(provider: OneShotLimitProvider(snapshot), defaults: defaults, pollingInterval: nil)
         await store.refresh()
@@ -234,7 +234,7 @@ final class NotchLimitAdaptersTests: XCTestCase {
             windows: [win(id: "five", minutes: 300, usedPercent: 6),
                       win(id: "weekly", minutes: 10_080, usedPercent: 48)],
             resetCredits: nil,
-            fetchedAt: Date(timeIntervalSince1970: 1)
+            fetchedAt: Date()
         )
         let store = AccountLimitStore(provider: OneShotLimitProvider(snapshot),
                                       defaults: defaults, pollingInterval: nil)

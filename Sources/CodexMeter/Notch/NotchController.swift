@@ -193,18 +193,19 @@ final class NotchController: ObservableObject {
         }
     }
 
-    /// Reflect a change in the underlying Codex/Claude limits into the notch
-    /// without waiting out the store's poll — but only while the notch is on
-    /// screen, and only on an actual change to the limit *windows*. Keyed on
-    /// `objectWillChange` this fed a loop: every fetch writes the last-good
-    /// cache to `UserDefaults`, `AccountLimitStore` re-publishes on any defaults
-    /// change, and the notch re-fetched three times a second.
+    /// Refresh on quota or freshness changes, but ignore timestamps/defaults
+    /// writes so saving the notch cache cannot feed a polling loop.
     private func wireLimitBridge() {
         guard whileVisible.isEmpty, let codexLimits, let claudeIntegration else { return }
-        codexLimits.$snapshot
-            .map { $0?.windows ?? [] }
-            .merge(with: claudeIntegration.$snapshot.map { $0?.windows ?? [] })
-            .removeDuplicates()
+        let codex = codexLimits.$snapshot.map { $0?.windows ?? [] }
+            .combineLatest(codexLimits.$status)
+            .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
+            .map { _ in () }
+        let claude = claudeIntegration.$snapshot.map { $0?.windows ?? [] }
+            .combineLatest(claudeIntegration.$status)
+            .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
+            .map { _ in () }
+        codex.merge(with: claude)
             .debounce(for: .seconds(1), scheduler: RunLoop.main)
             .sink { [weak store] _ in store?.refreshNow() }
             .store(in: &whileVisible)

@@ -19,7 +19,7 @@ final class AccountLimitStoreTests: XCTestCase {
                 )
             ],
             resetCredits: nil,
-            fetchedAt: Date(timeIntervalSince1970: 1)
+            fetchedAt: Date()
         )
         let provider = SequencedLimitProvider([
             .success(expected),
@@ -78,7 +78,7 @@ final class AccountLimitStoreTests: XCTestCase {
         let snapshot = AccountLimitsSnapshot(
             windows: [AccountLimitWindow(id: "w", limitID: "codex", displayName: "Codex",
                                          windowDurationMinutes: 10_080, usedPercent: 10, resetsAt: nil)],
-            resetCredits: nil, fetchedAt: Date(timeIntervalSince1970: 1)
+            resetCredits: nil, fetchedAt: Date()
         )
         let provider = CountingLimitProvider(snapshot)
         let store = AccountLimitStore(provider: provider, defaults: defaults, pollingInterval: .seconds(120))
@@ -96,6 +96,23 @@ final class AccountLimitStoreTests: XCTestCase {
         defaults.set(false, forKey: "accountLimitsEnabled")
         try await Task.sleep(for: .milliseconds(200))
         XCTAssertEqual(store.status, .disabled)
+    }
+
+    func testOldSnapshotBecomesStaleAndActiveAppRefreshesIt() async throws {
+        let snapshot = AccountLimitsSnapshot(windows: [], resetCredits: nil, fetchedAt: Date())
+        let provider = CountingLimitProvider(snapshot)
+        let store = AccountLimitStore(provider: provider, defaults: try makeDefaults(), pollingInterval: nil)
+        await store.refresh()
+        XCTAssertEqual(store.status, .ready)
+        store.updateFreshness(now: snapshot.fetchedAt.addingTimeInterval(16 * 3600))
+        XCTAssertEqual(store.status, .stale)
+        XCTAssertFalse(store.status.allowsPaceEstimates)
+        XCTAssertEqual(LimitFreshness.text(fetchedAt: snapshot.fetchedAt,
+            now: snapshot.fetchedAt.addingTimeInterval(16 * 3600), stale: true), "Last known · updated 16 hr ago")
+        await store.refreshIfNeeded(now: snapshot.fetchedAt.addingTimeInterval(120))
+        let calls = await provider.callCount
+        XCTAssertEqual(calls, 2)
+        XCTAssertFalse(store.isRefreshing)
     }
 
     private func makeDefaults() throws -> UserDefaults {

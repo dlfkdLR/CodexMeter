@@ -156,3 +156,21 @@ enum AccountLimitError: Error, LocalizedError, Equatable {
         }
     }
 }
+
+/// Shared by the compact summary and the detail page; never freezes at "just now".
+enum LimitFreshness {
+    static func text(fetchedAt: Date, now: Date = Date(), stale: Bool = false) -> String {
+        let age = max(0, now.timeIntervalSince(fetchedAt))
+        let elapsed: String
+        switch age {
+        case ..<5: elapsed = "just now"
+        case ..<60: elapsed = "\(Int(age)) sec ago"
+        case ..<3_600: elapsed = "\(Int(age / 60)) min ago"
+        case ..<86_400: elapsed = "\(Int(age / 3_600)) hr ago"
+        default:
+            let days = Int(age / 86_400)
+            elapsed = "\(days) \(days == 1 ? "day" : "days") ago"
+        }
+        return stale ? "Last known · updated \(elapsed)" : "Updated \(elapsed)"
+    }
+}

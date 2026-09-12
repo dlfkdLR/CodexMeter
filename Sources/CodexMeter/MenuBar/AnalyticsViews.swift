@@ -41,7 +41,9 @@ struct AccountLimitsView: View {
                     .font(.caption)
                     HStack(spacing: 5) {
                         Image(systemName: status == .stale ? "wifi.slash" : "clock")
-                        Text(limitStatusText(snapshot))
+                        TimelineView(.periodic(from: .now, by: 30)) { context in
+                            Text(LimitFreshness.text(fetchedAt: snapshot.fetchedAt, now: context.date, stale: status == .stale))
+                        }
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -80,7 +82,9 @@ struct AccountLimitsView: View {
                 .accessibilityLabel("\(window.displayName), \(window.windowLabel), remaining")
                 .accessibilityValue("\(Int(window.remainingPercent.rounded())) percent")
             if let reset = window.resetsAt {
-                Text("Resets \(reset, style: .relative)")
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    Text(ResetCopy.text(for: reset, now: context.date, format: .remaining))
+                }
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .help("Resets \(reset.formatted(date: .complete, time: .shortened))")
@@ -133,29 +137,7 @@ struct AccountLimitsView: View {
             : windows
     }
 
-    private func limitStatusText(_ snapshot: AccountLimitsSnapshot) -> String {
-        let age = max(0, Date().timeIntervalSince(snapshot.fetchedAt))
-        let ageText: String
-        switch age {
-        case ..<5:
-            ageText = "just now"
-        case ..<60:
-            ageText = "\(Int(age)) sec ago"
-        case ..<3_600:
-            ageText = "\(Int(age / 60)) min ago"
-        case ..<86_400:
-            ageText = "\(Int(age / 3_600)) hr ago"
-        default:
-            let days = Int(age / 86_400)
-            ageText = "\(days) \(days == 1 ? "day" : "days") ago"
-        }
-        if status == .stale {
-            return provider == .codex
-                ? "Offline · last updated \(ageText)"
-                : "Last known · updated \(ageText)"
-        }
-        return "Updated \(ageText)"
-    }
+
 }
 
 enum AnalyticsChartMetric: String, CaseIterable, Identifiable {

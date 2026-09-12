@@ -54,108 +54,31 @@ struct AppServerProcessRunner: AppServerProcessRunning {
         timeout: Duration,
         maximumOutputBytes: Int
     ) async throws -> Data {
-        let box = RunningProcessBox(executable: executable, arguments: arguments, workingDirectory: workingDirectory)
-        do {
-            try box.process.run()
-        } catch {
-            throw AccountLimitError.processLaunchFailed
-        }
-        defer {
-            box.stop()
-            box.closePipes()
-        }
         guard let firstNewline = standardInput.firstIndex(of: 0x0A) else {
-            box.stop()
             throw AccountLimitError.malformedResponse
         }
-        let initialization = standardInput[...firstNewline]
-        let remainingRequests = standardInput[standardInput.index(after: firstNewline)...]
+        let inherited = ProcessInfo.processInfo.environment
+        let allowed = ["HOME", "TMPDIR", "USER", "LOGNAME", "LANG", "LC_ALL", "LC_CTYPE",
+                       "__CF_USER_TEXT_ENCODING", "CODEX_HOME", "XDG_CONFIG_HOME",
+                       "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"]
+        let environment = allowed.reduce(into: [String: String]()) { $0[$1] = inherited[$1] }
         do {
-            try box.input.fileHandleForWriting.write(contentsOf: initialization)
-        } catch {
-            box.stop()
-            throw AccountLimitError.processLaunchFailed
-        }
-
-        return try await withThrowingTaskGroup(of: Data.self) { group in
-            group.addTask {
-                do {
-                    async let stderr = readToEndBounded(
-                        from: box.error.fileHandleForReading,
-                        maximumBytes: maximumOutputBytes
-                    )
-                    var output = try readLine(
-                        from: box.output.fileHandleForReading,
-                        maximumBytes: maximumOutputBytes
-                    )
-                    try box.input.fileHandleForWriting.write(contentsOf: remainingRequests)
-                    while !containsResponseID2(output) {
-                        let line = try readLine(
-                            from: box.output.fileHandleForReading,
-                            maximumBytes: maximumOutputBytes - output.count
-                        )
-                        guard !line.isEmpty else { throw AccountLimitError.malformedResponse }
-                        output.append(line)
-                    }
-                    try box.input.fileHandleForWriting.close()
-                    output.append(
-                        try readToEndBounded(
-                            from: box.output.fileHandleForReading,
-                            maximumBytes: maximumOutputBytes - output.count
-                        )
-                    )
-                    let errorOutput = try await stderr
-                    box.process.waitUntilExit()
-                    guard box.process.terminationStatus == 0 else {
-                        let message = String(data: errorOutput.prefix(1_024), encoding: .utf8)?
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                        throw AccountLimitError.server(message?.isEmpty == false ? message! : "Codex app-server exited unexpectedly.")
-                    }
-                    return output
-                } catch {
-                    box.stop()
-                    throw error
-                }
+            let result = try await BoundedProcess.run(
+                executable: executable, arguments: arguments, environment: environment,
+                workingDirectory: workingDirectory,
+                initialInput: Data(standardInput[...firstNewline]),
+                followingInput: Data(standardInput[standardInput.index(after: firstNewline)...]),
+                closeInputWhen: { containsResponseID2($0) },
+                timeout: timeout, maximumOutputBytes: maximumOutputBytes
+            )
+            guard result.status == 0 else {
+                throw AccountLimitError.server("Codex app-server exited unexpectedly.")
             }
-            group.addTask {
-                try await Task.sleep(for: timeout)
-                box.stop()
-                throw AccountLimitError.timedOut
-            }
-            guard let first = try await group.next() else {
-                throw AccountLimitError.processLaunchFailed
-            }
-            group.cancelAll()
-            return first
-        }
-    }
-
-    private func readLine(from handle: FileHandle, maximumBytes: Int) throws -> Data {
-        guard maximumBytes > 0 else { throw AccountLimitError.responseTooLarge }
-        var line = Data()
-        while line.count <= maximumBytes {
-            guard let chunk = try handle.read(upToCount: 1), !chunk.isEmpty else { break }
-            line.append(chunk)
-            if chunk[chunk.startIndex] == 0x0A { return line }
-        }
-        guard line.count <= maximumBytes else { throw AccountLimitError.responseTooLarge }
-        return line
-    }
-
-    private func readToEndBounded(from handle: FileHandle, maximumBytes: Int) throws -> Data {
-        guard maximumBytes >= 0 else { throw AccountLimitError.responseTooLarge }
-        var data = Data()
-        while true {
-            let remaining = maximumBytes - data.count
-            let requestedBytes = min(65_536, remaining + 1)
-            guard let chunk = try handle.read(upToCount: requestedBytes), !chunk.isEmpty else {
-                return data
-            }
-            data.append(chunk)
-            guard data.count <= maximumBytes else {
-                throw AccountLimitError.responseTooLarge
-            }
-        }
+            guard containsResponseID2(result.output) else { throw AccountLimitError.malformedResponse }
+            return result.output
+        } catch BoundedProcessError.timedOut { throw AccountLimitError.timedOut }
+        catch BoundedProcessError.outputTooLarge { throw AccountLimitError.responseTooLarge }
+        catch is BoundedProcessError { throw AccountLimitError.processLaunchFailed }
     }
 
     private func containsResponseID2(_ data: Data) -> Bool {
@@ -166,46 +89,6 @@ struct AppServerProcessRunner: AppServerProcessRunning {
             else { return false }
             return identifier.intValue == 2
         }
-    }
-}
-
-private final class RunningProcessBox: @unchecked Sendable {
-    let process = Process()
-    let input = Pipe()
-    let output = Pipe()
-    let error = Pipe()
-
-    init(executable: URL, arguments: [String], workingDirectory: URL? = nil) {
-        process.executableURL = executable
-        process.arguments = arguments
-        let inherited = ProcessInfo.processInfo.environment
-        let allowedEnvironmentKeys = [
-            "HOME", "TMPDIR", "USER", "LOGNAME", "LANG", "LC_ALL", "LC_CTYPE",
-            "__CF_USER_TEXT_ENCODING", "CODEX_HOME", "XDG_CONFIG_HOME",
-            "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"
-        ]
-        process.environment = allowedEnvironmentKeys.reduce(into: [:]) { environment, key in
-            environment[key] = inherited[key]
-        }
-        process.currentDirectoryURL = workingDirectory
-        process.standardInput = input
-        process.standardOutput = output
-        process.standardError = error
-    }
-
-    func stop() {
-        guard process.isRunning else { return }
-        process.terminate()
-        DispatchQueue.global().asyncAfter(deadline: .now() + 1) { [weak self] in
-            guard let self, self.process.isRunning else { return }
-            kill(self.process.processIdentifier, SIGKILL)
-        }
-    }
-
-    func closePipes() {
-        try? input.fileHandleForWriting.close()
-        try? output.fileHandleForReading.close()
-        try? error.fileHandleForReading.close()
     }
 }
 

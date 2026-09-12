@@ -4,6 +4,25 @@ All notable changes to CodexMeter will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.11] - 2026-09-12
+
+### Security
+
+- **Provider responses are no longer written to the system log.** Three providers logged the first few hundred bytes of a usage response with `privacy: .public`, which overrides the redaction macOS applies by default — putting plan, spend and account identifiers in the clear, where other processes can read them and any sysdiagnose bundle captures them. Only sizes are logged now.
+- **Provider responses have a ceiling.** The nine third-party endpoints the notch polls had no size limit, so a vendor incident returning a very large body could grow the app's memory until macOS killed it. An oversize response now fails that one ring instead, at no measurable cost to an ordinary one.
+
+## [2.0.10] - 2026-09-12
+
+### Added
+
+- **Claude Accounts.** Save the current Claude subscription login, add another through the official CLI's own browser sign-in, switch between them, and remove them. Saved logins stay in this Mac's Keychain; close your Claude Code sessions before switching.
+
+### Fixed
+
+- **Account-limit refreshes no longer get stuck** after the Codex or Claude helper process exits — timeouts and cancellation release the refresh so later readings can update.
+- **Cached limits show their real age**, refresh after returning to the app or waking the Mac, and read "Resetting…" once a reset time has passed.
+- **Claude sessions no longer stay "working"** after a completed or continued conversation left an old busy record behind.
+
 ## [2.0.9] - 2026-09-11
 
 ### Added

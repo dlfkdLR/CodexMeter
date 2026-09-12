@@ -156,7 +156,7 @@ final class ClaudeAccountsWindowController {
             window.center()
             self.window = window
         }
-        
+
         NSApplication.shared.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }

@@ -52,7 +52,9 @@ final class OllamaNotchProvider: NotchProvider {
         }
 
         let body = String(data: data, encoding: .utf8) ?? ""
-        NotchLog.usage.debug("ollama usage -> \(body.prefix(900), privacy: .public)")
+        // Size only — see the note in `CursorNotchProvider`. An account's usage
+        // response is not something to write into the system log.
+        NotchLog.usage.debug("ollama usage -> \(data.count, privacy: .public) bytes")
 
         let result = try OllamaUsage.parse(body)
         return ProviderSnapshot(

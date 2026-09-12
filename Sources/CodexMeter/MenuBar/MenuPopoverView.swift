@@ -401,13 +401,18 @@ struct MenuPopoverView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Plan, \(plan)")
             }
+            Button("Switch") { ClaudeAccountsWindowController.shared.show() }
+                .buttonStyle(.borderless)
+                .frame(minHeight: 28)
+                .accessibilityLabel("Switch Claude account")
+                .accessibilityIdentifier("menu.claudeAccountSwitcher")
         }
         .font(.subheadline)
         .padding(.horizontal, 6)
         .frame(minHeight: 36)
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("menu.claudeAccount")
         .accessibilityLabel("Claude account, \(claude.account?.displayName ?? "not connected")")
     }
@@ -607,7 +612,14 @@ struct MenuPopoverView: View {
                         // providers. The ChatGPT snapshot date already appears in the
                         // Token History header, so it is not repeated here.
                         if selectedSection == .codex {
-                            Text(currentLimitStatusMessage)
+                            if let snapshot = currentLimitSnapshot {
+                                TimelineView(.periodic(from: .now, by: 30)) { context in
+                                    Text(LimitFreshness.text(fetchedAt: snapshot.fetchedAt, now: context.date,
+                                                            stale: currentLimitStatus == .stale))
+                                }
+                            } else {
+                                Text(currentLimitStatusMessage)
+                            }
                         } else if showsRelativeUpdate, let lastSourceRefreshAt = store.lastSourceRefreshAt {
                             HStack(spacing: 3) {
                                 Text("Updated")
@@ -960,8 +972,9 @@ struct MenuPopoverView: View {
                 .accessibilityValue("\(Int(remaining.rounded())) percent")
             HStack(spacing: 4) {
                 if let reset = window.resetsAt {
-                    Text("Resets")
-                    Text(reset, style: .relative)
+                    TimelineView(.periodic(from: .now, by: 30)) { context in
+                        Text(ResetCopy.text(for: reset, now: context.date, format: .remaining))
+                    }
                 }
             }
             .font(.caption2)

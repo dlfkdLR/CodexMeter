@@ -17,7 +17,7 @@ final class UsageSettingsLayoutTests: XCTestCase {
         defaults.set(true, forKey: "sessionsEnabled")
         defaults.set(true, forKey: "showCachedInput")
         defaults.set(false, forKey: "costEstimatesEnabled")
-        let now = Date(timeIntervalSince1970: 1_789_084_800)
+        let now = Date()
         let usage = TokenUsage(inputTokens: 8_766_241, cachedInputTokens: 8_559_232, outputTokens: 20_849)
         let snapshot = UsageSnapshot(today: usage, week: usage, month: usage, allTime: usage,
                                      quality: .exact, updatedAt: now)

@@ -373,8 +373,9 @@ final class ClaudeIntegrationStoreTests: XCTestCase {
         fixture.defaults.set(true, forKey: "claudeEnabled")
         let account = ClaudeAccount(email: "person@example.com", subscriptionType: "pro", authenticationMethod: "claude.ai")
         let installer = RecordingClaudeInstaller()
+        let authenticator = DelayedClaudeAuthenticator(account: account)
         let store = ClaudeIntegrationStore(
-            authenticator: DelayedClaudeAuthenticator(account: account),
+            authenticator: authenticator,
             installer: installer,
             defaults: fixture.defaults,
             limitsURL: fixture.limitsURL,
@@ -382,8 +383,9 @@ final class ClaudeIntegrationStoreTests: XCTestCase {
         )
 
         let addTask = Task { await store.addCurrentAccount() }
-        try await Task.sleep(for: .milliseconds(10))
+        await authenticator.waitUntilStarted()
         await store.setEnabled(false)
+        await authenticator.release()
         await addTask.value
 
         XCTAssertFalse(store.isEnabled)
@@ -516,14 +518,25 @@ private actor SwitchableClaudeAuthenticator: ClaudeAuthenticating {
     }
 }
 
-private struct DelayedClaudeAuthenticator: ClaudeAuthenticating {
+private actor DelayedClaudeAuthenticator: ClaudeAuthenticating {
     let account: ClaudeAccount
-
+    private var started = false
+    private var startedWaiter: CheckedContinuation<Void, Never>?
+    private var completion: CheckedContinuation<Void, Never>?
+    init(account: ClaudeAccount) { self.account = account }
+    func waitUntilStarted() async {
+        if started { return }
+        await withCheckedContinuation { startedWaiter = $0 }
+    }
+    func release() { completion?.resume(); completion = nil }
     func accountStatus() async throws -> ClaudeAccount? {
-        try await Task.sleep(for: .milliseconds(75))
+        await withCheckedContinuation { continuation in
+            completion = continuation
+            started = true
+            startedWaiter?.resume(); startedWaiter = nil
+        }
         return account
     }
-
 }
 
 private final class RecordingClaudeInstaller: ClaudeStatusLineInstalling, @unchecked Sendable {

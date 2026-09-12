@@ -1,4 +1,4 @@
-# Codex accounts
+# Accounts
 
 CodexMeter can save your own ChatGPT logins and apply a selected login to Codex. Switching is always user-initiated; it never rotates accounts when usage limits are reached.
 
@@ -54,3 +54,18 @@ Native layout tests render the production Accounts view with synthetic empty, po
 Additional popover tests cover both top-level tabs, light and dark appearances, and six account states (empty, populated, long email, error, busy, and 12 saved accounts). They verify that the switch control and full errors fit, no scrolling is added, and rendering never changes credentials or operates Codex. Other popover tests inject a synthetic account store instead of accessing the developer’s Keychain.
 
 Manual verification remains outstanding in 1.2.0: a real two-account browser login, Keychain authorization prompt, and desktop restart/switch have not been exercised end to end. Automated tests must never change the developer’s running Codex login. Finish active Codex work before confirming a switch; the official Codex app may require sign-in again if a saved login has expired.
+
+## Claude accounts
+
+Open **Switch account** from the Claude notch tooltip or account popover, **Settings → Usage → Claude → Switch**, or **Settings → Providers → Claude Code → Manage Accounts…**. These open the native **Claude Accounts** window.
+
+1. **Save Current Account** saves the current Claude subscription login to a separate, non-synchronizing local Keychain vault.
+2. **Add Account…** invokes the official `claude auth login --claudeai` browser flow in an owner-only temporary configuration with its own Keychain service. An explicit signed-out status is required before login starts. Adding an account does not replace the current login; Cancel stops only the owned helper.
+3. Close existing Claude Code sessions, then choose **Switch** beside a saved account and confirm. CodexMeter preserves the departing login, replaces only the OAuth record and account identity, then clears old account-limit snapshots. Start Claude Code to use the selected account.
+4. Removing a saved account deletes only its vault entry; it does not sign out of Claude Code.
+
+Up to 12 Claude accounts can be saved. Email and organization/account identity distinguish entries; the reported plan appears below the email. The default macOS subscription login is supported. Custom config homes, API keys, managed authentication policies, and non-Keychain credential files must be managed through Claude Code. A revoked or expired saved login can still require official sign-in.
+
+Credential writes preserve unrelated Keychain/configuration fields, check for concurrent changes, and use private atomic profile replacement. If profile replacement fails, rollback restores only the credential written by this operation. Tokens are never placed in usage storage, diagnostics, or UI. Keychain authorization may be requested across ad-hoc signed builds. No automatic quota-based switching occurs, and local usage history remains a per-Mac ledger.
+
+Verification: synthetic credentials cover save/add/cancel/switch/remove, running-client guards, concurrent changes, and rollback. Native renders cover six states at two window sizes in light/dark appearances. The installed Claude Accounts window was opened without changing a login. A real two-account OAuth login and switch were not exercised end to end.

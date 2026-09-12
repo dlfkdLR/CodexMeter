@@ -98,6 +98,16 @@ final class NotchController: ObservableObject {
             disconnected: Set(providers.map(\.id)).subtracting(selectedProviderIDs), order: Self.storedProviderOrder())
         self.store = store
 
+        ClaudeAccountStore.shared.onWillSwitch = { [weak claudeIntegration, weak store] in
+            claudeIntegration?.beginAccountSwitch()
+            store?.invalidateAccount(providerID: "claude")
+        }
+        ClaudeAccountStore.shared.onDidSwitch = { [weak claudeIntegration, weak store] in
+            await claudeIntegration?.finishAccountSwitch()
+            store?.invalidateAccount(providerID: "claude")
+            store?.refresh(providerID: "claude")
+        }
+
         window.onRefresh = { [weak store] in store?.refreshNow() }
         window.onRefreshProvider = { [weak store] id in store?.refresh(providerID: id) }
         window.onOpenSettings = { SettingsWindowController.shared.present() }
@@ -110,9 +120,10 @@ final class NotchController: ObservableObject {
         window.onSwitchAccount = { id in
             if id == "codex" {
                 CodexAccountsWindowController.shared.show()
+            } else if id == "claude" {
+                ClaudeAccountsWindowController.shared.show()
             } else {
-                let pane: SettingsPane = id == "claude" ? .provider(.claude) : .notchProvider(id: id)
-                SettingsWindowController.shared.present(selecting: pane)
+                SettingsWindowController.shared.present(selecting: .notchProvider(id: id))
             }
         }
         window.onOpenUsage = {
@@ -193,18 +204,19 @@ final class NotchController: ObservableObject {
         }
     }
 
-    /// Reflect a change in the underlying Codex/Claude limits into the notch
-    /// without waiting out the store's poll — but only while the notch is on
-    /// screen, and only on an actual change to the limit *windows*. Keyed on
-    /// `objectWillChange` this fed a loop: every fetch writes the last-good
-    /// cache to `UserDefaults`, `AccountLimitStore` re-publishes on any defaults
-    /// change, and the notch re-fetched three times a second.
+    /// Refresh on quota or freshness changes, but ignore timestamps/defaults
+    /// writes so saving the notch cache cannot feed a polling loop.
     private func wireLimitBridge() {
         guard whileVisible.isEmpty, let codexLimits, let claudeIntegration else { return }
-        codexLimits.$snapshot
-            .map { $0?.windows ?? [] }
-            .merge(with: claudeIntegration.$snapshot.map { $0?.windows ?? [] })
-            .removeDuplicates()
+        let codex = codexLimits.$snapshot.map { $0?.windows ?? [] }
+            .combineLatest(codexLimits.$status)
+            .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
+            .map { _ in () }
+        let claude = claudeIntegration.$snapshot.map { $0?.windows ?? [] }
+            .combineLatest(claudeIntegration.$status)
+            .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
+            .map { _ in () }
+        codex.merge(with: claude)
             .debounce(for: .seconds(1), scheduler: RunLoop.main)
             .sink { [weak store] _ in store?.refreshNow() }
             .store(in: &whileVisible)

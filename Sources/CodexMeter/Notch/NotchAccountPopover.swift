@@ -61,7 +61,7 @@ struct NotchAccountPopover: View {
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                             .lineLimit(1).truncationMode(.middle)
-                        Text(option.id == "codex" ? "Switch or add account" : "Account settings")
+                        Text("Switch or add account")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(.secondary)
                     }

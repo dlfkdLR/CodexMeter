@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 @MainActor
@@ -12,6 +13,9 @@ final class AccountLimitStore: ObservableObject {
     private let pollingInterval: Duration?
     private var pollingTask: Task<Void, Never>?
     private var defaultsTask: Task<Void, Never>?
+    private var freshnessTask: Task<Void, Never>?
+    private var lifecycleTasks: [Task<Void, Never>] = []
+    private var readGeneration = 0
     private var inFlightReadTask: Task<AccountLimitsSnapshot, Error>?
     /// The last `isEnabled` this store acted on, so an unrelated defaults write
     /// does not restart the poll.
@@ -28,6 +32,22 @@ final class AccountLimitStore: ObservableObject {
         lastKnownEnabled = defaults.object(forKey: "accountLimitsEnabled") == nil
             || defaults.bool(forKey: "accountLimitsEnabled")
         synchronizeEnabledPreference()
+        freshnessTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                guard !Task.isCancelled else { return }
+                self?.updateFreshness()
+            }
+        }
+        for (center, name) in [(NSWorkspace.shared.notificationCenter, NSWorkspace.didWakeNotification),
+                               (NotificationCenter.default, NSApplication.didBecomeActiveNotification)] {
+            lifecycleTasks.append(Task { [weak self] in
+                for await _ in center.notifications(named: name) {
+                    guard !Task.isCancelled else { return }
+                    await self?.refreshIfNeeded()
+                }
+            })
+        }
         defaultsTask = Task { [weak self] in
             let changes = NotificationCenter.default.notifications(
                 named: UserDefaults.didChangeNotification,
@@ -48,6 +68,8 @@ final class AccountLimitStore: ObservableObject {
     deinit {
         pollingTask?.cancel()
         defaultsTask?.cancel()
+        freshnessTask?.cancel()
+        lifecycleTasks.forEach { $0.cancel() }
         inFlightReadTask?.cancel()
     }
 
@@ -61,7 +83,7 @@ final class AccountLimitStore: ObservableObject {
         pollingTask?.cancel()
         pollingTask = nil
         guard isEnabled else {
-            inFlightReadTask?.cancel()
+            cancelRead()
             status = .disabled
             statusMessage = "Account limits are disabled"
             snapshot = nil
@@ -84,22 +106,27 @@ final class AccountLimitStore: ObservableObject {
 
     func refresh() async {
         guard isEnabled, !isRefreshing, !AccountSwitchActivity.isSwitching else { return }
+        updateFreshness()
+        readGeneration += 1
+        let operation = readGeneration
         let accountGeneration = AccountSwitchActivity.generation
         isRefreshing = true
         if snapshot == nil { status = .loading }
         let readTask = Task { try await provider.readLimits() }
         inFlightReadTask = readTask
-        defer { isRefreshing = false; inFlightReadTask = nil }
+        defer {
+            if readGeneration == operation { isRefreshing = false; inFlightReadTask = nil }
+        }
         do {
             let refreshed = try await withTaskCancellationHandler {
                 try await readTask.value
             } onCancel: { readTask.cancel() }
-            guard isEnabled, accountGeneration == AccountSwitchActivity.generation, !AccountSwitchActivity.isSwitching else { return }
+            guard readGeneration == operation, isEnabled, accountGeneration == AccountSwitchActivity.generation, !AccountSwitchActivity.isSwitching else { return }
             snapshot = refreshed
             status = .ready
-            statusMessage = "Updated just now"
+            updateFreshness()
         } catch {
-            guard isEnabled, accountGeneration == AccountSwitchActivity.generation, !AccountSwitchActivity.isSwitching else { return }
+            guard readGeneration == operation, isEnabled, accountGeneration == AccountSwitchActivity.generation, !AccountSwitchActivity.isSwitching else { return }
             if snapshot != nil {
                 status = .stale
                 statusMessage = "Showing last known limits"
@@ -110,8 +137,28 @@ final class AccountLimitStore: ObservableObject {
         }
     }
 
-    func clearForAccountSwitch() {
+    func refreshIfNeeded(now: Date = Date()) async {
+        updateFreshness(now: now)
+        guard snapshot == nil || now.timeIntervalSince(snapshot!.fetchedAt) >= 60 else { return }
+        await refresh()
+    }
+
+    func updateFreshness(now: Date = Date()) {
+        guard isEnabled, let snapshot, status == .ready || status == .stale else { return }
+        if now.timeIntervalSince(snapshot.fetchedAt) >= 300 { status = .stale }
+        statusMessage = status == .stale ? "Showing last known limits"
+            : LimitFreshness.text(fetchedAt: snapshot.fetchedAt, now: now)
+    }
+
+    private func cancelRead() {
+        readGeneration += 1
         inFlightReadTask?.cancel()
+        inFlightReadTask = nil
+        isRefreshing = false
+    }
+
+    func clearForAccountSwitch() {
+        cancelRead()
         snapshot = nil
         status = .loading
         statusMessage = "Switching account…"

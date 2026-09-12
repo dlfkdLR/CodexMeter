@@ -82,8 +82,8 @@ The notch's account-switch control follows its Settings control along the edge
 first and the account control 80ms later; both remain visible across the gap
 and during menu tracking, then hide on exit. Reduce Motion removes the animation.
 Its hit area participates in the panel's
-screen bounds and hover region. A native menu opens saved Codex accounts or the
-Claude Code account pane without changing accounts on a single click.
+screen bounds and hover region. A native account popover opens the corresponding saved Codex or Claude Accounts
+window without changing accounts on a single click.
 Settings ▸ Notch ▸ Readings offers Used / Remaining: the percent and ring sweep
 change together, while warning colours continue to reflect actual consumption.
 
@@ -248,7 +248,7 @@ The diamond meter mark (`◈`) was the menu-bar and app identity through 1.x and
 
 - **Character:** The existing Codenotch tooltip, with account context and actions integrated into its own type, colors, spacing, and shell.
 - **Account Row:** A compact row below the provider title shows the reported plan and a visible “Switch account” button. An absent or blank plan uses the neutral label “Account”; plan names are never inferred from token totals or quota readings. Full plan text remains available as help text.
-- **Account Destination:** For Codex, Switch account opens the existing Accounts window. For Claude and other providers, it opens their account or setup Settings page, where the existing tool-specific guidance applies. Opening this destination is not an automatic vendor-account change.
+- **Account Destination:** For Codex and Claude, Switch account opens the corresponding native saved-account window. Switching requires explicit confirmation; Claude Code sessions must be closed first. Other providers retain their account or setup Settings destinations. Opening a window does not change the vendor account.
 - **Settings Orb:** The existing gear artwork is hosted by a plain native Button labeled “Open Settings.” Its callback reaches the Settings window through the shared view model, preserving the orb's shape, position, and hover appearance.
 - **Fit:** Today, account actions, grouped limits, and capped live sessions remain inside the tooltip's rounded mask and reachable pointer region. Provider titles stay on one line and may scale down slightly; the card keeps its existing width and grows according to the shared content budget.
 - **Verification:** Check the natural content height against the shared card budget with grouped and ungrouped limits, Today present or absent, and varying live-session counts. Verify that both Settings and account callbacks reach the actual view model and that provider selection round-trips through storage, including Ollama Local and an empty list.
@@ -272,3 +272,7 @@ The diamond meter mark (`◈`) was the menu-bar and app identity through 1.x and
 - **Don't** communicate low quota, stale data, or estimates through color alone.
 
 The notch Settings and account controls share a slim black capsule instead of separate floating discs. The resting arc is preserved; the account glyph appears 80 ms after Settings. Its transient native popover lists provider logos, current identity and plan, with a clear route to account management and outside-click/Escape dismissal.
+
+### Claude Accounts
+
+Claude inherits the Codex Accounts utility window: 560 × 400 pt by default, 500 × 300 pt minimum, system type and colors, native controls, and dividers. Only the saved list scrolls; Save Current Account, Add Account, Cancel during sign-in, status, and session guidance stay fixed. Rows show email, the reported plan, Current or Switch, and removal. A failed identity refresh removes the unverified Current badge. Switching and removal require confirmation. This extension adds no design tokens.

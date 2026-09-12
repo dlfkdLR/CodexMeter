@@ -445,7 +445,30 @@ final class ClaudeIntegrationStore: ObservableObject {
 
     deinit { pollingTask?.cancel() }
 
-    var isAvailable: Bool { isEnabled && isConnected }
+    private(set) var accountSwitchInProgress = false
+    var isAvailable: Bool { isEnabled && isConnected && !accountSwitchInProgress }
+
+    func beginAccountSwitch() {
+        accountSwitchInProgress = true
+        cancelCurrentOperation()
+        clearLimitsCache()
+        snapshot = nil
+        account = nil
+        detectedAccount = nil
+        isConnected = false
+        status = .checking
+        statusMessage = "Switching Claude account…"
+        notifyAvailabilityIfNeeded()
+    }
+
+    func finishAccountSwitch() async {
+        clearLimitsCache()
+        accountSwitchInProgress = false
+        guard isEnabled else { return }
+        defaults.set(false, forKey: "claudeAccountLinked")
+        defaults.removeObject(forKey: "claudeLinkedAccountID")
+        await addCurrentAccount()
+    }
 
     func setEnabled(_ enabled: Bool) async {
         guard isEnabled != enabled else { return }
@@ -480,7 +503,7 @@ final class ClaudeIntegrationStore: ObservableObject {
     }
 
     func addCurrentAccount() async {
-        guard isEnabled, !isRefreshing, !isDisabling else { return }
+        guard isEnabled, !isRefreshing, !isDisabling, !accountSwitchInProgress else { return }
         let operation = beginOperation()
         status = .checking
         statusMessage = "Checking Claude account…"
@@ -499,7 +522,7 @@ final class ClaudeIntegrationStore: ObservableObject {
             }
             clearLimitsCache()
             detectedAccount = found
-            await linkAndConnect(found)
+            await linkAndConnect(found, operation: operation)
         } catch {
             if isCurrent(operation) { fail(error) }
         }
@@ -528,7 +551,7 @@ final class ClaudeIntegrationStore: ObservableObject {
     }
 
     func refresh() async {
-        guard isEnabled, !isRefreshing, !isDisabling else { return }
+        guard isEnabled, !isRefreshing, !isDisabling, !accountSwitchInProgress else { return }
         let operation = beginOperation()
         status = .checking
         defer { finishOperation(operation) }
@@ -551,7 +574,7 @@ final class ClaudeIntegrationStore: ObservableObject {
                 notifyAvailabilityIfNeeded()
                 return
             }
-            await linkAndConnect(found)
+            await linkAndConnect(found, operation: operation)
         } catch {
             if isCurrent(operation) { fail(error) }
         }
@@ -560,18 +583,21 @@ final class ClaudeIntegrationStore: ObservableObject {
     /// Local Claude usage needs no helper; only the limit percentages do. Connect
     /// for usage even when the status-line helper cannot be installed, and surface
     /// the limits problem rather than failing the whole integration.
-    private func linkAndConnect(_ found: ClaudeAccount) async {
+    private func linkAndConnect(_ found: ClaudeAccount, operation: Int) async {
         defaults.set(true, forKey: "claudeAccountLinked")
         defaults.set(found.linkIdentifier, forKey: "claudeLinkedAccountID")
         account = found
         isConnected = true
         do {
             try await performInstall()
+            guard isCurrent(operation), !accountSwitchInProgress, !isDisabling else { return }
             loadLimits()
         } catch where snapshot != nil {
+            guard isCurrent(operation), !accountSwitchInProgress, !isDisabling else { return }
             status = .stale
             statusMessage = "Showing last known Claude limits"
         } catch {
+            guard isCurrent(operation), !accountSwitchInProgress, !isDisabling else { return }
             snapshot = nil
             status = .waitingForLimits
             statusMessage = (error as? LocalizedError)?.errorDescription
@@ -695,68 +721,30 @@ final class ClaudeIntegrationStore: ObservableObject {
     }
 }
 
-private enum ClaudeCommandRunner {
+enum ClaudeCommandRunner {
     static func run(
         executable: URL,
         arguments: [String],
         timeout: Duration,
         maximumOutputBytes: Int,
-        acceptsNonzeroExit: Bool = false
+        acceptsNonzeroExit: Bool = false,
+        environment: [String: String]? = nil
     ) async throws -> Data {
-        let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("codexmeter-claude-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(
-            at: directory,
-            withIntermediateDirectories: false,
-            attributes: [.posixPermissions: 0o700]
-        )
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let outputURL = directory.appendingPathComponent("stdout")
-        FileManager.default.createFile(atPath: outputURL.path, contents: nil, attributes: [.posixPermissions: 0o600])
-        let output = try FileHandle(forWritingTo: outputURL)
-        defer { try? output.close() }
-
-        let box = ClaudeRunningProcessBox(executable: executable, arguments: arguments)
-        box.process.standardOutput = output
-        box.process.standardError = FileHandle.nullDevice
-        do { try box.process.run() } catch { throw ClaudeIntegrationError.processFailed }
-
-        let status = try await withThrowingTaskGroup(of: Int32.self) { group in
-            group.addTask { box.process.waitUntilExit(); return box.process.terminationStatus }
-            group.addTask {
-                try await Task.sleep(for: timeout)
-                box.stop()
-                throw ClaudeIntegrationError.timedOut
-            }
-            guard let first = try await group.next() else { throw ClaudeIntegrationError.processFailed }
-            group.cancelAll()
-            return first
-        }
-        try output.synchronize()
-        let data = try Data(contentsOf: outputURL, options: .mappedIfSafe)
-        guard data.count <= maximumOutputBytes else { throw ClaudeIntegrationError.responseTooLarge }
-        guard status == 0 || acceptsNonzeroExit else { throw ClaudeIntegrationError.processFailed }
-        return data
+        do {
+            let result = try await BoundedProcess.run(
+                executable: executable, arguments: arguments,
+                environment: environment ?? ClaudeProcessEnvironment.sanitized,
+                timeout: timeout, maximumOutputBytes: maximumOutputBytes
+            )
+            guard result.status == 0 || acceptsNonzeroExit else { throw ClaudeIntegrationError.processFailed }
+            return result.output
+        } catch BoundedProcessError.timedOut { throw ClaudeIntegrationError.timedOut }
+        catch BoundedProcessError.outputTooLarge { throw ClaudeIntegrationError.responseTooLarge }
+        catch is BoundedProcessError { throw ClaudeIntegrationError.processFailed }
     }
 }
 
-private final class ClaudeRunningProcessBox: @unchecked Sendable {
-    let process = Process()
-
-    init(executable: URL, arguments: [String]) {
-        process.executableURL = executable
-        process.arguments = arguments
-        process.standardInput = FileHandle.nullDevice
-        process.environment = ClaudeProcessEnvironment.sanitized
-    }
-
-    func stop() {
-        guard process.isRunning else { return }
-        process.terminate()
-    }
-}
-
-private enum ClaudeProcessEnvironment {
+enum ClaudeProcessEnvironment {
     static var sanitized: [String: String] {
         let inherited = ProcessInfo.processInfo.environment
         let allowed = [

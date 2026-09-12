@@ -23,6 +23,11 @@ enum ClaudeTranscript {
     /// the terminal interface writes it to the registry.
     enum Turn: Equatable { case inFlight, finished }
 
+    struct Event {
+        let turn: Turn
+        let timestamp: Date?
+    }
+
     /// How much of the end of the file to look at. The last few records settle
     /// it, and these transcripts run to megabytes.
     static let tailBytes = 64 * 1024
@@ -99,6 +104,10 @@ enum ClaudeTranscript {
     /// opened and not yet used. The caller leaves such a session as it found it
     /// rather than guessing.
     static func turn(inTail data: Data) -> Turn? {
+        event(inTail: data)?.turn
+    }
+
+    static func event(inTail data: Data) -> Event? {
         let lines = data.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: true)
         for line in lines.reversed() {
             // The first line of the tail is usually cut in half; it fails to
@@ -109,14 +118,28 @@ enum ClaudeTranscript {
             // parent's turn is the one being reported on.
             if json["isSidechain"] as? Bool == true { continue }
 
+            let timestamp = (json["timestamp"] as? String).flatMap { value -> Date? in
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                if let date = formatter.date(from: value) { return date }
+                formatter.formatOptions = [.withInternetDateTime]
+                return formatter.date(from: value)
+            }
             switch json["type"] as? String {
+            case "continued-in":
+                // The old process may remain open after a conversation moves to
+                // another session. Its last registry status is no longer live.
+                return Event(turn: .finished, timestamp: timestamp)
+            case "system" where json["subtype"] as? String == "turn_duration":
+                return Event(turn: .finished, timestamp: timestamp)
             case "assistant":
                 // `tool_use` is the only stop reason that means the turn goes
                 // on; `end_turn`, `stop_sequence` and `max_tokens` all end it.
                 let message = json["message"] as? [String: Any]
-                return message?["stop_reason"] as? String == "tool_use" ? .inFlight : .finished
+                return Event(turn: message?["stop_reason"] as? String == "tool_use" ? .inFlight : .finished,
+                             timestamp: timestamp)
             case "user":
-                return isInterruption(json) ? .finished : .inFlight
+                return Event(turn: isInterruption(json) ? .finished : .inFlight, timestamp: timestamp)
             default:
                 continue
             }
@@ -153,7 +176,7 @@ final class ClaudeTranscriptReader {
     private struct Cached {
         let modified: Date
         let size: UInt64
-        let turn: ClaudeTranscript.Turn?
+        let event: ClaudeTranscript.Event?
     }
 
     private let projects: URL
@@ -183,29 +206,31 @@ final class ClaudeTranscriptReader {
 
     /// What the session is doing, and when it last moved. Nil when there is no
     /// transcript to read, or nothing said in it yet.
-    func activity(sessionID: String, cwd: String) -> (turn: ClaudeTranscript.Turn, since: Date)? {
+    func activity(sessionID: String, cwd: String) -> (turn: ClaudeTranscript.Turn, since: Date, eventAt: Date?)? {
         guard let url = path(sessionID: sessionID, cwd: cwd),
               let attributes = try? fileManager.attributesOfItem(atPath: url.path),
               let modified = attributes[.modificationDate] as? Date
         else { return nil }
         let size = (attributes[.size] as? NSNumber)?.uint64Value ?? 0
 
-        let turn: ClaudeTranscript.Turn?
+        let event: ClaudeTranscript.Event?
         if let cached = cache[sessionID], cached.modified == modified, cached.size == size {
-            turn = cached.turn
+            event = cached.event
         } else {
-            turn = ClaudeTranscript.turn(at: url)
-            cache[sessionID] = Cached(modified: modified, size: size, turn: turn)
+            event = ClaudeTranscript.tail(of: url).flatMap(ClaudeTranscript.event(inTail:))
+            cache[sessionID] = Cached(modified: modified, size: size, event: event)
         }
 
-        guard let turn else { return nil }
+        guard let event else { return nil }
+        let turn = event.turn
         if let previous = entered[sessionID], previous.turn == turn {
-            return (turn, previous.at)
+            return (turn, previous.at, event.timestamp)
         }
         // First sight of a change, so the file's own timestamp is the closest
         // thing there is to when it happened.
-        entered[sessionID] = (turn, modified)
-        return (turn, modified)
+        let since = event.timestamp ?? modified
+        entered[sessionID] = (turn, since)
+        return (turn, since, event.timestamp)
     }
 
     private func path(sessionID: String, cwd: String) -> URL? {

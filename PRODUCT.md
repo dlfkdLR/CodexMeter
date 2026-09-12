@@ -35,10 +35,10 @@ The app runs quietly on macOS 14 or later as a native menu bar utility. It disco
 - Avoid prompts, responses, source code, and terminal output. Authentication data never enters usage storage or logs; explicitly saved account logins use a separate local Keychain vault.
 - Keep optional account retrieval opt-in, fixed-destination, aggregate-only, and memory-only.
 - Read Codex account limits only through a verified signed Codex app-server. Read Claude five-hour and weekly limits only from its documented local status-line fields. Keep both paths read-only and never expose reset-credit consumption or purchase actions.
-- Let users save their own Codex logins and explicitly switch via normal desktop quit, private login replacement, and reopen. Never rotate accounts automatically based on quota; keep account state separate from local history.
+- Let users explicitly save and switch their own Codex or Claude subscription logins in separate local Keychain vaults. Codex uses normal desktop quit, private login replacement, and reopen; Claude requires existing sessions to be closed first and never stops them. Never rotate accounts automatically based on quota; keep account state separate from local history.
 - Derive current API-equivalent estimates from model token usage; unknown or incomplete pricing data remains unavailable rather than becoming zero.
 - Persist only canonical model IDs, keyed project identifiers, folder basenames, session relationships, and numeric attachment metadata needed for local analytics.
-- Keep normal accounting free of telemetry, analytics, notifications, a local web server, and a separately installed runtime. Explicit account registration delegates the temporary browser sign-in flow to the bundled Codex CLI.
+- Keep normal accounting free of telemetry, analytics, notifications, a local web server, and a separately installed runtime. Explicit account registration delegates temporary browser sign-in to the verified bundled Codex CLI or the installed official Claude CLI, using a separate temporary configuration.
 - Remain responsive during large historical imports and tolerate unknown, malformed, partial, truncated, rotated, and duplicated input.
 - Keep launch-at-login optional and use the platform-supported current-user mechanism.
 

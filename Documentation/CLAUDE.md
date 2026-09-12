@@ -1,6 +1,6 @@
 # Claude Code
 
-Open **Settings**, select **Claude Code** in the Providers sidebar, enable it, and add the account already signed in to the official Claude CLI. If Claude Code is signed out, run `claude` in your terminal and sign in there first, then choose **Add Account**. The Claude tab remains hidden until this explicit setup is complete.
+Open **Settings → Providers**, open **Claude Code** details, enable it, and add the account already signed in to the official Claude CLI. If Claude Code is signed out, run `claude` in your terminal and sign in there first, then choose **Add Account**. The Claude tab remains hidden until this explicit setup is complete.
 
 ## Included
 
@@ -16,7 +16,7 @@ The default source is `~/.claude/projects/**/*.jsonl`. `CLAUDE_CONFIG_DIR` is ho
 
 ## Presentation
 
-In **Settings ▸ Usage**, the service picker switches between Codex and Claude Code after Claude has been enabled and connected. Today, history, Usage/Projects/Sessions, and the Settings data actions follow the selected service. The second top-level mode changes between **Codex Limits** and **Claude Limits**. The header shows the connected account for both services in the same row; Claude reports its plan there instead of a switcher, since profile totals, reset credits, and account switching remain Codex-only.
+In **Settings ▸ Usage**, the service picker switches between Codex and Claude Code after Claude has been enabled and connected. Today, history, Usage/Projects/Sessions, and the Settings data actions follow the selected service. The second top-level mode changes between **Codex Limits** and **Claude Limits**. The header shows the connected account for both services in the same row; Claude shows its reported plan and a Switch action opening Claude Accounts. Profile totals and reset credits remain Codex-only.
 
 The edge notch shows a Claude ring alongside the Codex one once Claude is enabled, fed from the same limit snapshots — it adds no reads of its own.
 
@@ -42,12 +42,14 @@ Claude data lives in `Claude.sqlite`, alongside but separate from the existing `
 
 Clearing Claude history retains only the hashed identities of excluded responses in `claude_message_exclusions`, alongside the cutoff. This prevents later streaming blocks or copied transcripts from restoring a cleared response, including after a restart or rebuild. No cleared token counts, message contents, or raw identifiers are retained in that exclusion table. The additive table is created only for Claude imports; the Codex database schema is unchanged.
 
-Claude web/mobile account-wide token totals, account switching, attachment counts, and API-equivalent cost estimates are **not supported in this version**. An unknown price is unavailable, never a zero-cost claim.
+Claude web/mobile account-wide token totals, attachment counts, and API-equivalent cost estimates are **not supported in this version**. An unknown price is unavailable, never a zero-cost claim.
 
-CodexMeter invokes only the official read-only `claude auth status` command to identify the signed-in account. Signing in is done by the user with Claude Code itself; CodexMeter never launches a login flow and never reads or copies Claude credentials. If the active Claude CLI account changes, that account must be added explicitly before its data appears. For limits, CodexMeter installs an owner-only helper as Claude Code's documented status-line command. The helper accepts status-line JSON on standard input, discards all prompt/session/path fields, and saves only five-hour/weekly percentages, reset times, and a fetch timestamp. Existing status-line configuration is restored on disable or disconnect; disconnecting CodexMeter does not sign the user out of Claude Code.
+Normal usage monitoring invokes the official read-only `claude auth status` command to identify the signed-in account. The separate, explicit **Claude Accounts** feature can save the current subscription login to Keychain, add another login through an isolated official CLI browser flow, and switch after confirmation with existing Claude sessions closed. See [account handling](ACCOUNTS.md#claude-accounts). If the active Claude CLI account changes outside Claude Accounts, add that account explicitly before its data appears. A confirmed switch in Claude Accounts reconnects the selected account automatically. For limits, CodexMeter installs an owner-only helper as Claude Code's documented status-line command. The helper accepts status-line JSON on standard input, discards all prompt/session/path fields, and saves only five-hour/weekly percentages, reset times, and a fetch timestamp. Existing status-line configuration is restored on disable or disconnect; disconnecting CodexMeter does not sign the user out of Claude Code.
 
 ## Verification
 
 `swift test --filter ClaudeUsageTests` covers cache arithmetic, duplicate blocks, copied history, streaming revisions, restarts, local-day/week/month boundaries, analytics reconciliation, sub-agents, partial lines, rewrites, history cutoffs, and source isolation. An opt-in independent-accounting test accepts a temporary redacted numeric projection; no private transcript belongs in the repository.
 
 Official references: [Claude Code authentication](https://code.claude.com/docs/en/authentication), [CLI auth commands](https://code.claude.com/docs/en/cli-usage), [status-line rate-limit fields](https://code.claude.com/docs/en/statusline), [session storage](https://code.claude.com/docs/en/sessions), and [prompt-cache usage fields](https://platform.claude.com/docs/en/build-with-claude/prompt-caching). Formats can change; unknown records are not guessed.
+
+Claude session activity reconciles registry status with newer explicit transcript completion records, including continued conversations. Background bookkeeping alone does not mark a session working or override a newer permission-waiting state.

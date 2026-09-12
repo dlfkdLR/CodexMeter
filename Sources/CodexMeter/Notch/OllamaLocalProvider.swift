@@ -39,7 +39,7 @@ final class OllamaLocalProvider: NotchProvider {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(for: request)
+            (data, response) = try await BoundedHTTP.data(for: request, on: session)
         } catch {
             // The daemon is not running (or not on this port) — hide the cell.
             throw NotchProviderError.needsAuth

@@ -94,7 +94,7 @@ For Codex, cached input is already part of input: **Total = Input + Output**. [H
 
 Use the notch's account control or **Settings → Usage → Switch** to manage saved Codex accounts. Logins are saved in this Mac's Keychain, and switching asks before restarting Codex. There is no automatic quota-based account rotation.
 
-Claude's account entry opens its provider settings; sign-in remains with Claude Code. [Account setup and limitations](Documentation/ACCOUNTS.md).
+Claude’s account entry opens **Claude Accounts**, with the same saved-account list, Add Account, Switch, and removal actions. Browser sign-in uses an isolated official Claude CLI configuration; close Claude Code sessions before switching. [Account setup and limitations](Documentation/ACCOUNTS.md).
 
 ## Alerts and updates
 
@@ -104,7 +104,7 @@ Sparkle checks the signed update feed daily. Change automatic checks in **Settin
 
 ## Privacy and accuracy
 
-Local token accounting runs on this Mac. CodexMeter does not put prompts, responses, source code, full project paths, or attachment contents in its usage database. Credentials do not enter that database or diagnostics; explicitly saved Codex accounts use the local Keychain.
+Local token accounting runs on this Mac. CodexMeter does not put prompts, responses, source code, full project paths, or attachment contents in its usage database. Credentials do not enter that database or diagnostics; explicitly saved Codex and Claude accounts use separate local Keychain items.
 
 Provider limit requests go to their respective services; optional ChatGPT account totals require the existing Codex sign-in. Internal provider endpoints can change. Missing or stale readings are labelled rather than invented, and deleted local logs cannot be reconstructed. API-equivalent cost estimates are not subscription charges or bills.
 

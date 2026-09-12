@@ -131,16 +131,20 @@ final class ClaudeSessionMonitor: ObservableObject, AgentActivityMonitor {
             .sorted { $0.since == $1.since ? $0.id < $1.id : $0.since > $1.since }
     }
 
-    /// The record's own answer where it has one, the transcript's where it does
-    /// not. Desktop sessions always take the second path; terminal ones never
-    /// do, which is what keeps their `waiting` state — the one thing only the
-    /// terminal interface knows — exactly as it was.
+    /// Registry status stays authoritative until a newer transcript completion
+    /// closes that turn. Desktop clients without a status use transcript activity.
     nonisolated static func state(of record: ClaudeSessionRecord,
                       transcripts: ClaudeTranscriptReader?) -> AgentSession {
-        guard !record.reportsStatus,
-              let sessionID = record.sessionID,
+        guard let sessionID = record.sessionID,
               let activity = transcripts?.activity(sessionID: sessionID, cwd: record.cwd)
         else { return record.session }
+        if record.reportsStatus {
+            // A permission prompt remains authoritative unless a later explicit
+            // turn event supersedes it. File mtime includes unrelated bookkeeping
+            // and must never be used to overrule a registry status.
+            guard activity.turn == .finished, let eventAt = activity.eventAt,
+                  eventAt > record.session.since else { return record.session }
+        }
         return record.session(state: activity.turn == .inFlight ? .busy : .idle,
                               since: activity.since)
     }

@@ -201,6 +201,51 @@ final class NotchClaudeSessionStateSourceTests: XCTestCase {
         XCTAssertEqual(session.waitingFor, "permission")
     }
 
+    func testContinuedSessionOverridesOldBusyRegistryWithoutUsingFileModificationTime() throws {
+        let busy = try record(#"{"pid":7,"sessionId":"moved","cwd":"/tmp/app","status":"busy","statusUpdatedAt":1788922941635}"#)
+        try writeTranscript("""
+        {"type":"assistant","timestamp":"2026-09-09T03:03:36.899Z","message":{"stop_reason":"tool_use"}}
+        {"type":"continued-in","timestamp":"2026-09-09T03:03:37.881Z"}
+        {"type":"bridge-session"}
+        """, session: "moved", cwd: "/tmp/app")
+        let session = ClaudeSessionMonitor.state(of: busy, transcripts: reader)
+        XCTAssertEqual(session.state, .idle)
+        XCTAssertEqual(session.processID, 7)
+        XCTAssertEqual(session.since.timeIntervalSince1970, 1788923017.881, accuracy: 0.001)
+    }
+
+    func testNewerRegistryBusyOrWaitingSurvivesOldFinishedTranscript() throws {
+        try writeTranscript(#"{"type":"continued-in","timestamp":"2026-09-09T03:03:37.881Z"}"#,
+                            session: "active", cwd: "/tmp/app")
+        for status in ["busy", "waiting"] {
+            let current = try record("""
+            {"pid":7,"sessionId":"active","cwd":"/tmp/app","status":"\(status)","statusUpdatedAt":1788923020000}
+            """)
+            XCTAssertEqual(ClaudeSessionMonitor.state(of: current, transcripts: reader).state, current.session.state)
+        }
+    }
+
+    func testTerminalCompletionAndInterruptionSupersedeStaleBusyRegistry() throws {
+        let busy = try record(#"{"pid":7,"sessionId":"done","cwd":"/tmp/app","status":"busy","statusUpdatedAt":1788922941635}"#)
+        for line in [
+            #"{"type":"assistant","timestamp":"2026-09-09T03:03:37.881Z","message":{"stop_reason":"end_turn"}}"#,
+            #"{"type":"system","subtype":"turn_duration","timestamp":"2026-09-09T03:03:37.881Z"}"#,
+            #"{"type":"user","timestamp":"2026-09-09T03:03:37.881Z","message":{"content":"[Request interrupted by user]"}}"#
+        ] {
+            try writeTranscript(line, session: "done", cwd: "/tmp/app")
+            XCTAssertEqual(ClaudeSessionMonitor.state(of: busy, transcripts: reader).state, .idle)
+        }
+    }
+
+    func testRecentBookkeepingDoesNotTurnAnOldCompletionIntoANewerOne() throws {
+        let busy = try record(#"{"pid":7,"sessionId":"ongoing","cwd":"/tmp/app","status":"busy","statusUpdatedAt":1788923020000}"#)
+        try writeTranscript("""
+        {"type":"assistant","timestamp":"2026-09-09T03:03:37.881Z","message":{"stop_reason":"end_turn"}}
+        {"type":"bridge-session","timestamp":"2026-09-12T00:24:49.000Z"}
+        """, session: "ongoing", cwd: "/tmp/app")
+        XCTAssertEqual(ClaudeSessionMonitor.state(of: busy, transcripts: reader).state, .busy)
+    }
+
     // MARK: - Deduplication
 
     /// Resuming after a crash registers a new pid while the old process is

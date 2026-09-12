@@ -24,3 +24,4 @@ xcuserdata/
 *.pem
 *.jks
 *.keystore
+.vscode/

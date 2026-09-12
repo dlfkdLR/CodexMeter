@@ -33,7 +33,9 @@ final class GrokNotchProvider: NotchProvider {
         if credentials.isExpired { throw NotchProviderError.credentialExpired }
 
         let credits = try await body(from: creditsURL, token: credentials.accessToken)
-        NotchLog.usage.debug("grok credits -> \(credits.prefix(400), privacy: .public)")
+        // Size only — see the note in `CursorNotchProvider`. A billing response
+        // is not something to write into the system log.
+        NotchLog.usage.debug("grok credits -> \(credits.utf8.count, privacy: .public) bytes")
 
         return ProviderSnapshot(
             id: id,

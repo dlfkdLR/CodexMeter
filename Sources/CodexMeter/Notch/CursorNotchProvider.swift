@@ -52,7 +52,11 @@ final class CursorNotchProvider: NotchProvider {
         }
 
         let body = String(data: data, encoding: .utf8) ?? ""
-        NotchLog.usage.debug("cursor usage -> \(body.prefix(900), privacy: .public)")
+        // Size only, never the payload: this response carries the plan, spend
+        // and team billing figures, and `privacy: .public` would write them to
+        // the unified log in the clear — where any other process can read them
+        // and where `log collect` and sysdiagnose pick them up.
+        NotchLog.usage.debug("cursor usage -> \(data.count, privacy: .public) bytes")
 
         let windows = try CursorUsage.windows(fromJSON: body)
         return ProviderSnapshot(
